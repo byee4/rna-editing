@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "rna_editing",
+  "project_id": "e6b0b322-dd2d-451b-bd27-9f4269ae6024"
+}
