@@ -1,6 +1,9 @@
 WORKDIR: "results"
 reference: "refs/genome.fa"
 known_snps: "refs/known_snps.vcf" # Optional database filter
+# Optional cohort-wide variant file for samples without WGS. Use either a
+# string applied to every non-WGS sample or a sample-to-file mapping.
+# variants: "refs/cohort_variants.vcf.gz"
 
 # Singularity/Apptainer images used by this workflow. Existing images live in
 # /Volumes/X9Pro/container_data/singularity_images; wgs.sif and picard.sif need
@@ -18,8 +21,9 @@ containers:
   editpredict: "/Volumes/X9Pro/container_data/singularity_images/editpredict.sif"
   redinet: "/Volumes/X9Pro/container_data/singularity_images/redinet.sif"
 
-# Mapping matched RNA and WGS data per sample. Use a string for single-end
-# reads, or a two-item list for paired-end reads.
+# Mapping RNA data plus either WGS FASTQs or an external variant file per
+# sample. Use a string for single-end reads, or a two-item list for paired-end
+# reads. External variants must be .vcf.gz or .bed.gz.
 samples:
   patient1:
     rna: "raw/p1_rna.fastq.gz"
@@ -28,9 +32,7 @@ samples:
     rna:
       - "raw/p2_rna_R1.fastq.gz"
       - "raw/p2_rna_R2.fastq.gz"
-    wgs:
-      - "raw/p2_wgs_R1.fastq.gz"
-      - "raw/p2_wgs_R2.fastq.gz"
+    variants: "refs/p2_variants.vcf.gz"
 
 reditools2:
   threads: 24

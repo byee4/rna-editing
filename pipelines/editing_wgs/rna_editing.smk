@@ -7,7 +7,9 @@ rule reditools2_dnarna:
         wgs_bam=WORKDIR + "/dedup/{sample}.wgs.bam",
         ref=REF
     output:
-        table=WORKDIR + "/reditools2_dnarna/{sample}.tsv"
+        table=WORKDIR + f"/reditools2_dnarna/{{sample,{WGS_SAMPLE_PATTERN}}}.tsv"
+    wildcard_constraints:
+        sample=WGS_SAMPLE_PATTERN
     threads: config["reditools2"]["threads"]
     container: container_for("reditools")
     resources:
@@ -31,7 +33,9 @@ rule jacusa2_dnarna:
         rna_bam=WORKDIR + "/mapped/{sample}.rna.md.bam",
         wgs_bam=WORKDIR + "/mapped/{sample}.wgs.md.bam"
     output:
-        out=WORKDIR + "/jacusa2_dnarna/{sample}.out"
+        out=WORKDIR + f"/jacusa2_dnarna/{{sample,{WGS_SAMPLE_PATTERN}}}.out"
+    wildcard_constraints:
+        sample=WGS_SAMPLE_PATTERN
     threads: config["jacusa2"]["threads"]
     resources:
         mem_mb=lambda wildcards, attempt: 33350 * (1.5 ** (attempt - 1)),
@@ -120,7 +124,8 @@ rule deepred_predict:
 rule editpredict_filter:
     input:
         ref=REF,
-        pos=WORKDIR + "/sprint/{sample}/regular.res"
+        pos=WORKDIR + "/sprint/{sample}/regular.res",
+        variants=variant_input
     output:
         out=WORKDIR + "/editpredict/{sample}_scores.txt"
     resources:
@@ -131,8 +136,11 @@ rule editpredict_filter:
     log:
         stdout=WORKDIR + "/logs/{sample}.editpredict.out",
         stderr=WORKDIR + "/logs/{sample}.editpredict.err"
+    params:
+        variant_arg=lambda wildcards, input: editpredict_variant_arg(input.variants)
     shell:
-        "editpredict_score --reference {input.ref} --positions {input.pos} --output {output.out} "
+        "editpredict_score --reference {input.ref} --positions {input.pos} "
+        "--output {output.out} {params.variant_arg} "
         "1> {log.stdout} 2> {log.stderr}"
 
 

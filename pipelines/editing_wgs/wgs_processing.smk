@@ -6,7 +6,9 @@ rule bwa_mem_wgs:
         fastq=lambda wildcards: sample_reads(wildcards, "wgs"),
         ref=REF
     output:
-        bam=WORKDIR + "/mapped/{sample}.wgs.bam"
+        bam=WORKDIR + f"/mapped/{{sample,{WGS_SAMPLE_PATTERN}}}.wgs.bam"
+    wildcard_constraints:
+        sample=WGS_SAMPLE_PATTERN
     threads: 24
     container: container_for("wgs")
     resources:
@@ -24,7 +26,9 @@ rule generate_dna_coverage:
     input:
         bam=WORKDIR + "/mapped/{sample}.wgs.md.bam"
     output:
-        cov=WORKDIR + "/wgs_coverage/{sample}.cov"
+        cov=WORKDIR + f"/wgs_coverage/{{sample,{WGS_SAMPLE_PATTERN}}}.cov"
+    wildcard_constraints:
+        sample=WGS_SAMPLE_PATTERN
     container: container_for("wgs")
     log:
         stderr=WORKDIR + "/logs/{sample}.wgs_coverage.err"
@@ -38,8 +42,10 @@ rule call_germline_variants:
         bam=WORKDIR + "/mapped/{sample}.wgs.md.bam",
         ref=REF
     output:
-        vcf=WORKDIR + "/germline/{sample}_germline.vcf.gz",
-        tbi=WORKDIR + "/germline/{sample}_germline.vcf.gz.tbi"
+        vcf=WORKDIR + f"/germline/{{sample,{WGS_SAMPLE_PATTERN}}}_germline.vcf.gz",
+        tbi=WORKDIR + f"/germline/{{sample,{WGS_SAMPLE_PATTERN}}}_germline.vcf.gz.tbi"
+    wildcard_constraints:
+        sample=WGS_SAMPLE_PATTERN
     container: container_for("wgs")
     log:
         stderr=WORKDIR + "/logs/{sample}.germline.err"
