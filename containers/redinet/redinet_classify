@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'USAGE'
+Usage: redinet_classify --reditable TABLE --reference FASTA --output TABLE [options]
+
+Runs REDInet light inference when the upstream Package/Utilities script and
+model are available in /opt/redinet. The input should be a REDItools-derived
+table in the format accepted by REDInet.
+
+Options:
+  --min-coverage N      Minimum coverage threshold.
+  --ag-frequency F      Minimum A-to-G frequency threshold.
+  --min-ag-subs N       Minimum A-to-G substitutions.
+USAGE
+}
+
+reditable=""
+reference=""
+output=""
+min_coverage="10"
+ag_frequency="0.01"
+min_ag_subs="2"
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --reditable) reditable="$2"; shift 2 ;;
+    --reference) reference="$2"; shift 2 ;;
+    --output) output="$2"; shift 2 ;;
+    --min-coverage) min_coverage="$2"; shift 2 ;;
+    --ag-frequency) ag_frequency="$2"; shift 2 ;;
+    --min-ag-subs) min_ag_subs="$2"; shift 2 ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "Unknown argument: $1" >&2; usage >&2; exit 2 ;;
+  esac
+done
+
+if [ -z "$reditable" ] || [ -z "$reference" ] || [ -z "$output" ]; then
+  usage >&2
+  exit 2
+fi
+
+script="/opt/redinet/Package/Utilities/REDInet_Inference_light_ver.py"
+model="/opt/redinet/Package/Utilities/REDInet.h5"
+if [ ! -s "$script" ]; then
+  echo "Missing REDInet light inference script at $script" >&2
+  exit 127
+fi
+
+python "$script" \
+  -r "$reditable" \
+  -m "$model" \
+  -o "$output" \
+  -c "$min_coverage" \
+  -f "$ag_frequency" \
+  -s "$min_ag_subs" \
+  -ref "$reference"

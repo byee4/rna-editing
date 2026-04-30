@@ -1,0 +1,96 @@
+configfile: "config.yaml"
+
+# Define global variables from config
+REF = config["reference"]
+SAMPLES = config["samples"].keys()
+SIF_DIR = config.get("singularity_image_dir", "/Volumes/X9Pro/container_data/singularity_images")
+CONTAINERS = config.get("containers", {})
+
+
+def container_for(tool):
+    """Return the configured Singularity image path for a workflow tool."""
+    return CONTAINERS.get(tool, f"{SIF_DIR}/{tool}.sif")
+
+# Rule all: The default target that aggregates all requested outputs
+rule all:
+    input:
+        expand("data/processed/{sample}.md.bam.bai", sample=SAMPLES),
+        expand("data/processed/{sample}.cov", sample=SAMPLES),
+        expand("data/processed/{sample}_germline.vcf.gz.tbi", sample=SAMPLES)
+
+# 1. Alignment with BWA-MEM
+# Recommended for non-spliced DNA reads
+rule bwa_mem_align:
+    input:
+        reads = lambda wildcards: config["samples"][wildcards.sample],
+        ref = REF
+    output:
+        bam = temp("data/aligned/{sample}.raw.bam")
+    threads: config["threads"]["bwa"]
+    container: container_for("wgs")
+    shell:
+        """
+        bwa mem -t {threads} {input.ref} {input.reads} | \
+        samtools view -h -b - > {output.bam}
+        """
+
+# 2. PCR Deduplication and Sorting
+# Crucial for establishing a reliable homozygous DNA background
+rule deduplicate_dna:
+    input:
+        "data/aligned/{sample}.raw.bam"
+    output:
+        bam = temp("data/aligned/{sample}.dedup.bam")
+    threads: config["threads"]["samtools"]
+    container: container_for("wgs")
+    shell:
+        """
+        samtools sort -n -@ {threads} -O bam {input} | \
+        samtools fixmate -m - - | \
+        samtools sort -@ {threads} - | \
+        samtools markdup -r - {output.bam}
+        """
+
+# 3. Populate MD Tags
+# Mandatory for JACUSA2 and RED to reconstruct reference sequences
+rule populate_md_tags:
+    input:
+        bam = "data/aligned/{sample}.dedup.bam",
+        ref = REF
+    output:
+        bam = "data/processed/{sample}.md.bam",
+        bai = "data/processed/{sample}.md.bam.bai"
+    container: container_for("wgs")
+    shell:
+        """
+        samtools calmd -b {input.bam} {input.ref} > {output.bam} && \
+        samtools index {output.bam}
+        """
+
+# 4. Generate Coverage Profile
+# Required for REDItools2 (HPC mode) dynamic workload balancing
+rule generate_dna_coverage:
+    input:
+        bam = "data/processed/{sample}.md.bam"
+    output:
+        cov = "data/processed/{sample}.cov"
+    container: container_for("wgs")
+    shell:
+        "samtools depth {input.bam} > {output.cov}"
+
+# 5. Call Germline SNVs
+# Used as a filter to distinguish RNA editing from genomic polymorphisms
+rule call_germline_variants:
+    input:
+        bam = "data/processed/{sample}.md.bam",
+        ref = REF
+    output:
+        vcf = "data/processed/{sample}_germline.vcf.gz",
+        tbi = "data/processed/{sample}_germline.vcf.gz.tbi"
+    container: container_for("wgs")
+    shell:
+        """
+        bcftools mpileup -f {input.ref} {input.bam} | \
+        bcftools call -mv -Oz -o {output.vcf} && \
+        bcftools index -t {output.vcf}
+        """

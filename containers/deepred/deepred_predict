@@ -1,0 +1,24 @@
+#!/usr/bin/env python3
+"""Stable CLI placeholder for DeepRed prediction inside the container."""
+
+import argparse
+import sys
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="Run DeepRed prediction once source code and model artifacts are installed."
+    )
+    parser.add_argument("--input", required=True, help="Candidate SNV or sequence table.")
+    parser.add_argument("--output", required=True, help="Prediction output table.")
+    parser.parse_args()
+    print(
+        "DeepRed source code and trained model artifacts are not installed in this scaffold image. "
+        "Add the upstream implementation/model to containers/deepred before production use.",
+        file=sys.stderr,
+    )
+    return 127
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

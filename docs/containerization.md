@@ -16,6 +16,10 @@ image is converted to a Singularity/Apptainer SIF.
 | LoDEI | `containers/lodei` | `validate-lodei` |
 | RED | `containers/red` | `validate-red` |
 | SAILOR | `containers/sailor` | `validate-sailor` |
+| WGS preprocessing | `containers/wgs` | `validate-wgs` |
+| DeepRed | `containers/deepred` | `validate-deepred` |
+| EditPredict | `containers/editpredict` | `validate-editpredict` |
+| REDInet | `containers/redinet` | `validate-redinet` |
 
 ## Build and Validate
 
@@ -49,6 +53,14 @@ To validate one or more tools:
 
 ```bash
 TOOLS="reditools jacusa2" scripts/validate_containers.sh
+```
+
+The default validation set covers the images already present in
+`/Volumes/X9Pro/container_data/singularity_images`. Newly added contexts for
+missing Snakefile dependencies can be built explicitly:
+
+```bash
+TOOLS="wgs deepred editpredict redinet" scripts/validate_containers.sh
 ```
 
 Useful environment variables:
@@ -85,3 +97,10 @@ Some tools are old and require legacy runtimes. REDItools and SPRINT use Python
 SAMtools 1.3.1 and BCFtools 1.2 from source. RED is a Java/R/MySQL application
 distributed as a desktop-style jar, so its validation checks the runtime stack
 and jar contents rather than attempting to open the GUI.
+
+The DeepRed context is a runtime scaffold because no matching local SIF or
+checked-in upstream implementation/model is available. It gives the Snakemake
+rule a stable command name and clearly fails until the source and trained model
+artifacts are added. EditPredict and REDInet include upstream checkouts plus
+thin wrappers, but their input adapters should be reviewed with real workflow
+data before production use.
