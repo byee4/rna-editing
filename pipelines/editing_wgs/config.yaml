@@ -14,14 +14,19 @@ containers:
   reditools: "/Volumes/X9Pro/container_data/singularity_images/reditools.sif"
   jacusa2: "/Volumes/X9Pro/container_data/singularity_images/jacusa2.sif"
 
-# Mapping matched RNA and WGS data per sample
+# Mapping matched RNA and WGS data per sample. Use a string for single-end
+# reads, or a two-item list for paired-end reads.
 samples:
   patient1:
     rna: "raw/p1_rna.fastq.gz"
     wgs: "raw/p1_wgs.fastq.gz"
   patient2:
-    rna: "raw/p2_rna.fastq.gz"
-    wgs: "raw/p2_wgs.fastq.gz"
+    rna:
+      - "raw/p2_rna_R1.fastq.gz"
+      - "raw/p2_rna_R2.fastq.gz"
+    wgs:
+      - "raw/p2_wgs_R1.fastq.gz"
+      - "raw/p2_wgs_R2.fastq.gz"
 
 reditools2:
   threads: 24

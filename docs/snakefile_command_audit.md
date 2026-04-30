@@ -72,3 +72,5 @@ Corrections applied there:
 - REDItools DNA/RNA mode now calls the script path installed in
   `reditools.sif` and writes a declared TSV output.
 - JACUSA2 now calls `/opt/jacusa2/jacusa2.jar`, matching `jacusa2.sif`.
+- Sample `rna` and `wgs` entries now accept either a single FASTQ string or a
+  two-item FASTQ list so STAR and BWA can run single-end or paired-end reads.

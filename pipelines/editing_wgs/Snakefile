@@ -12,6 +12,23 @@ def container_for(tool):
     """Return the configured Singularity image path for a workflow tool."""
     return CONTAINERS.get(tool, f"{SIF_DIR}/{tool}.sif")
 
+
+def sample_reads(wildcards, assay):
+    """Return one or two FASTQ files for a sample assay.
+
+    Config entries may be a single FASTQ path or a list/tuple containing one
+    single-end FASTQ or two paired-end FASTQs. Rejecting other shapes keeps
+    aligner command lines predictable.
+    """
+    reads = config["samples"][wildcards.sample][assay]
+    if isinstance(reads, str):
+        return [reads]
+    if isinstance(reads, (list, tuple)) and len(reads) in (1, 2):
+        return list(reads)
+    raise ValueError(
+        f"samples.{wildcards.sample}.{assay} must be a FASTQ path or a one/two-item FASTQ list"
+    )
+
 rule all:
     input:
         expand(WORKDIR + "/reditools2_dnarna/{sample}.tsv", sample=SAMPLES),
@@ -22,7 +39,7 @@ rule all:
 # RNA Alignment: STAR is recommended for its splice-awareness and speed [5, 12]
 rule star_align_rna:
     input:
-        fastq=lambda wildcards: config["samples"][wildcards.sample]["rna"],
+        fastq=lambda wildcards: sample_reads(wildcards, "rna"),
         ref=REF
     output:
         bam=WORKDIR + "/mapped/{sample}.rna.bam"
@@ -46,7 +63,7 @@ rule star_align_rna:
 # WGS Alignment: BWA-MEM is standard for genomic reads [5, 6, 15]
 rule bwa_mem_wgs:
     input:
-        fastq=lambda wildcards: config["samples"][wildcards.sample]["wgs"],
+        fastq=lambda wildcards: sample_reads(wildcards, "wgs"),
         ref=REF
     output:
         bam=WORKDIR + "/mapped/{sample}.wgs.bam"
