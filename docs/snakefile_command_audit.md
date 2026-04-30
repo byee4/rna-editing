@@ -1,7 +1,7 @@
 # Snakefile Command Audit
 
 This audit compares the command-line calls in `pipelines/editing/Snakefile` and
-`pipelines/WGS/Snakefile.yaml` with the Singularity images found in
+`pipelines/WGS/Snakefile` with the Singularity images found in
 `/Volumes/X9Pro/container_data/singularity_images`.
 
 ## Existing Images

@@ -9,7 +9,7 @@ TOOLS="wgs" scripts/validate_containers.sh
 Then run Snakemake with Singularity/Apptainer enabled:
 
 ```bash
-snakemake --snakefile pipelines/WGS/Snakefile.yaml --directory pipelines/WGS --use-singularity --cores 16
+snakemake --snakefile pipelines/WGS/Snakefile --directory pipelines/WGS --use-singularity --cores 16
 ```
 
 ### 1. `config.yaml`

@@ -128,25 +128,6 @@ rule reditools2_serial:
         "-l {params.min_cov} -V "
         "1> {log.stdout} 2> {log.stderr}"
 
-# SAILOR uses a Bayesian score to call high-confidence RES [14, 15]
-rule sailor_call:
-    input:
-        bam=get_bam,
-        ref=REF,
-        snps=SNPS
-    output:
-        res=WORKDIR + "/sailor/{sample}_editing_sites.bed"
-    resources:
-        mem_mb=lambda wildcards, attempt: 8192 * (1.5 ** (attempt - 1)),
-        runtime=lambda wildcards, attempt: 180 * (2 ** (attempt - 1))
-    benchmark: "benchmarks/{sample}.sailor.txt"
-    log:
-        stdout=WORKDIR + "/stdout/{sample}.sailor.out",
-        stderr=WORKDIR + "/stderr/{sample}.sailor.err"
-    shell:
-        "sailor -i {input.bam} -f {input.ref} -s {input.snps} -o {output.res} "
-        "1> {log.stdout} 2> {log.stderr}"
-
 # --- Downstream Deep Learning and Filtering Rules ---
 
 rule deepred_predict:
