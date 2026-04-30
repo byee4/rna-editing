@@ -1,0 +1,199 @@
+configfile: "config.yaml"
+
+import os
+
+# Global Variables
+REF = config["reference"]
+SNPS = config["known_snps"]
+WORKDIR = config["WORKDIR"]
+SAMPLES = list(config["samples"].keys())
+PAIRS = list(config["jacusa2_pairs"].keys())
+SIF_DIR = config.get("singularity_image_dir", "/Volumes/X9Pro/container_data/singularity_images")
+CONTAINERS = config.get("containers", {})
+BAM_TO_SAMPLE = {bam: sample for sample, bam in config["samples"].items()}
+REPO_ROOT = os.path.abspath(os.path.join(workflow.basedir, "..", ".."))
+EDITPREDICT_POSITIONS_SCRIPT = os.path.join(REPO_ROOT, "scripts", "sprint_to_editpredict_positions.py")
+DEEPRED_VCF_SCRIPT = os.path.join(REPO_ROOT, "scripts", "sprint_to_deepred_vcf.py")
+
+
+def container_for(tool):
+    """Return the configured Singularity image path for a workflow tool."""
+    return CONTAINERS.get(tool, f"{SIF_DIR}/{tool}.sif")
+
+rule all:
+    input:
+        expand(WORKDIR + "/sprint/{sample}/regular.res", sample=SAMPLES),
+        expand(WORKDIR + "/jacusa2/{pair}.out", pair=PAIRS),
+        expand(WORKDIR + "/reditools2/{sample}.tsv", sample=SAMPLES),
+        expand(WORKDIR + "/deepred/{sample}_predictions.txt", sample=SAMPLES),
+        expand(WORKDIR + "/editpredict/{sample}_scores.txt", sample=SAMPLES),
+        expand(WORKDIR + "/redinet/{sample}_classified.txt", sample=SAMPLES)
+
+# --- Helper Functions ---
+def get_bam(wildcards):
+    return config["samples"][wildcards.sample]
+
+
+def get_pair_bam(wildcards, role):
+    """Use an MD-tagged BAM for JACUSA2 when the pair path is a known sample."""
+    bam = config["jacusa2_pairs"][wildcards.pair][role]
+    sample = BAM_TO_SAMPLE.get(bam)
+    if sample is None:
+        return bam
+    return WORKDIR + f"/mapped/{sample}.md.bam"
+
+# --- Rules ---
+
+# JACUSA2 requires MD tags to reconstruct the reference [2, 3, 9]
+rule samtools_calmd:
+    input:
+        bam=get_bam,
+        ref=REF
+    output:
+        md_bam=WORKDIR + "/mapped/{sample}.md.bam"
+    resources:
+        mem_mb=lambda wildcards, attempt: 4096 * (1.5 ** (attempt - 1)),
+        runtime=lambda wildcards, attempt: 60 * (2 ** (attempt - 1))
+    benchmark: "benchmarks/{sample}.calmd.txt"
+    container: container_for("samtools")
+    log:
+        stdout=WORKDIR + "/stdout/{sample}.calmd.out",
+        stderr=WORKDIR + "/stderr/{sample}.calmd.err"
+    shell:
+        "samtools calmd -b {input.bam} {input.ref} > {output.md_bam} 2> {log.stderr}"
+
+# SPRINT takes coordinate-sorted BAMs [4, 10]
+rule sprint_from_bam:
+    input:
+        bam=get_bam,
+        ref=REF
+    output:
+        res=WORKDIR + "/sprint/{sample}/regular.res"
+    resources:
+        mem_mb=lambda wildcards, attempt: 12500 * (1.5 ** (attempt - 1)),
+        runtime=lambda wildcards, attempt: 1400 * (2 ** (attempt - 1))
+    benchmark: "benchmarks/{sample}.sprint.txt"
+    container: container_for("sprint")
+    log:
+        stdout=WORKDIR + "/stdout/{sample}.sprint.out",
+        stderr=WORKDIR + "/stderr/{sample}.sprint.err"
+    shell:
+        "sprint_from_bam {input.bam} {input.ref} {WORKDIR}/sprint/{wildcards.sample} samtools "
+        "1> {log.stdout} 2> {log.stderr}"
+
+# JACUSA2 site-specific comparison using condition-mapped paths [2, 6, 7]
+rule jacusa2_call2:
+    input:
+        case=lambda wildcards: get_pair_bam(wildcards, "case"),
+        ctrl=lambda wildcards: get_pair_bam(wildcards, "ctrl")
+    output:
+        out=WORKDIR + "/jacusa2/{pair}.out"
+    threads: config["jacusa2"]["threads"]
+    resources:
+        mem_mb=lambda wildcards, attempt: 33350 * (1.5 ** (attempt - 1)),
+        runtime=lambda wildcards, attempt: 222 * (2 ** (attempt - 1))
+    benchmark: "benchmarks/{pair}.jacusa2.txt"
+    container: container_for("jacusa2")
+    log:
+        stdout=WORKDIR + "/stdout/{pair}.jacusa2.out",
+        stderr=WORKDIR + "/stderr/{pair}.jacusa2.err"
+    params:
+        filters=config["jacusa2"]["filters"]
+    shell:
+        "java -jar /opt/jacusa2/jacusa2.jar call-2 -r {output.out} -p {threads} "
+        "-a {params.filters} {input.case} {input.ctrl} "
+        "1> {log.stdout} 2> {log.stderr}"
+
+# REDItools2 serial mode uses the improved read-loading engine [11-13]
+rule reditools2_serial:
+    input:
+        bam=get_bam,
+        ref=REF
+    output:
+        table=WORKDIR + "/reditools2/{sample}.tsv"
+    threads: config["reditools2"]["threads"]
+    resources:
+        mem_mb=lambda wildcards, attempt: 1350 * (1.5 ** (attempt - 1)),
+        runtime=lambda wildcards, attempt: 12910 * (2 ** (attempt - 1))
+    benchmark: "benchmarks/{sample}.reditools2.txt"
+    container: container_for("reditools")
+    log:
+        stdout=WORKDIR + "/stdout/{sample}.reditools2.out",
+        stderr=WORKDIR + "/stderr/{sample}.reditools2.err"
+    params:
+        min_cov=config["reditools2"]["min_cov"]
+    shell:
+        "python /opt/reditools2/src/cineca/reditools.py "
+        "-f {input.bam} -r {input.ref} -o {output.table} "
+        "-l {params.min_cov} -V "
+        "1> {log.stdout} 2> {log.stderr}"
+
+# --- Downstream Deep Learning and Filtering Rules ---
+
+rule deepred_predict:
+    input: snvs=WORKDIR + "/sprint/{sample}/regular.res"
+    output:
+        vcf=temp(WORKDIR + "/deepred/{sample}.gatk.raw.vcf"),
+        pred=WORKDIR + "/deepred/{sample}_predictions.txt"
+    resources:
+        mem_mb=lambda wildcards, attempt: 4096 * (1.5 ** (attempt - 1)),
+        runtime=lambda wildcards, attempt: 120 * (2 ** (attempt - 1))
+    benchmark: "benchmarks/{sample}.deepred.txt"
+    container: container_for("deepred")
+    log:
+        stdout=WORKDIR + "/stdout/{sample}.deepred.out",
+        stderr=WORKDIR + "/stderr/{sample}.deepred.err"
+    params:
+        vcf_script=DEEPRED_VCF_SCRIPT,
+        project=lambda wildcards: wildcards.sample,
+        sample=lambda wildcards: wildcards.sample
+    shell:
+        "python {params.vcf_script} {input.snvs} {output.vcf} && "
+        "deepred_predict --input-vcf {output.vcf} --project {params.project} "
+        "--sample {params.sample} --output {output.pred} "
+        "1> {log.stdout} 2> {log.stderr}"
+
+rule editpredict_filter:
+    input: ref=REF, pos=WORKDIR + "/sprint/{sample}/regular.res"
+    output:
+        positions=temp(WORKDIR + "/editpredict/{sample}_positions.tsv"),
+        out=WORKDIR + "/editpredict/{sample}_scores.txt"
+    resources:
+        mem_mb=lambda wildcards, attempt: 4096 * (1.5 ** (attempt - 1)),
+        runtime=lambda wildcards, attempt: 120 * (2 ** (attempt - 1))
+    benchmark: "benchmarks/{sample}.editpredict.txt"
+    container: container_for("editpredict")
+    log:
+        stdout=WORKDIR + "/stdout/{sample}.editpredict.out",
+        stderr=WORKDIR + "/stderr/{sample}.editpredict.err"
+    params:
+        positions_script=EDITPREDICT_POSITIONS_SCRIPT
+    shell:
+        "python {params.positions_script} {input.pos} {output.positions} "
+        "1> {log.stdout} 2> {log.stderr} && "
+        "editpredict_score --reference {input.ref} --positions {output.positions} --output {output.out} "
+        "1>> {log.stdout} 2>> {log.stderr}"
+
+rule redinet_classify:
+    input:
+        reditable=WORKDIR + "/reditools2/{sample}.tsv",
+        ref=REF
+    output:
+        classified=WORKDIR + "/redinet/{sample}_classified.txt"
+    resources:
+        mem_mb=lambda wildcards, attempt: 4096 * (1.5 ** (attempt - 1)),
+        runtime=lambda wildcards, attempt: 120 * (2 ** (attempt - 1))
+    benchmark: "benchmarks/{sample}.redinet.txt"
+    container: container_for("redinet")
+    log:
+        stdout=WORKDIR + "/stdout/{sample}.redinet.out",
+        stderr=WORKDIR + "/stderr/{sample}.redinet.err"
+    params:
+        min_coverage=config["redinet"]["min_coverage"],
+        ag_frequency=config["redinet"]["ag_frequency"],
+        min_ag_subs=config["redinet"]["min_ag_subs"]
+    shell:
+        "redinet_classify --reditable {input.reditable} --reference {input.ref} "
+        "--output {output.classified} --min-coverage {params.min_coverage} "
+        "--ag-frequency {params.ag_frequency} --min-ag-subs {params.min_ag_subs} "
+        "1> {log.stdout} 2> {log.stderr}"

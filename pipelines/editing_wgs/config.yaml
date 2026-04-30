@@ -1,0 +1,48 @@
+WORKDIR: "results"
+reference: "refs/genome.fa"
+known_snps: "refs/known_snps.vcf" # Optional database filter
+# Optional cohort-wide variant file for samples without WGS. Use either a
+# string applied to every non-WGS sample or a sample-to-file mapping.
+# variants: "refs/cohort_variants.vcf.gz"
+
+# Singularity/Apptainer images used by this workflow. Existing images live in
+# /Volumes/X9Pro/container_data/singularity_images; wgs.sif and picard.sif need
+# to be built from their Docker contexts before production execution.
+singularity_image_dir: "/Volumes/X9Pro/container_data/singularity_images"
+containers:
+  star: "/Volumes/X9Pro/container_data/singularity_images/lodei.sif"
+  wgs: "/Volumes/X9Pro/container_data/singularity_images/wgs.sif"
+  picard: "/Volumes/X9Pro/container_data/singularity_images/picard.sif"
+  samtools: "/Volumes/X9Pro/container_data/singularity_images/jacusa2.sif"
+  sprint: "/Volumes/X9Pro/container_data/singularity_images/sprint.sif"
+  reditools: "/Volumes/X9Pro/container_data/singularity_images/reditools.sif"
+  jacusa2: "/Volumes/X9Pro/container_data/singularity_images/jacusa2.sif"
+  deepred: "/Volumes/X9Pro/container_data/singularity_images/deepred.sif"
+  editpredict: "/Volumes/X9Pro/container_data/singularity_images/editpredict.sif"
+  redinet: "/Volumes/X9Pro/container_data/singularity_images/redinet.sif"
+
+# Mapping RNA data plus either WGS FASTQs or an external variant file per
+# sample. Use a string for single-end reads, or a two-item list for paired-end
+# reads. External variants must be .vcf.gz or .bed.gz.
+samples:
+  patient1:
+    rna: "raw/p1_rna.fastq.gz"
+    wgs: "raw/p1_wgs.fastq.gz"
+  patient2:
+    rna:
+      - "raw/p2_rna_R1.fastq.gz"
+      - "raw/p2_rna_R2.fastq.gz"
+    variants: "refs/p2_variants.vcf.gz"
+
+reditools2:
+  threads: 24
+  min_cov: 10 # Minimum coverage for DNA-RNA and RNA-only serial modes [8, 9]
+
+jacusa2:
+  threads: 8
+  filters: "D,I,S" # recommended filters for read ends and introns [10, 11]
+
+redinet:
+  min_coverage: 10
+  ag_frequency: 0.01
+  min_ag_subs: 2

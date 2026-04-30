@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'USAGE'
+Usage: editpredict_score --reference FASTA --positions POSITIONS --output TABLE [--vcf VARIANTS.vcf.gz]
+
+Runs the EditPredict checkout in /opt/editpredict. The positions file must be in
+the format expected by upstream get_seq.py; SPRINT regular.res files may need an
+adapter before they can be used directly.
+USAGE
+}
+
+reference=""
+positions=""
+output=""
+vcf=""
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --reference) reference="$2"; shift 2 ;;
+    --positions) positions="$2"; shift 2 ;;
+    --output) output="$2"; shift 2 ;;
+    --vcf) vcf="$2"; shift 2 ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "Unknown argument: $1" >&2; usage >&2; exit 2 ;;
+  esac
+done
+
+if [ -z "$reference" ] || [ -z "$positions" ] || [ -z "$output" ]; then
+  usage >&2
+  exit 2
+fi
+
+tmpdir="$(mktemp -d)"
+trap 'rm -rf "$tmpdir"' EXIT
+
+vcf_args=()
+if [ -n "$vcf" ]; then
+  case "$vcf" in
+    *.vcf.gz)
+      gzip -dc "$vcf" > "$tmpdir/variants.vcf"
+      vcf_args=(-v "$tmpdir/variants.vcf")
+      ;;
+    *.vcf)
+      vcf_args=(-v "$vcf")
+      ;;
+    *)
+      echo "--vcf must point to a .vcf or .vcf.gz file" >&2
+      exit 2
+      ;;
+  esac
+fi
+
+python /opt/editpredict/get_seq.py -f "$reference" -p "$positions" -m b -l 100 "${vcf_args[@]}" > "$tmpdir/sequences.txt"
+python /opt/editpredict/editPredict.py \
+  -f "$tmpdir/sequences.txt" \
+  -c /opt/editpredict/editPredict_construction_alu.h5 \
+  -w /opt/editpredict/editPredict_weight_alu.json \
+  > "$output"

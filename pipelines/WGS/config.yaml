@@ -1,0 +1,24 @@
+# Global Reference Genome
+reference: "refs/hg38.fa"
+
+singularity_image_dir: "/Volumes/X9Pro/container_data/singularity_images"
+containers:
+  wgs: "/Volumes/X9Pro/container_data/singularity_images/wgs.sif"
+
+# Targeted Cell Line WGS Datasets
+# Format: SampleName: [R1_path, R2_path]
+samples:
+  HEK293T_DNA:
+    - "data/raw/HEK293T_WT_DNA_R1.fastq.gz"
+    - "data/raw/HEK293T_WT_DNA_R2.fastq.gz"
+  K562_DNA:
+    - "data/raw/K562_DNA_R1.fastq.gz"
+    - "data/raw/K562_DNA_R2.fastq.gz"
+  HepG2_DNA:
+    - "data/raw/HepG2_DNA_R1.fastq.gz"
+    - "data/raw/HepG2_DNA_R2.fastq.gz"
+
+# Resource allocation
+threads:
+  bwa: 16
+  samtools: 8

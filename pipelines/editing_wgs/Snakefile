@@ -1,0 +1,124 @@
+configfile: "config.yaml"
+
+import os
+import re
+
+# Global Variables
+REF = config["reference"]
+WORKDIR = config["WORKDIR"]
+SAMPLES = list(config["samples"].keys())
+SIF_DIR = config.get("singularity_image_dir", "/Volumes/X9Pro/container_data/singularity_images")
+CONTAINERS = config.get("containers", {})
+SAMPLE_CONFIG = config["samples"]
+VARIANT_EXTENSIONS = (".vcf.gz", ".bed.gz")
+REPO_ROOT = os.path.abspath(os.path.join(workflow.basedir, "..", ".."))
+EDITPREDICT_POSITIONS_SCRIPT = os.path.join(REPO_ROOT, "scripts", "sprint_to_editpredict_positions.py")
+DEEPRED_VCF_SCRIPT = os.path.join(REPO_ROOT, "scripts", "sprint_to_deepred_vcf.py")
+
+
+def container_for(tool):
+    """Return the configured Singularity image path for a workflow tool."""
+    return CONTAINERS.get(tool, f"{SIF_DIR}/{tool}.sif")
+
+
+def sample_reads(wildcards, assay):
+    """Return one or two FASTQ files for a sample assay.
+
+    Config entries may be a single FASTQ path or a list/tuple containing one
+    single-end FASTQ or two paired-end FASTQs. Rejecting other shapes keeps
+    aligner command lines predictable.
+    """
+    reads = SAMPLE_CONFIG[wildcards.sample][assay]
+    if isinstance(reads, str):
+        return [reads]
+    if isinstance(reads, (list, tuple)) and len(reads) in (1, 2):
+        return list(reads)
+    raise ValueError(
+        f"samples.{wildcards.sample}.{assay} must be a FASTQ path or a one/two-item FASTQ list"
+    )
+
+
+def get_rna_bam(wildcards):
+    """Return the deduplicated RNA BAM produced from a sample's RNA FASTQs."""
+    return WORKDIR + f"/dedup/{wildcards.sample}.rna.bam"
+
+
+def has_wgs(sample):
+    """Return whether a sample has WGS FASTQs configured for germline calling."""
+    return "wgs" in SAMPLE_CONFIG[sample] and SAMPLE_CONFIG[sample]["wgs"] not in (None, "")
+
+
+def validate_variant_file(sample, path):
+    """Validate the configured external variant file for a sample."""
+    if not isinstance(path, str) or not path.endswith(VARIANT_EXTENSIONS):
+        raise ValueError(
+            f"samples.{sample}.variants must end with .vcf.gz or .bed.gz when provided"
+        )
+    return path
+
+
+def external_variant_file(sample):
+    """Return a configured external .vcf.gz or .bed.gz variant file, if present."""
+    sample_config = SAMPLE_CONFIG[sample]
+    path = sample_config.get("variants") or sample_config.get("variant_file")
+    global_variants = config.get("variants") or config.get("variant_file")
+    if not path and isinstance(global_variants, dict):
+        path = global_variants.get(sample)
+    elif not path:
+        path = global_variants
+    if not path:
+        return None
+    return validate_variant_file(sample, path)
+
+
+def germline_vcf(sample):
+    """Return the WGS-derived germline VCF path for a sample."""
+    return WORKDIR + f"/germline/{sample}_germline.vcf.gz"
+
+
+def variant_file(sample):
+    """Return the variant file that should inform compatible editing callers.
+
+    Samples with WGS use the workflow-generated germline VCF. Samples without
+    WGS can provide an external .vcf.gz or .bed.gz variant file instead.
+    """
+    if has_wgs(sample):
+        return germline_vcf(sample)
+    return external_variant_file(sample)
+
+
+def variant_input(wildcards):
+    """Return an optional variant dependency for rules that can consume variants."""
+    path = variant_file(wildcards.sample)
+    return [path] if path else []
+
+
+def editpredict_variant_arg(variants):
+    """Return EditPredict's optional VCF argument for compatible variant inputs."""
+    for variant in variants:
+        if str(variant).endswith(".vcf.gz"):
+            return f"--vcf {variant}"
+    return ""
+
+
+WGS_SAMPLES = [sample for sample in SAMPLES if has_wgs(sample)]
+WGS_SAMPLE_PATTERN = "|".join(re.escape(sample) for sample in WGS_SAMPLES) or r"(?!)"
+
+
+rule all:
+    input:
+        expand(WORKDIR + "/reditools2_dnarna/{sample}.tsv", sample=WGS_SAMPLES),
+        expand(WORKDIR + "/jacusa2_dnarna/{sample}.out", sample=WGS_SAMPLES),
+        expand(WORKDIR + "/sprint/{sample}/regular.res", sample=SAMPLES),
+        expand(WORKDIR + "/reditools2/{sample}.tsv", sample=SAMPLES),
+        expand(WORKDIR + "/deepred/{sample}_predictions.txt", sample=SAMPLES),
+        expand(WORKDIR + "/editpredict/{sample}_scores.txt", sample=SAMPLES),
+        expand(WORKDIR + "/redinet/{sample}_classified.txt", sample=SAMPLES),
+        expand(WORKDIR + "/wgs_coverage/{sample}.cov", sample=WGS_SAMPLES),
+        expand(WORKDIR + "/germline/{sample}_germline.vcf.gz.tbi", sample=WGS_SAMPLES)
+
+
+include: "preprocessing.smk"
+include: "rna_processing.smk"
+include: "wgs_processing.smk"
+include: "rna_editing.smk"

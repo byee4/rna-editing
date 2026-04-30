@@ -1,0 +1,6 @@
+name: editing-wgs-snakemake
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - snakemake-minimal=9.19.0

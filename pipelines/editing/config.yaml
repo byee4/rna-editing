@@ -1,0 +1,42 @@
+WORKDIR: "results"
+reference: "refs/genome.fa"
+known_snps: "refs/known_snps.bed"
+
+# Singularity/Apptainer images validated by scripts/validate_containers.sh.
+# The downstream ML tools are listed here once their Dockerfiles exist; build
+# their SIFs before enabling those rules in production runs.
+singularity_image_dir: "/Volumes/X9Pro/container_data/singularity_images"
+containers:
+  samtools: "/Volumes/X9Pro/container_data/singularity_images/jacusa2.sif"
+  sprint: "/Volumes/X9Pro/container_data/singularity_images/sprint.sif"
+  jacusa2: "/Volumes/X9Pro/container_data/singularity_images/jacusa2.sif"
+  reditools: "/Volumes/X9Pro/container_data/singularity_images/reditools.sif"
+  deepred: "/Volumes/X9Pro/container_data/singularity_images/deepred.sif"
+  editpredict: "/Volumes/X9Pro/container_data/singularity_images/editpredict.sif"
+  redinet: "/Volumes/X9Pro/container_data/singularity_images/redinet.sif"
+
+# Mapping actual BAM paths to sample IDs
+samples:
+  control_rep1: "raw_data/HEK_WT_R1.bam"
+  control_rep2: "raw_data/HEK_WT_R2.bam"
+  treated_rep1: "raw_data/HEK_ADARKO_R1.bam"
+
+# Condition mapping for JACUSA2 (Site-specific identification call-2)
+# Replicate-aware comparisons require grouping BAMs [2, 6, 7]
+jacusa2_pairs:
+  experiment1:
+    case: "raw_data/HEK_ADARKO_R1.bam"
+    ctrl: "raw_data/HEK_WT_R1.bam"
+
+reditools2:
+  threads: 16
+  min_cov: 10
+
+jacusa2:
+  threads: 8
+  filters: "D,I,S" # recommended filters [2, 8]
+
+redinet:
+  min_coverage: 10
+  ag_frequency: 0.01
+  min_ag_subs: 2
