@@ -20,6 +20,7 @@ image is converted to a Singularity/Apptainer SIF.
 | DeepRed | `containers/deepred` | `validate-deepred` |
 | EditPredict | `containers/editpredict` | `validate-editpredict` |
 | REDInet | `containers/redinet` | `validate-redinet` |
+| Picard | `containers/picard` | `validate-picard` |
 
 ## Build and Validate
 
@@ -60,7 +61,7 @@ The default validation set covers the images already present in
 missing Snakefile dependencies can be built explicitly:
 
 ```bash
-TOOLS="wgs deepred editpredict redinet" scripts/validate_containers.sh
+TOOLS="wgs deepred editpredict redinet picard" scripts/validate_containers.sh
 ```
 
 Useful environment variables:
@@ -103,4 +104,5 @@ checked-in upstream implementation/model is available. It gives the Snakemake
 rule a stable command name and clearly fails until the source and trained model
 artifacts are added. EditPredict and REDInet include upstream checkouts plus
 thin wrappers, but their input adapters should be reviewed with real workflow
-data before production use.
+data before production use. Picard is packaged separately for duplicate marking
+because no matching Picard SIF exists in the local image directory.

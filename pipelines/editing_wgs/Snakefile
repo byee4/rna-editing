@@ -1,0 +1,137 @@
+configfile: "config.yaml"
+
+# Global Variables
+REF = config["reference"]
+WORKDIR = config["WORKDIR"]
+SAMPLES = list(config["samples"].keys())
+SIF_DIR = config.get("singularity_image_dir", "/Volumes/X9Pro/container_data/singularity_images")
+CONTAINERS = config.get("containers", {})
+
+
+def container_for(tool):
+    """Return the configured Singularity image path for a workflow tool."""
+    return CONTAINERS.get(tool, f"{SIF_DIR}/{tool}.sif")
+
+rule all:
+    input:
+        expand(WORKDIR + "/reditools2_dnarna/{sample}.tsv", sample=SAMPLES),
+        expand(WORKDIR + "/jacusa2_dnarna/{sample}.out", sample=SAMPLES)
+
+# --- Preprocessing: Alignment and Cleanup ---
+
+# RNA Alignment: STAR is recommended for its splice-awareness and speed [5, 12]
+rule star_align_rna:
+    input:
+        fastq=lambda wildcards: config["samples"][wildcards.sample]["rna"],
+        ref=REF
+    output:
+        bam=WORKDIR + "/mapped/{sample}.rna.bam"
+    threads: 12
+    container: container_for("star")
+    resources:
+        mem_mb=lambda wildcards, attempt: 32000 * (1.5 ** (attempt - 1)), # STAR requires ~30GB for human [13, 14]
+        runtime=lambda wildcards, attempt: 120 * (2 ** (attempt - 1))
+    log:
+        stdout=WORKDIR + "/logs/{sample}.star.out",
+        stderr=WORKDIR + "/logs/{sample}.star.err"
+    params:
+        prefix=WORKDIR + "/mapped/{sample}.rna.",
+        star_bam=WORKDIR + "/mapped/{sample}.rna.Aligned.sortedByCoord.out.bam"
+    shell:
+        "STAR --runThreadN {threads} --genomeDir {input.ref}_idx --readFilesIn {input.fastq} "
+        "--readFilesCommand zcat --outSAMtype BAM SortedByCoordinate "
+        "--outFileNamePrefix {params.prefix} 1> {log.stdout} 2> {log.stderr} && "
+        "mv -f {params.star_bam} {output.bam}"
+
+# WGS Alignment: BWA-MEM is standard for genomic reads [5, 6, 15]
+rule bwa_mem_wgs:
+    input:
+        fastq=lambda wildcards: config["samples"][wildcards.sample]["wgs"],
+        ref=REF
+    output:
+        bam=WORKDIR + "/mapped/{sample}.wgs.bam"
+    threads: 24
+    container: container_for("wgs")
+    resources:
+        mem_mb=lambda wildcards, attempt: 16000 * (1.5 ** (attempt - 1)),
+        runtime=lambda wildcards, attempt: 1800 * (2 ** (attempt - 1)) # WGS alignment is a major bottleneck (~30h) [15, 16]
+    log:
+        stderr=WORKDIR + "/logs/{sample}.bwa_mem.err"
+    shell:
+        "bwa mem -t {threads} {input.ref} {input.fastq} 2> {log.stderr} | "
+        "samtools view -Sb - | samtools sort -@ {threads} -o {output.bam}"
+
+# Picard: Mark duplicates to prevent PCR bias from inflating editing levels [17-19]
+rule mark_duplicates:
+    input:
+        bam=WORKDIR + "/mapped/{sample}.{type}.bam"
+    output:
+        bam=WORKDIR + "/dedup/{sample}.{type}.bam",
+        metrics=WORKDIR + "/dedup/{sample}.{type}.metrics.txt"
+    container: container_for("picard")
+    log:
+        stderr=WORKDIR + "/logs/{sample}.{type}.mark_duplicates.err"
+    shell:
+        "picard MarkDuplicates I={input.bam} O={output.bam} M={output.metrics} "
+        "REMOVE_DUPLICATES=true 2> {log.stderr}"
+
+# JACUSA2: Mandatory MD tag population [10, 11]
+rule samtools_calmd:
+    input:
+        bam=WORKDIR + "/dedup/{sample}.{type}.bam",
+        ref=REF
+    output:
+        bam=WORKDIR + "/mapped/{sample}.{type}.md.bam"
+    container: container_for("samtools")
+    log:
+        stderr=WORKDIR + "/logs/{sample}.{type}.calmd.err"
+    shell:
+        "samtools calmd -b {input.bam} {input.ref} > {output.bam} 2> {log.stderr}"
+
+# --- RNA Editing Detection (DNA-RNA Comparison) ---
+
+# REDItools2: The DNA-RNA script uses genomic reads to purge SNPs [9, 20, 21]
+rule reditools2_dnarna:
+    input:
+        rna_bam=WORKDIR + "/dedup/{sample}.rna.bam",
+        wgs_bam=WORKDIR + "/dedup/{sample}.wgs.bam",
+        ref=REF
+    output:
+        table=WORKDIR + "/reditools2_dnarna/{sample}.tsv"
+    threads: config["reditools2"]["threads"]
+    container: container_for("reditools")
+    resources:
+        mem_mb=lambda wildcards, attempt: 4096 * (1.5 ** (attempt - 1)),
+        runtime=lambda wildcards, attempt: 12000 * (2 ** (attempt - 1)) # Multi-day runtime for large WGS data [16]
+    params:
+        min_cov=config["reditools2"]["min_cov"]
+    log:
+        stdout=WORKDIR + "/logs/{sample}.reditools2.out",
+        stderr=WORKDIR + "/logs/{sample}.reditools2.err"
+    shell:
+        "python /opt/reditools/main/REDItoolDnaRna.py -i {input.rna_bam} -j {input.wgs_bam} "
+        "-f {input.ref} -o {output.table} "
+        "-c {params.min_cov},{params.min_cov} -q 30,30 -m 30,255 -v 3 "
+        "1> {log.stdout} 2> {log.stderr}"
+
+# JACUSA2: call-2 mode in RDD (RNA-DNA Difference) mode [22, 23]
+rule jacusa2_dnarna:
+    input:
+        rna_bam=WORKDIR + "/mapped/{sample}.rna.md.bam",
+        wgs_bam=WORKDIR + "/mapped/{sample}.wgs.md.bam"
+    output:
+        out=WORKDIR + "/jacusa2_dnarna/{sample}.out"
+    threads: config["jacusa2"]["threads"]
+    resources:
+        mem_mb=lambda wildcards, attempt: 33350 * (1.5 ** (attempt - 1)),
+        runtime=lambda wildcards, attempt: 400 * (2 ** (attempt - 1))
+    container: container_for("jacusa2")
+    log:
+        stdout=WORKDIR + "/logs/{sample}.jacusa2.out",
+        stderr=WORKDIR + "/logs/{sample}.jacusa2.err"
+    params:
+        filters=config["jacusa2"]["filters"]
+    shell:
+        "java -jar /opt/jacusa2/jacusa2.jar call-2 -r {output.out} -p {threads} "
+        "-a {params.filters} {input.rna_bam} {input.wgs_bam} "
+        "1> {log.stdout} 2> {log.stderr}"

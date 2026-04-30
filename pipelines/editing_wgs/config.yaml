@@ -1,0 +1,32 @@
+WORKDIR: "results"
+reference: "refs/genome.fa"
+known_snps: "refs/known_snps.vcf" # Optional database filter
+
+# Singularity/Apptainer images used by this workflow. Existing images live in
+# /Volumes/X9Pro/container_data/singularity_images; wgs.sif and picard.sif need
+# to be built from their Docker contexts before production execution.
+singularity_image_dir: "/Volumes/X9Pro/container_data/singularity_images"
+containers:
+  star: "/Volumes/X9Pro/container_data/singularity_images/lodei.sif"
+  wgs: "/Volumes/X9Pro/container_data/singularity_images/wgs.sif"
+  picard: "/Volumes/X9Pro/container_data/singularity_images/picard.sif"
+  samtools: "/Volumes/X9Pro/container_data/singularity_images/jacusa2.sif"
+  reditools: "/Volumes/X9Pro/container_data/singularity_images/reditools.sif"
+  jacusa2: "/Volumes/X9Pro/container_data/singularity_images/jacusa2.sif"
+
+# Mapping matched RNA and WGS data per sample
+samples:
+  patient1:
+    rna: "raw/p1_rna.fastq.gz"
+    wgs: "raw/p1_wgs.fastq.gz"
+  patient2:
+    rna: "raw/p2_rna.fastq.gz"
+    wgs: "raw/p2_wgs.fastq.gz"
+
+reditools2:
+  threads: 24
+  min_cov: 10 # Recommended minimum for DNA-RNA mode [8, 9]
+
+jacusa2:
+  threads: 8
+  filters: "D,I,S" # recommended filters for read ends and introns [10, 11]
