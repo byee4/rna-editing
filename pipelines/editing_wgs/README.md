@@ -6,10 +6,30 @@ editing callers. The DNA/RNA branch uses matched WGS to help remove inherited
 variants, while the RNA-only branch provides SPRINT, REDItools2 serial,
 DeepRED, editPredict, and REDI-NET outputs from the deduplicated RNA BAM.
 
+The workflow is split into small Snakemake modules so assay processing and
+editing callers can be maintained independently:
+
+- `Snakefile`: shared configuration, helper functions, final targets, and module
+  includes.
+- `preprocessing.smk`: shared BAM cleanup steps that prepare aligned RNA and WGS
+  BAMs for downstream analysis.
+- `rna_processing.smk`: RNA-seq alignment and RNA-specific processing rules.
+- `wgs_processing.smk`: WGS alignment, coverage, and germline variant rules.
+- `rna_editing.smk`: DNA/RNA comparison callers plus RNA-only editing and
+  classification rules.
+
 Run with Singularity/Apptainer enabled:
 
 ```bash
 snakemake --snakefile pipelines/editing_wgs/Snakefile --directory pipelines/editing_wgs --use-singularity --cores 24
+```
+
+For Snakemake validation and dry-run tests, create the project-local test
+environment from the tracked definition and invoke Snakemake through that env:
+
+```bash
+conda env create -p .conda/editing-wgs-snakemake -f pipelines/editing_wgs/environment.yaml
+conda run -p .conda/editing-wgs-snakemake snakemake --snakefile pipelines/editing_wgs/Snakefile --directory pipelines/editing_wgs --runtime-source-cache-path pipelines/editing_wgs/.snakemake/source-cache --dry-run --cores 1
 ```
 
 The config maps each sample to RNA and WGS FASTQs. Each `rna` or `wgs` entry can

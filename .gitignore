@@ -1,2 +1,5 @@
 .DS_Store
 .beads/embeddeddolt/
+.conda/
+.snakemake/
+**/.snakemake/
