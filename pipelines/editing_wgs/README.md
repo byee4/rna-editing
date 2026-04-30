@@ -44,6 +44,8 @@ Primary outputs include:
 - `results/deepred/{sample}_predictions.txt`: DeepRED scores for SPRINT calls.
 - `results/editpredict/{sample}_scores.txt`: editPredict scores for SPRINT calls.
 - `results/redinet/{sample}_classified.txt`: REDI-NET classes for REDItools2 calls.
+- `results/wgs_coverage/{sample}.cov`: WGS-only coverage from `{sample}.wgs.md.bam`.
+- `results/germline/{sample}_germline.vcf.gz`: WGS-only germline SNVs from `{sample}.wgs.md.bam`.
 
 Container paths and caller thresholds are defined in `config.yaml`; existing
 local SIFs cover STAR through `lodei.sif`, REDItools, JACUSA2, SPRINT, DeepRED,
@@ -56,5 +58,7 @@ TOOLS="wgs picard sprint deepred editpredict redinet" scripts/validate_container
 
 Use `reditools2.min_cov` for both DNA/RNA and RNA-only REDItools2 coverage, and
 the `redinet` block to tune REDI-NET minimum coverage, A-to-G frequency, and
-minimum A-to-G substitution count. Real runs require the configured FASTQs,
+minimum A-to-G substitution count. DNA coverage and germline variant rules are
+restricted to the MD-tagged WGS BAM path, `results/mapped/{sample}.wgs.md.bam`,
+so they are not scheduled for RNA BAMs. Real runs require the configured FASTQs,
 reference FASTA, and STAR genome index at `refs/genome.fa_idx`.

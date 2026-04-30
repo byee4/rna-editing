@@ -43,7 +43,9 @@ rule all:
         expand(WORKDIR + "/reditools2/{sample}.tsv", sample=SAMPLES),
         expand(WORKDIR + "/deepred/{sample}_predictions.txt", sample=SAMPLES),
         expand(WORKDIR + "/editpredict/{sample}_scores.txt", sample=SAMPLES),
-        expand(WORKDIR + "/redinet/{sample}_classified.txt", sample=SAMPLES)
+        expand(WORKDIR + "/redinet/{sample}_classified.txt", sample=SAMPLES),
+        expand(WORKDIR + "/wgs_coverage/{sample}.cov", sample=SAMPLES),
+        expand(WORKDIR + "/germline/{sample}_germline.vcf.gz.tbi", sample=SAMPLES)
 
 # --- Preprocessing: Alignment and Cleanup ---
 
@@ -115,6 +117,36 @@ rule samtools_calmd:
         stderr=WORKDIR + "/logs/{sample}.{type}.calmd.err"
     shell:
         "samtools calmd -b {input.bam} {input.ref} > {output.bam} 2> {log.stderr}"
+
+# --- WGS-only Coverage and Germline Variant Calls ---
+
+# Coverage and germline calls are WGS-only and intentionally consume .wgs.md.bam.
+rule generate_dna_coverage:
+    input:
+        bam=WORKDIR + "/mapped/{sample}.wgs.md.bam"
+    output:
+        cov=WORKDIR + "/wgs_coverage/{sample}.cov"
+    container: container_for("wgs")
+    log:
+        stderr=WORKDIR + "/logs/{sample}.wgs_coverage.err"
+    shell:
+        "samtools depth {input.bam} > {output.cov} 2> {log.stderr}"
+
+# Germline variants from WGS MD-tagged BAMs can be used as genomic filters.
+rule call_germline_variants:
+    input:
+        bam=WORKDIR + "/mapped/{sample}.wgs.md.bam",
+        ref=REF
+    output:
+        vcf=WORKDIR + "/germline/{sample}_germline.vcf.gz",
+        tbi=WORKDIR + "/germline/{sample}_germline.vcf.gz.tbi"
+    container: container_for("wgs")
+    log:
+        stderr=WORKDIR + "/logs/{sample}.germline.err"
+    shell:
+        "{{ bcftools mpileup -f {input.ref} {input.bam} | "
+        "bcftools call -mv -Oz -o {output.vcf}; }} 2> {log.stderr} && "
+        "bcftools index -t {output.vcf} 2>> {log.stderr}"
 
 # --- RNA Editing Detection (DNA-RNA Comparison) ---
 
