@@ -66,7 +66,7 @@ Primary outputs include:
 - `results/jacusa2_dnarna/{sample}.out`: JACUSA2 RNA-DNA difference calls for samples with WGS.
 - `results/sprint/{sample}/regular.res`: SPRINT RNA-only editing candidates.
 - `results/reditools2/{sample}.tsv`: REDItools2 serial RNA-only calls.
-- `results/deepred/{sample}_predictions.txt`: DeepRED scores for SPRINT calls.
+- `results/deepred/{sample}_predictions.txt`: DeepRED scores for SPRINT calls after converting SPRINT's regular RES table to DeepRed's documented `#CHROM`, `POS`, `REF`, `ALT` candidate SNV input and running the upstream preprocess/predict Perl workflow.
 - `results/editpredict/{sample}_scores.txt`: editPredict scores for SPRINT calls after converting SPRINT's BED-like coordinates to EditPredict positions, with `--vcf` when a `.vcf.gz` variant source is available.
 - `results/redinet/{sample}_classified.txt`: REDI-NET classes for REDItools2 calls.
 - `results/wgs_coverage/{sample}.cov`: WGS-only coverage from `{sample}.wgs.md.bam` for samples with WGS.

@@ -13,6 +13,7 @@ CONTAINERS = config.get("containers", {})
 BAM_TO_SAMPLE = {bam: sample for sample, bam in config["samples"].items()}
 REPO_ROOT = os.path.abspath(os.path.join(workflow.basedir, "..", ".."))
 EDITPREDICT_POSITIONS_SCRIPT = os.path.join(REPO_ROOT, "scripts", "sprint_to_editpredict_positions.py")
+DEEPRED_VCF_SCRIPT = os.path.join(REPO_ROOT, "scripts", "sprint_to_deepred_vcf.py")
 
 
 def container_for(tool):
@@ -150,7 +151,9 @@ rule sailor_call:
 
 rule deepred_predict:
     input: snvs=WORKDIR + "/sprint/{sample}/regular.res"
-    output: pred=WORKDIR + "/deepred/{sample}_predictions.txt"
+    output:
+        vcf=temp(WORKDIR + "/deepred/{sample}.gatk.raw.vcf"),
+        pred=WORKDIR + "/deepred/{sample}_predictions.txt"
     resources:
         mem_mb=lambda wildcards, attempt: 4096 * (1.5 ** (attempt - 1)),
         runtime=lambda wildcards, attempt: 120 * (2 ** (attempt - 1))
@@ -159,8 +162,14 @@ rule deepred_predict:
     log:
         stdout=WORKDIR + "/stdout/{sample}.deepred.out",
         stderr=WORKDIR + "/stderr/{sample}.deepred.err"
+    params:
+        vcf_script=DEEPRED_VCF_SCRIPT,
+        project=lambda wildcards: wildcards.sample,
+        sample=lambda wildcards: wildcards.sample
     shell:
-        "deepred_predict --input {input.snvs} --output {output.pred} "
+        "python {params.vcf_script} {input.snvs} {output.vcf} && "
+        "deepred_predict --input-vcf {output.vcf} --project {params.project} "
+        "--sample {params.sample} --output {output.pred} "
         "1> {log.stdout} 2> {log.stderr}"
 
 rule editpredict_filter:

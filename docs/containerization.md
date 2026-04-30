@@ -100,9 +100,13 @@ distributed as a desktop-style jar, so its validation checks the runtime stack
 and jar contents rather than attempting to open the GUI.
 
 The DeepRed context is a runtime scaffold because no matching local SIF or
-checked-in upstream implementation/model is available. It gives the Snakemake
-rule a stable command name and clearly fails until the source and trained model
-artifacts are added. EditPredict and REDInet include upstream checkouts plus
-thin wrappers, but their input adapters should be reviewed with real workflow
-data before production use. Picard is packaged separately for duplicate marking
-because no matching Picard SIF exists in the local image directory.
+checked-in upstream implementation/model is available. Its wrapper accepts a
+DeepRed-ready candidate SNV table, stages it in the upstream `Raw_Data/<project>`
+layout next to the `DeepRed` code directory, and runs
+`Preprocess_input_data_for_DeepRed.pl` followed by `Run_DeepRed.pl` when the
+source and model artifacts are installed under `DEEPRED_ROOT` or `/opt/DeepRed`;
+otherwise it fails with a plain-English setup message. EditPredict and REDInet
+include upstream checkouts plus thin wrappers, but their input adapters should
+be reviewed with real workflow data before production use. Picard is packaged
+separately for duplicate marking because no matching Picard SIF exists in the
+local image directory.

@@ -1,23 +1,103 @@
 #!/usr/bin/env python3
-"""Stable CLI placeholder for DeepRed prediction inside the container."""
+"""Stage DeepRed inputs and run the upstream project/sample workflow."""
 
 import argparse
+import os
+import shutil
+import subprocess
 import sys
+
+
+def run_root_for(deepred_root):
+    """Return the working directory expected by upstream DeepRed Perl scripts."""
+    normalized_root = os.path.abspath(deepred_root)
+    if os.path.basename(normalized_root) == "DeepRed":
+        return os.path.dirname(normalized_root)
+    return normalized_root
+
+
+def copy_input_vcf(input_vcf, run_root, project, sample):
+    """Copy candidate SNVs to DeepRed's documented Raw_Data project layout."""
+    raw_project_dir = os.path.join(run_root, "Raw_Data", project)
+    os.makedirs(raw_project_dir, exist_ok=True)
+    staged_vcf = os.path.join(raw_project_dir, "{}.gatk.raw.vcf".format(sample))
+    shutil.copyfile(input_vcf, staged_vcf)
+    return staged_vcf
+
+
+def run_command(command, cwd):
+    """Run one DeepRed command and raise a clear error if it fails."""
+    completed = subprocess.run(command, cwd=cwd)
+    if completed.returncode:
+        raise RuntimeError(
+            "DeepRed command failed with exit code {}: {}".format(
+                completed.returncode, " ".join(command)
+            )
+        )
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Run DeepRed prediction once source code and model artifacts are installed."
+        description="Run DeepRed prediction using the upstream project/sample workflow."
     )
-    parser.add_argument("--input", required=True, help="Candidate SNV or sequence table.")
-    parser.add_argument("--output", required=True, help="Prediction output table.")
-    parser.parse_args()
-    print(
-        "DeepRed source code and trained model artifacts are not installed in this scaffold image. "
-        "Add the upstream implementation/model to containers/deepred before production use.",
-        file=sys.stderr,
+    parser.add_argument("--input-vcf", required=True, help="DeepRed candidate SNV table.")
+    parser.add_argument("--project", required=True, help="DeepRed Raw_Data project directory name.")
+    parser.add_argument("--sample", required=True, help="DeepRed sample prefix.")
+    parser.add_argument("--output", required=True, help="Prediction output table to write.")
+    parser.add_argument(
+        "--deepred-root",
+        default=os.environ.get("DEEPRED_ROOT", "/opt/DeepRed"),
+        help="Directory containing the upstream DeepRed code directory or a parent with ./DeepRed.",
     )
-    return 127
+    args = parser.parse_args()
+
+    run_root = run_root_for(args.deepred_root)
+    code_root = (
+        args.deepred_root
+        if os.path.basename(os.path.abspath(args.deepred_root)) == "DeepRed"
+        else os.path.join(args.deepred_root, "DeepRed")
+    )
+    if not os.path.isdir(code_root):
+        code_root = args.deepred_root
+
+    preprocess = os.path.join(code_root, "Preprocess_input_data_for_DeepRed.pl")
+    run_deepred = os.path.join(code_root, "Run_DeepRed.pl")
+    if not os.path.exists(preprocess) or not os.path.exists(run_deepred):
+        print(
+            "DeepRed source code and trained model artifacts are not installed. "
+            "Install wenjiegroup/DeepRed under {} or set DEEPRED_ROOT/--deepred-root.".format(
+                args.deepred_root
+            ),
+            file=sys.stderr,
+        )
+        return 127
+
+    copy_input_vcf(args.input_vcf, run_root, args.project, args.sample)
+    try:
+        run_command(["perl", preprocess, args.project, args.sample], cwd=run_root)
+        run_command(["perl", run_deepred, args.project, args.sample], cwd=run_root)
+    except RuntimeError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+
+    score_tail = os.path.join(
+        "Score",
+        "Score_combined",
+        "{}_for_Input_Data_chr".format(args.project),
+        "Score_predicted.{}.txt".format(args.sample),
+    )
+    score_path = os.path.join(run_root, score_tail)
+    if not os.path.exists(score_path):
+        score_path = os.path.join(code_root, score_tail)
+    if not os.path.exists(score_path):
+        print("DeepRed did not create expected score file: {}".format(score_path), file=sys.stderr)
+        return 1
+
+    output_dir = os.path.dirname(args.output)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+    shutil.copyfile(score_path, args.output)
+    return 0
 
 
 if __name__ == "__main__":

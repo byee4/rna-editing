@@ -106,6 +106,7 @@ rule deepred_predict:
     input:
         snvs=WORKDIR + "/sprint/{sample}/regular.res"
     output:
+        vcf=temp(WORKDIR + "/deepred/{sample}.gatk.raw.vcf"),
         pred=WORKDIR + "/deepred/{sample}_predictions.txt"
     resources:
         mem_mb=lambda wildcards, attempt: 4096 * (1.5 ** (attempt - 1)),
@@ -115,8 +116,14 @@ rule deepred_predict:
     log:
         stdout=WORKDIR + "/logs/{sample}.deepred.out",
         stderr=WORKDIR + "/logs/{sample}.deepred.err"
+    params:
+        vcf_script=DEEPRED_VCF_SCRIPT,
+        project=lambda wildcards: wildcards.sample,
+        sample=lambda wildcards: wildcards.sample
     shell:
-        "deepred_predict --input {input.snvs} --output {output.pred} "
+        "python {params.vcf_script} {input.snvs} {output.vcf} && "
+        "deepred_predict --input-vcf {output.vcf} --project {params.project} "
+        "--sample {params.sample} --output {output.pred} "
         "1> {log.stdout} 2> {log.stderr}"
 
 
