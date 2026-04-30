@@ -127,6 +127,7 @@ rule editpredict_filter:
         pos=WORKDIR + "/sprint/{sample}/regular.res",
         variants=variant_input
     output:
+        positions=temp(WORKDIR + "/editpredict/{sample}_positions.tsv"),
         out=WORKDIR + "/editpredict/{sample}_scores.txt"
     resources:
         mem_mb=lambda wildcards, attempt: 4096 * (1.5 ** (attempt - 1)),
@@ -137,11 +138,14 @@ rule editpredict_filter:
         stdout=WORKDIR + "/logs/{sample}.editpredict.out",
         stderr=WORKDIR + "/logs/{sample}.editpredict.err"
     params:
+        positions_script=EDITPREDICT_POSITIONS_SCRIPT,
         variant_arg=lambda wildcards, input: editpredict_variant_arg(input.variants)
     shell:
-        "editpredict_score --reference {input.ref} --positions {input.pos} "
+        "python {params.positions_script} {input.pos} {output.positions} "
+        "1> {log.stdout} 2> {log.stderr} && "
+        "editpredict_score --reference {input.ref} --positions {output.positions} "
         "--output {output.out} {params.variant_arg} "
-        "1> {log.stdout} 2> {log.stderr}"
+        "1>> {log.stdout} 2>> {log.stderr}"
 
 
 # REDI-NET classifies REDItools2 serial output into candidate editing classes.

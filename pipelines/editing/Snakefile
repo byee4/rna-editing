@@ -1,5 +1,7 @@
 configfile: "config.yaml"
 
+import os
+
 # Global Variables
 REF = config["reference"]
 SNPS = config["known_snps"]
@@ -9,6 +11,8 @@ PAIRS = list(config["jacusa2_pairs"].keys())
 SIF_DIR = config.get("singularity_image_dir", "/Volumes/X9Pro/container_data/singularity_images")
 CONTAINERS = config.get("containers", {})
 BAM_TO_SAMPLE = {bam: sample for sample, bam in config["samples"].items()}
+REPO_ROOT = os.path.abspath(os.path.join(workflow.basedir, "..", ".."))
+EDITPREDICT_POSITIONS_SCRIPT = os.path.join(REPO_ROOT, "scripts", "sprint_to_editpredict_positions.py")
 
 
 def container_for(tool):
@@ -161,7 +165,9 @@ rule deepred_predict:
 
 rule editpredict_filter:
     input: ref=REF, pos=WORKDIR + "/sprint/{sample}/regular.res"
-    output: out=WORKDIR + "/editpredict/{sample}_scores.txt"
+    output:
+        positions=temp(WORKDIR + "/editpredict/{sample}_positions.tsv"),
+        out=WORKDIR + "/editpredict/{sample}_scores.txt"
     resources:
         mem_mb=lambda wildcards, attempt: 4096 * (1.5 ** (attempt - 1)),
         runtime=lambda wildcards, attempt: 120 * (2 ** (attempt - 1))
@@ -170,9 +176,13 @@ rule editpredict_filter:
     log:
         stdout=WORKDIR + "/stdout/{sample}.editpredict.out",
         stderr=WORKDIR + "/stderr/{sample}.editpredict.err"
+    params:
+        positions_script=EDITPREDICT_POSITIONS_SCRIPT
     shell:
-        "editpredict_score --reference {input.ref} --positions {input.pos} --output {output.out} "
-        "1> {log.stdout} 2> {log.stderr}"
+        "python {params.positions_script} {input.pos} {output.positions} "
+        "1> {log.stdout} 2> {log.stderr} && "
+        "editpredict_score --reference {input.ref} --positions {output.positions} --output {output.out} "
+        "1>> {log.stdout} 2>> {log.stderr}"
 
 rule redinet_classify:
     input:

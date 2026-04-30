@@ -1,5 +1,6 @@
 configfile: "config.yaml"
 
+import os
 import re
 
 # Global Variables
@@ -10,6 +11,8 @@ SIF_DIR = config.get("singularity_image_dir", "/Volumes/X9Pro/container_data/sin
 CONTAINERS = config.get("containers", {})
 SAMPLE_CONFIG = config["samples"]
 VARIANT_EXTENSIONS = (".vcf.gz", ".bed.gz")
+REPO_ROOT = os.path.abspath(os.path.join(workflow.basedir, "..", ".."))
+EDITPREDICT_POSITIONS_SCRIPT = os.path.join(REPO_ROOT, "scripts", "sprint_to_editpredict_positions.py")
 
 
 def container_for(tool):

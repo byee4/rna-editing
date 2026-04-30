@@ -13,6 +13,8 @@ snakemake --snakefile pipelines/editing/Snakefile --directory pipelines/editing 
 The reviewed default DAG excludes SAILOR per project direction. JACUSA2 uses
 MD-tagged BAMs when the configured pair BAM paths match entries in `samples`.
 REDItools2 writes one TSV per sample, which is then used as REDInet input.
+EditPredict scores SPRINT calls after converting SPRINT's BED-like coordinates
+to the chromosome/locus list expected by upstream `get_seq.py`.
 
 DeepRed, EditPredict, and REDInet depend on Docker contexts added under
 `containers/`. Build their SIFs before enabling production runs:
