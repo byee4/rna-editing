@@ -33,6 +33,17 @@ conda env create -p .conda/editing-wgs-snakemake -f pipelines/editing_wgs/enviro
 conda run -p .conda/editing-wgs-snakemake snakemake --snakefile pipelines/editing_wgs/Snakefile --directory pipelines/editing_wgs --runtime-source-cache-path /private/tmp/editing_wgs_snakemake_source_cache --dry-run --cores 1
 ```
 
+The `tests/` directory beside this Snakefile contains generated dry-run
+fixtures for every supported sample instance type: single-end RNA plus WGS,
+paired-end RNA plus paired-end WGS, paired-end RNA plus an external `.vcf.gz`,
+and single-end RNA plus an external `.bed.gz`. Run the unittest harness from
+the repository root to verify all of those instances still build a Snakemake
+DAG:
+
+```bash
+conda run -p .conda/editing-wgs-snakemake python -m unittest tests/test_editing_wgs_dryrun.py
+```
+
 The config maps each sample to RNA FASTQs plus either WGS FASTQs or an external
 variant file. Each `rna` or `wgs` entry can be either a single FASTQ path for
 single-end data or a two-item list for paired R1/R2 data. External variant files
