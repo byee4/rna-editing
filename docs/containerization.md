@@ -19,18 +19,27 @@ image is converted to a Singularity/Apptainer SIF.
 
 ## Build and Validate
 
-The validation script writes Docker build cache, Docker image archives, SIF
-files, and Apptainer cache data under `/Volumes/X9Pro/container_data` by
-default so the nearly-full system disk is not used for large artifacts.
-Docker Desktop's default `docker` builder cannot always export BuildKit cache
-to a host directory; when that happens, the script retries without external
-build-cache export while keeping Docker archives and SIF files on the external
-volume.
+The validation script writes Docker build cache, Docker archive output, SIF
+files, Buildx config, host temporary files, and
+Apptainer/Singularity cache and temporary files under
+`/Volumes/X9Pro/container_data` by default so the nearly-full system disk is not
+used for large artifacts.
 
-The containerized Apptainer builder uses a tmpfs-backed `/tmp` for SIF builds
-and SIF validation. This avoids growing Docker Desktop's disk image during
-Apptainer extraction while still keeping the Docker archives, SIF outputs, and
-Apptainer cache on the external drive.
+Apptainer itself requires `/tmp` to be a real mount point inside Docker Desktop
+on macOS. The builder therefore uses a RAM-backed tmpfs for `/tmp`, which keeps
+that extraction pressure off `Macintosh HD`; persistent Apptainer/Singularity
+cache and all outputs remain on X9Pro.
+
+The script builds Docker archives directly to the external drive with Buildx
+instead of loading each tool image into the Docker daemon. After each SIF is
+built and validated, the per-tool Docker archive, build cache, and temporary
+Apptainer/Singularity directories are removed. The only intended final
+artifacts are the `.sif` files.
+
+Docker Desktop's default `docker` Buildx driver does not always support direct
+archive export. The script creates a temporary `docker-container` Buildx builder
+for archive generation, disables build cache for each tool, prunes cache after
+validation, and removes the temporary builder when the run exits.
 
 ```bash
 scripts/validate_containers.sh
@@ -46,11 +55,17 @@ Useful environment variables:
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `CONTAINER_DATA_ROOT` | `/Volumes/X9Pro/container_data/rna-editing` | Storage for build cache, Docker archives, SIF files, and temporary files. |
+| `CONTAINER_DATA_ROOT` | `/Volumes/X9Pro/container_data` | Storage root for build cache, Docker archives, SIF files, config, and temporary files. |
+| `SIF_OUTPUT_DIR` | `/Volumes/X9Pro/container_data/singularity_images` | Final Singularity/Apptainer image output directory. |
+| `DOCKER_ARCHIVE_DIR` | `/Volumes/X9Pro/container_data/images` | Temporary Docker archives used as SIF build input. |
+| `DOCKER_CACHE_ROOT` | `/Volumes/X9Pro/container_data/docker-cache` | External Buildx cache root. |
+| `CONTAINER_TMP_ROOT` | `/Volumes/X9Pro/container_data/tmp` | External temporary root for Buildx, host tmp, and Apptainer/Singularity tmp/cache data. |
+| `BUILDX_BUILDER` | `rna-editing-x9pro` | Temporary Buildx builder used for direct archive export. |
+| `REUSE_EXISTING_ARCHIVES` | `1` | Reuse an existing non-empty Docker archive after an interrupted run instead of rebuilding it. |
+| `APPTAINER_TMPFS_SIZE` | `4g` | RAM-backed `/tmp` size for containerized Apptainer builds and validation. |
 | `DOCKER_PLATFORM` | `linux/amd64` | Platform used for Docker builds and containerized Apptainer runs. |
 | `TOOLS` | all tools | Space-separated list of tools to build and validate. |
 | `APPTAINER_IMAGE` | `ghcr.io/apptainer/apptainer:1.4.4` | Containerized Apptainer builder used when host Apptainer/Singularity is unavailable. |
-| `APPTAINER_TMPFS_SIZE` | `4g` | Size of the tmpfs mounted at `/tmp` for containerized Apptainer builds and SIF validation. |
 
 ## Outputs
 
@@ -58,10 +73,10 @@ Successful runs create:
 
 | Artifact | Location |
 | --- | --- |
-| Docker images | Local Docker daemon as `rna-editing/<tool>:latest` during validation. Images can be removed after their archives are saved. |
-| Docker archives | `/Volumes/X9Pro/container_data/rna-editing/images/<tool>.tar` |
-| Singularity/Apptainer SIFs | `/Volumes/X9Pro/container_data/rna-editing/sif/<tool>.sif` |
-| Build cache | `/Volumes/X9Pro/container_data/rna-editing/docker-cache/<tool>` |
+| Singularity/Apptainer SIFs | `/Volumes/X9Pro/container_data/singularity_images/<tool>.sif` |
+| Docker archives | `/Volumes/X9Pro/container_data/images/<tool>.tar`, removed after each validated SIF |
+| Build cache | `/Volumes/X9Pro/container_data/docker-cache/<tool>`, removed after each validated SIF |
+| Temporary files | `/Volumes/X9Pro/container_data/tmp`, per-tool directories removed after each validated SIF |
 
 ## Notes
 
