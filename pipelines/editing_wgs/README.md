@@ -1,7 +1,10 @@
 # Matched RNA/WGS Editing Workflow
 
 This Snakemake workflow aligns matched RNA-seq and WGS inputs, marks
-duplicates, adds MD tags, and runs DNA/RNA comparison callers.
+duplicates, adds MD tags, and runs both DNA/RNA comparison callers and RNA-only
+editing callers. The DNA/RNA branch uses matched WGS to help remove inherited
+variants, while the RNA-only branch provides SPRINT, REDItools2 serial,
+DeepRED, editPredict, and REDI-NET outputs from the deduplicated RNA BAM.
 
 Run with Singularity/Apptainer enabled:
 
@@ -27,15 +30,31 @@ samples:
       - "raw/sample_wgs_R2.fastq.gz"
 ```
 
-Container paths are defined in `config.yaml`; existing local SIFs cover STAR
-through `lodei.sif`, REDItools, and JACUSA2. The WGS and Picard images need to
-be built from `containers/wgs` and `containers/picard` before a full production
-run:
+The workflow passes those one- or two-file FASTQ lists directly to STAR and
+BWA-MEM. Downstream caller rules consume BAMs, so SPRINT, REDItools2 serial,
+DeepRED, editPredict, and REDI-NET work the same way for single-end and
+paired-end samples after alignment.
+
+Primary outputs include:
+
+- `results/reditools2_dnarna/{sample}.tsv`: REDItools DNA/RNA comparison calls.
+- `results/jacusa2_dnarna/{sample}.out`: JACUSA2 RNA-DNA difference calls.
+- `results/sprint/{sample}/regular.res`: SPRINT RNA-only editing candidates.
+- `results/reditools2/{sample}.tsv`: REDItools2 serial RNA-only calls.
+- `results/deepred/{sample}_predictions.txt`: DeepRED scores for SPRINT calls.
+- `results/editpredict/{sample}_scores.txt`: editPredict scores for SPRINT calls.
+- `results/redinet/{sample}_classified.txt`: REDI-NET classes for REDItools2 calls.
+
+Container paths and caller thresholds are defined in `config.yaml`; existing
+local SIFs cover STAR through `lodei.sif`, REDItools, JACUSA2, SPRINT, DeepRED,
+editPredict, and REDI-NET. The WGS and Picard images need to be built from
+`containers/wgs` and `containers/picard` before a full production run:
 
 ```bash
-TOOLS="wgs picard" scripts/validate_containers.sh
+TOOLS="wgs picard sprint deepred editpredict redinet" scripts/validate_containers.sh
 ```
 
-The DAG dry-run was verified with placeholder configured inputs. Real runs still
-require the configured FASTQs, reference FASTA, and STAR genome index at
-`refs/genome.fa_idx`.
+Use `reditools2.min_cov` for both DNA/RNA and RNA-only REDItools2 coverage, and
+the `redinet` block to tune REDI-NET minimum coverage, A-to-G frequency, and
+minimum A-to-G substitution count. Real runs require the configured FASTQs,
+reference FASTA, and STAR genome index at `refs/genome.fa_idx`.

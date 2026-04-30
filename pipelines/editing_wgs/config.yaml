@@ -11,8 +11,12 @@ containers:
   wgs: "/Volumes/X9Pro/container_data/singularity_images/wgs.sif"
   picard: "/Volumes/X9Pro/container_data/singularity_images/picard.sif"
   samtools: "/Volumes/X9Pro/container_data/singularity_images/jacusa2.sif"
+  sprint: "/Volumes/X9Pro/container_data/singularity_images/sprint.sif"
   reditools: "/Volumes/X9Pro/container_data/singularity_images/reditools.sif"
   jacusa2: "/Volumes/X9Pro/container_data/singularity_images/jacusa2.sif"
+  deepred: "/Volumes/X9Pro/container_data/singularity_images/deepred.sif"
+  editpredict: "/Volumes/X9Pro/container_data/singularity_images/editpredict.sif"
+  redinet: "/Volumes/X9Pro/container_data/singularity_images/redinet.sif"
 
 # Mapping matched RNA and WGS data per sample. Use a string for single-end
 # reads, or a two-item list for paired-end reads.
@@ -30,8 +34,13 @@ samples:
 
 reditools2:
   threads: 24
-  min_cov: 10 # Recommended minimum for DNA-RNA mode [8, 9]
+  min_cov: 10 # Minimum coverage for DNA-RNA and RNA-only serial modes [8, 9]
 
 jacusa2:
   threads: 8
   filters: "D,I,S" # recommended filters for read ends and introns [10, 11]
+
+redinet:
+  min_coverage: 10
+  ag_frequency: 0.01
+  min_ag_subs: 2
