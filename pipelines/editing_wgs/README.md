@@ -2,10 +2,9 @@
 
 This Snakemake workflow aligns RNA-seq inputs with either matched WGS data or a
 precomputed variant file, marks duplicates, adds MD tags, and runs both DNA/RNA
-comparison callers and RNA-only editing callers. The DNA/RNA branch runs only
-for samples with WGS, while the RNA-only branch provides SPRINT, REDItools2
-serial, DeepRED, editPredict, and REDI-NET outputs from the deduplicated RNA
-BAM.
+comparison callers and RNA-only editing callers. The DNA/RNA branch runs
+JACUSA2 only for samples with WGS, while the RNA-only branch provides SPRINT,
+DeepRED, editPredict, and REDInet outputs from the deduplicated RNA BAM.
 
 The workflow is split into small Snakemake modules so assay processing and
 editing callers can be maintained independently:
@@ -66,23 +65,33 @@ samples:
 The workflow passes those one- or two-file FASTQ lists directly to STAR and
 BWA-MEM. Before any RNA alignment runs, STAR builds a shared genome index at
 `{reference}_idx` from the configured reference FASTA, so `reference` should
-point to the FASTA file rather than a prebuilt STAR index directory. Samples
-with WGS require germline VCF creation at
+point to the FASTA file rather than a prebuilt STAR index directory. The
+workflow also creates the required FASTA, BWA, and BAM index sidecars before
+tools that consume them. Samples with WGS require germline VCF creation at
 `results/germline/{sample}_germline.vcf.gz`, and that generated VCF is used by
 variant-aware editing rules. Samples with external variants skip WGS-only rules
 and do not schedule workflow-generated VCF outputs. Downstream caller rules
-consume BAMs, so SPRINT, REDItools2 serial, DeepRED, editPredict, and REDI-NET
-work the same way for single-end and paired-end samples after alignment.
+consume BAMs, so SPRINT, DeepRED, editPredict, and REDInet work the same way for
+single-end and paired-end samples after alignment.
+
+SPRINT receives a dedicated `results/sprint_mapq/{sample}.bam` input whose MAPQ
+values are rewritten to 30 with SPRINT's `changesammapq.py` utility. That keeps
+STAR's MAPQ=255 alignments inside SPRINT's accepted 20-200 MAPQ window without
+modifying the shared deduplicated RNA BAM.
+
+REDInet now follows the upstream REDInet recipe: REDItools v1 first extracts a
+low-stringency RNA-only candidate table, the workflow bgzips and tabix-indexes
+that `outTable_*` as `results/redinet/{sample}/outTable.gz`, and REDInet light
+inference consumes that indexed table to produce the classified output.
 
 Primary outputs include:
 
-- `results/reditools2_dnarna/{sample}.tsv`: REDItools DNA/RNA comparison calls for samples with WGS.
 - `results/jacusa2_dnarna/{sample}.out`: JACUSA2 RNA-DNA difference calls for samples with WGS.
 - `results/sprint/{sample}/regular.res`: SPRINT RNA-only editing candidates.
-- `results/reditools2/{sample}.tsv`: REDItools2 serial RNA-only calls.
+- `results/redinet/{sample}/outTable.gz`: bgzip-compressed and tabix-indexed REDItools v1 candidate table for REDInet.
 - `results/deepred/{sample}_predictions.txt`: DeepRED scores for SPRINT calls after converting SPRINT's regular RES table to DeepRed's documented `#CHROM`, `POS`, `REF`, `ALT` candidate SNV input and running the upstream preprocess/predict Perl workflow.
 - `results/editpredict/{sample}_scores.txt`: editPredict scores for SPRINT calls after converting SPRINT's BED-like coordinates to EditPredict positions, with `--vcf` when a `.vcf.gz` variant source is available.
-- `results/redinet/{sample}_classified.txt`: REDI-NET classes for REDItools2 calls.
+- `results/redinet/{sample}_classified.txt`: REDInet classes for indexed REDItools v1 candidate calls.
 - `results/wgs_coverage/{sample}.cov`: WGS-only coverage from `{sample}.wgs.md.bam` for samples with WGS.
 - `results/germline/{sample}_germline.vcf.gz`: WGS-only germline SNVs from `{sample}.wgs.md.bam` for samples with WGS.
 
@@ -95,10 +104,9 @@ editPredict, and REDI-NET. The WGS and Picard images need to be built from
 TOOLS="wgs picard sprint deepred editpredict redinet" scripts/validate_containers.sh
 ```
 
-Use `reditools2.min_cov` for both DNA/RNA and RNA-only REDItools2 coverage, and
-the `redinet` block to tune REDI-NET minimum coverage, A-to-G frequency, and
-minimum A-to-G substitution count. DNA coverage and germline variant rules are
-restricted to the MD-tagged WGS BAM path, `results/mapped/{sample}.wgs.md.bam`,
-so they are not scheduled for RNA BAMs. Real runs require the configured FASTQs
-and reference FASTA; the workflow generates the STAR genome index at
-`refs/genome.fa_idx`.
+Use the `redinet` block to tune the REDItools candidate-extraction thread count
+plus REDInet minimum coverage, A-to-G frequency, and minimum A-to-G substitution
+count. DNA coverage and germline variant rules are restricted to the MD-tagged
+WGS BAM path, `results/mapped/{sample}.wgs.md.bam`, so they are not scheduled
+for RNA BAMs. Real runs require the configured FASTQs and reference FASTA; the
+workflow generates the STAR genome index at `refs/genome.fa_idx`.
