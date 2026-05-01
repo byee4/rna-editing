@@ -11,15 +11,15 @@ def container_for(tool):
     """Return the configured Singularity image path for a workflow tool."""
     return CONTAINERS.get(tool, f"{SIF_DIR}/{tool}.sif")
 
-# Rule all: The default target that aggregates all requested outputs
+# Rule all: The default target that aggregates all requested outputs.
 rule all:
     input:
         expand("data/processed/{sample}.md.bam.bai", sample=SAMPLES),
         expand("data/processed/{sample}.cov", sample=SAMPLES),
         expand("data/processed/{sample}_germline.vcf.gz.tbi", sample=SAMPLES)
 
-# 1. Alignment with BWA-MEM
-# Recommended for non-spliced DNA reads
+# 1. BWA-MEM alignment for non-spliced DNA reads.
+# Sources: GitHub https://github.com/lh3/bwa; publication https://doi.org/10.48550/arXiv.1303.3997
 rule bwa_mem_align:
     input:
         reads = lambda wildcards: config["samples"][wildcards.sample],
@@ -34,8 +34,8 @@ rule bwa_mem_align:
         samtools view -h -b - > {output.bam}
         """
 
-# 2. PCR Deduplication and Sorting
-# Crucial for establishing a reliable homozygous DNA background
+# 2. SAMtools sort/fixmate/markdup removes PCR duplicate signal from DNA alignments.
+# Sources: GitHub https://github.com/samtools/samtools; publication https://doi.org/10.1093/bioinformatics/btp352
 rule deduplicate_dna:
     input:
         "data/aligned/{sample}.raw.bam"
@@ -51,8 +51,8 @@ rule deduplicate_dna:
         samtools markdup -r - {output.bam}
         """
 
-# 3. Populate MD Tags
-# Mandatory for JACUSA2 and RED to reconstruct reference sequences
+# 3. SAMtools calmd populates MD tags for downstream reference reconstruction.
+# Sources: GitHub https://github.com/samtools/samtools; publication https://doi.org/10.1093/bioinformatics/btp352
 rule populate_md_tags:
     input:
         bam = "data/aligned/{sample}.dedup.bam",
@@ -67,8 +67,8 @@ rule populate_md_tags:
         samtools index {output.bam}
         """
 
-# 4. Generate Coverage Profile
-# Required for REDItools2 (HPC mode) dynamic workload balancing
+# 4. SAMtools depth creates coverage profiles for downstream workload balancing.
+# Sources: GitHub https://github.com/samtools/samtools; publication https://doi.org/10.1093/bioinformatics/btp352
 rule generate_dna_coverage:
     input:
         bam = "data/processed/{sample}.md.bam"
@@ -78,8 +78,8 @@ rule generate_dna_coverage:
     shell:
         "samtools depth {input.bam} > {output.cov}"
 
-# 5. Call Germline SNVs
-# Used as a filter to distinguish RNA editing from genomic polymorphisms
+# 5. BCFtools calls germline SNVs to distinguish RNA editing from genomic polymorphisms.
+# Sources: GitHub https://github.com/samtools/bcftools; publication https://doi.org/10.1093/gigascience/giab008
 rule call_germline_variants:
     input:
         bam = "data/processed/{sample}.md.bam",
