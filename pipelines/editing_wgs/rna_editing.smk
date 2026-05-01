@@ -63,9 +63,35 @@ rule jacusa2_dnarna:
 
 # SPRINT takes coordinate-sorted BAMs and reports RNA editing candidates.
 # Sources: GitHub https://github.com/jumphone/SPRINT; publication https://doi.org/10.1093/bioinformatics/btx473
+rule sprint_mapq_bam:
+    input:
+        bam=get_rna_bam
+    output:
+        bam=WORKDIR + "/sprint_mapq/{sample}.bam"
+    threads: 4
+    container: container_for("sprint")
+    log:
+        stdout=WORKDIR + "/logs/{sample}.sprint_mapq.out",
+        stderr=WORKDIR + "/logs/{sample}.sprint_mapq.err"
+    params:
+        indir=WORKDIR + "/sprint_mapq/{sample}",
+        in_sam=WORKDIR + "/sprint_mapq/{sample}/input.sam",
+        mapq_sam=WORKDIR + "/sprint_mapq/{sample}/mapq30.sam"
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p {params.indir}
+        samtools view -h {input.bam} > {params.in_sam} 2> {log.stderr}
+        python /opt/sprint/utilities/changesammapq.py {params.in_sam} {params.mapq_sam} \
+            1> {log.stdout} 2>> {log.stderr}
+        samtools sort -@ {threads} -o {output.bam} {params.mapq_sam} 2>> {log.stderr}
+        rm -f {params.in_sam} {params.mapq_sam}
+        """
+
+
 rule sprint_from_bam:
     input:
-        bam=get_rna_bam,
+        bam=WORKDIR + "/sprint_mapq/{sample}.bam",
         ref=REF
     output:
         res=WORKDIR + "/sprint/{sample}/regular.res"
