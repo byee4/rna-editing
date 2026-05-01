@@ -8,12 +8,15 @@ rule mark_duplicates:
     output:
         bam=WORKDIR + "/dedup/{sample}.{type}.bam",
         metrics=WORKDIR + "/dedup/{sample}.{type}.metrics.txt"
+    wildcard_constraints:
+        type="rna|wgs"
     container: container_for("picard")
     log:
         stderr=WORKDIR + "/logs/{sample}.{type}.mark_duplicates.err"
     shell:
         "picard MarkDuplicates I={input.bam} O={output.bam} M={output.metrics} "
-        "REMOVE_DUPLICATES=true 2> {log.stderr}"
+        "REMOVE_DUPLICATES=true ASSUME_SORT_ORDER=coordinate TMP_DIR=$TMPDIR "
+        "2> {log.stderr}"
 
 
 # SAMtools calmd populates MD tags required by downstream JACUSA2 comparisons [10, 11].
@@ -24,6 +27,8 @@ rule samtools_calmd:
         ref=REF
     output:
         bam=WORKDIR + "/mapped/{sample}.{type}.md.bam"
+    wildcard_constraints:
+        type="rna|wgs"
     container: container_for("samtools")
     log:
         stderr=WORKDIR + "/logs/{sample}.{type}.calmd.err"

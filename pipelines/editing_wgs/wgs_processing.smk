@@ -20,7 +20,7 @@ rule bwa_mem_wgs:
         stderr=WORKDIR + "/logs/{sample}.bwa_mem.err"
     shell:
         "bwa mem -t {threads} {input.ref} {input.fastq} 2> {log.stderr} | "
-        "samtools view -Sb - | samtools sort -@ {threads} -o {output.bam}"
+        "samtools sort -@ {threads} -o {output.bam} -"
 
 
 # SAMtools depth creates WGS coverage profiles from MD-tagged DNA BAMs.
@@ -57,6 +57,9 @@ rule call_germline_variants:
     log:
         stderr=WORKDIR + "/logs/{sample}.germline.err"
     shell:
-        "{{ bcftools mpileup -f {input.ref} {input.bam} | "
-        "bcftools call -mv -Oz -o {output.vcf}; }} 2> {log.stderr} && "
-        "bcftools index -t {output.vcf} 2>> {log.stderr}"
+        r"""
+        set -euo pipefail
+        bcftools mpileup -f {input.ref} {input.bam} 2> {log.stderr} | \
+            bcftools call -mv -Oz -o {output.vcf} 2>> {log.stderr}
+        bcftools index -t {output.vcf} 2>> {log.stderr}
+        """

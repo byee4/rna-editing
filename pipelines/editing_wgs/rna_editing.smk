@@ -72,7 +72,7 @@ rule sprint_from_bam:
     resources:
         mem_mb=lambda wildcards, attempt: 12500 * (1.5 ** (attempt - 1)),
         runtime=lambda wildcards, attempt: 1400 * (2 ** (attempt - 1))
-    benchmark: "benchmarks/{sample}.sprint.txt"
+    benchmark: WORKDIR + "/benchmarks/{sample}.sprint.txt"
     container: container_for("sprint")
     log:
         stdout=WORKDIR + "/logs/{sample}.sprint.out",
@@ -96,7 +96,7 @@ rule reditools2_serial:
     resources:
         mem_mb=lambda wildcards, attempt: 1350 * (1.5 ** (attempt - 1)),
         runtime=lambda wildcards, attempt: 12910 * (2 ** (attempt - 1))
-    benchmark: "benchmarks/{sample}.reditools2_serial.txt"
+    benchmark: WORKDIR + "/benchmarks/{sample}.reditools2_serial.txt"
     container: container_for("reditools")
     log:
         stdout=WORKDIR + "/logs/{sample}.reditools2_serial.out",
@@ -121,7 +121,7 @@ rule deepred_predict:
     resources:
         mem_mb=lambda wildcards, attempt: 4096 * (1.5 ** (attempt - 1)),
         runtime=lambda wildcards, attempt: 120 * (2 ** (attempt - 1))
-    benchmark: "benchmarks/{sample}.deepred.txt"
+    benchmark: WORKDIR + "/benchmarks/{sample}.deepred.txt"
     container: container_for("deepred")
     log:
         stdout=WORKDIR + "/logs/{sample}.deepred.out",
@@ -150,7 +150,7 @@ rule editpredict_filter:
     resources:
         mem_mb=lambda wildcards, attempt: 4096 * (1.5 ** (attempt - 1)),
         runtime=lambda wildcards, attempt: 120 * (2 ** (attempt - 1))
-    benchmark: "benchmarks/{sample}.editpredict.txt"
+    benchmark: WORKDIR + "/benchmarks/{sample}.editpredict.txt"
     container: container_for("editpredict")
     log:
         stdout=WORKDIR + "/logs/{sample}.editpredict.out",
@@ -177,7 +177,7 @@ rule redinet_classify:
     resources:
         mem_mb=lambda wildcards, attempt: 4096 * (1.5 ** (attempt - 1)),
         runtime=lambda wildcards, attempt: 120 * (2 ** (attempt - 1))
-    benchmark: "benchmarks/{sample}.redinet.txt"
+    benchmark: WORKDIR + "/benchmarks/{sample}.redinet.txt"
     container: container_for("redinet")
     log:
         stdout=WORKDIR + "/logs/{sample}.redinet.out",
