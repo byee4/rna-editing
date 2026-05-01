@@ -74,3 +74,23 @@ Corrections applied there:
 - JACUSA2 now calls `/opt/jacusa2/jacusa2.jar`, matching `jacusa2.sif`.
 - Sample `rna` and `wgs` entries now accept either a single FASTQ string or a
   two-item FASTQ list so STAR and BWA can run single-end or paired-end reads.
+
+## REDInet Substitution
+
+The `editing_wgs` workflow no longer schedules standalone REDItools2 serial
+calls or a separate REDItools DNA/RNA TSV target. Matched DNA/RNA comparison is
+handled by JACUSA2 `call-2`, while REDInet handles RNA-only classification.
+
+REDInet now follows the upstream REDInet handoff recipe in three explicit
+steps:
+
+- `reditools_for_redinet` runs REDItools v1 in RNA-only mode with the
+  low-stringency REDInet candidate-extraction settings.
+- The resulting pid-suffixed `outTable_*` is normalized to
+  `results/redinet/{sample}/outTable.gz` and indexed with tabix.
+- `redinet_classify` requires both the bgzipped table and its `.tbi` before
+  invoking REDInet light inference.
+
+The same review pass added reference and BAM indexing rules, a SPRINT-only MAPQ
+rewrite BAM for STAR-aligned reads, command hardening for BWA/SAMtools,
+BCFtools, STAR, Picard, and consistent benchmark paths under `WORKDIR`.
