@@ -1,5 +1,7 @@
 # --- RNA Processing ---
 
+# STAR builds the splice-aware genome index shared by RNA alignment jobs.
+# Sources: GitHub https://github.com/alexdobin/STAR; publication https://doi.org/10.1093/bioinformatics/bts635
 rule star_genome_generate:
     input:
         ref=REF
@@ -20,7 +22,8 @@ rule star_genome_generate:
         "1> {log.stdout} 2> {log.stderr}"
 
 
-# RNA Alignment: STAR is recommended for its splice-awareness and speed [5, 12]
+# STAR is recommended for splice-aware RNA alignment and speed [5, 12].
+# Sources: GitHub https://github.com/alexdobin/STAR; publication https://doi.org/10.1093/bioinformatics/bts635
 rule star_align_rna:
     input:
         fastq=lambda wildcards: sample_reads(wildcards, "rna"),
