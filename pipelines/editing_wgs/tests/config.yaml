@@ -38,15 +38,12 @@ samples:
     rna: "tests/raw/external_bed.rna.fastq"
     variants: "tests/refs/external_variants.bed.gz"
 
-reditools2:
-  threads: 1
-  min_cov: 1
-
 jacusa2:
   threads: 1
   filters: "D,I,S"
 
 redinet:
+  reditools_threads: 1
   min_coverage: 1
   ag_frequency: 0.01
   min_ag_subs: 1
