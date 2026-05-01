@@ -1,6 +1,7 @@
 # --- Shared Preprocessing and BAM Cleanup ---
 
-# Picard: Mark duplicates to prevent PCR bias from inflating editing levels [17-19]
+# Picard MarkDuplicates removes PCR duplicates that can inflate editing levels [17-19].
+# Sources: GitHub https://github.com/broadinstitute/picard; docs https://broadinstitute.github.io/picard/
 rule mark_duplicates:
     input:
         bam=WORKDIR + "/mapped/{sample}.{type}.bam"
@@ -15,7 +16,8 @@ rule mark_duplicates:
         "REMOVE_DUPLICATES=true 2> {log.stderr}"
 
 
-# JACUSA2: Mandatory MD tag population [10, 11]
+# SAMtools calmd populates MD tags required by downstream JACUSA2 comparisons [10, 11].
+# Sources: GitHub https://github.com/samtools/samtools; publication https://doi.org/10.1093/bioinformatics/btp352
 rule samtools_calmd:
     input:
         bam=WORKDIR + "/dedup/{sample}.{type}.bam",

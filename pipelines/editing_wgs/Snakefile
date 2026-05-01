@@ -5,6 +5,7 @@ import re
 
 # Global Variables
 REF = config["reference"]
+STAR_INDEX = REF + "_idx"
 WORKDIR = config["WORKDIR"]
 SAMPLES = list(config["samples"].keys())
 SIF_DIR = config.get("singularity_image_dir", "/Volumes/X9Pro/container_data/singularity_images")

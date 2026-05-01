@@ -3,3 +3,5 @@
 .conda/
 .snakemake/
 **/.snakemake/
+__pycache__/
+**/__pycache__/
