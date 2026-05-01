@@ -121,5 +121,6 @@ rule all:
 
 include: "preprocessing.smk"
 include: "rna_processing.smk"
+include: "indexing.smk"
 include: "wgs_processing.smk"
 include: "rna_editing.smk"

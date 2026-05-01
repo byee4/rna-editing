@@ -5,8 +5,11 @@
 rule reditools2_dnarna:
     input:
         rna_bam=WORKDIR + "/dedup/{sample}.rna.bam",
+        rna_bai=WORKDIR + "/dedup/{sample}.rna.bam.bai",
         wgs_bam=WORKDIR + "/dedup/{sample}.wgs.bam",
-        ref=REF
+        wgs_bai=WORKDIR + "/dedup/{sample}.wgs.bam.bai",
+        ref=REF,
+        fai=REF + ".fai"
     output:
         table=WORKDIR + f"/reditools2_dnarna/{{sample,{WGS_SAMPLE_PATTERN}}}.tsv"
     wildcard_constraints:
@@ -33,7 +36,9 @@ rule reditools2_dnarna:
 rule jacusa2_dnarna:
     input:
         rna_bam=WORKDIR + "/mapped/{sample}.rna.md.bam",
-        wgs_bam=WORKDIR + "/mapped/{sample}.wgs.md.bam"
+        rna_bai=WORKDIR + "/mapped/{sample}.rna.md.bam.bai",
+        wgs_bam=WORKDIR + "/mapped/{sample}.wgs.md.bam",
+        wgs_bai=WORKDIR + "/mapped/{sample}.wgs.md.bam.bai"
     output:
         out=WORKDIR + f"/jacusa2_dnarna/{{sample,{WGS_SAMPLE_PATTERN}}}.out"
     wildcard_constraints:

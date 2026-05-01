@@ -5,7 +5,8 @@
 rule bwa_mem_wgs:
     input:
         fastq=lambda wildcards: sample_reads(wildcards, "wgs"),
-        ref=REF
+        ref=REF,
+        ref_index=expand(REF + "{ext}", ext=BWA_INDEX_EXTENSIONS)
     output:
         bam=WORKDIR + f"/mapped/{{sample,{WGS_SAMPLE_PATTERN}}}.wgs.bam"
     wildcard_constraints:
@@ -26,7 +27,8 @@ rule bwa_mem_wgs:
 # Sources: GitHub https://github.com/samtools/samtools; publication https://doi.org/10.1093/bioinformatics/btp352
 rule generate_dna_coverage:
     input:
-        bam=WORKDIR + "/mapped/{sample}.wgs.md.bam"
+        bam=WORKDIR + "/mapped/{sample}.wgs.md.bam",
+        bai=WORKDIR + "/mapped/{sample}.wgs.md.bam.bai"
     output:
         cov=WORKDIR + f"/wgs_coverage/{{sample,{WGS_SAMPLE_PATTERN}}}.cov"
     wildcard_constraints:
@@ -43,7 +45,9 @@ rule generate_dna_coverage:
 rule call_germline_variants:
     input:
         bam=WORKDIR + "/mapped/{sample}.wgs.md.bam",
-        ref=REF
+        bai=WORKDIR + "/mapped/{sample}.wgs.md.bam.bai",
+        ref=REF,
+        fai=REF + ".fai"
     output:
         vcf=WORKDIR + f"/germline/{{sample,{WGS_SAMPLE_PATTERN}}}_germline.vcf.gz",
         tbi=WORKDIR + f"/germline/{{sample,{WGS_SAMPLE_PATTERN}}}_germline.vcf.gz.tbi"
