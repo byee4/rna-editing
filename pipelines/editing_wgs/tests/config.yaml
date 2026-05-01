@@ -1,0 +1,52 @@
+WORKDIR: "test_results"
+reference: "tests/refs/genome.fa"
+known_snps: "tests/refs/known_snps.vcf"
+
+# Lightweight paths used by dry-run tests. The files in this directory are
+# intentionally tiny placeholders because the test validates workflow planning,
+# not caller biology or container execution.
+singularity_image_dir: "/tmp/editing_wgs_test_sifs"
+containers:
+  star: "/tmp/editing_wgs_test_sifs/lodei.sif"
+  wgs: "/tmp/editing_wgs_test_sifs/wgs.sif"
+  picard: "/tmp/editing_wgs_test_sifs/picard.sif"
+  samtools: "/tmp/editing_wgs_test_sifs/jacusa2.sif"
+  sprint: "/tmp/editing_wgs_test_sifs/sprint.sif"
+  reditools: "/tmp/editing_wgs_test_sifs/reditools.sif"
+  jacusa2: "/tmp/editing_wgs_test_sifs/jacusa2.sif"
+  deepred: "/tmp/editing_wgs_test_sifs/deepred.sif"
+  editpredict: "/tmp/editing_wgs_test_sifs/editpredict.sif"
+  redinet: "/tmp/editing_wgs_test_sifs/redinet.sif"
+
+samples:
+  wgs_single_end:
+    rna: "tests/raw/wgs_single_end.rna.fastq"
+    wgs: "tests/raw/wgs_single_end.wgs.fastq"
+  wgs_paired_end:
+    rna:
+      - "tests/raw/wgs_paired_end.rna_R1.fastq"
+      - "tests/raw/wgs_paired_end.rna_R2.fastq"
+    wgs:
+      - "tests/raw/wgs_paired_end.wgs_R1.fastq"
+      - "tests/raw/wgs_paired_end.wgs_R2.fastq"
+  external_vcf:
+    rna:
+      - "tests/raw/external_vcf.rna_R1.fastq"
+      - "tests/raw/external_vcf.rna_R2.fastq"
+    variants: "tests/refs/external_variants.vcf.gz"
+  external_bed:
+    rna: "tests/raw/external_bed.rna.fastq"
+    variants: "tests/refs/external_variants.bed.gz"
+
+reditools2:
+  threads: 1
+  min_cov: 1
+
+jacusa2:
+  threads: 1
+  filters: "D,I,S"
+
+redinet:
+  min_coverage: 1
+  ag_frequency: 0.01
+  min_ag_subs: 1

@@ -33,6 +33,17 @@ conda env create -p .conda/editing-wgs-snakemake -f pipelines/editing_wgs/enviro
 conda run -p .conda/editing-wgs-snakemake snakemake --snakefile pipelines/editing_wgs/Snakefile --directory pipelines/editing_wgs --runtime-source-cache-path /private/tmp/editing_wgs_snakemake_source_cache --dry-run --cores 1
 ```
 
+The `tests/` directory beside this Snakefile contains generated dry-run
+fixtures for every supported sample instance type: single-end RNA plus WGS,
+paired-end RNA plus paired-end WGS, paired-end RNA plus an external `.vcf.gz`,
+and single-end RNA plus an external `.bed.gz`. Run the unittest harness from
+the repository root to verify all of those instances still build a Snakemake
+DAG:
+
+```bash
+conda run -p .conda/editing-wgs-snakemake python -m unittest tests/test_editing_wgs_dryrun.py
+```
+
 The config maps each sample to RNA FASTQs plus either WGS FASTQs or an external
 variant file. Each `rna` or `wgs` entry can be either a single FASTQ path for
 single-end data or a two-item list for paired R1/R2 data. External variant files
@@ -53,7 +64,10 @@ samples:
 ```
 
 The workflow passes those one- or two-file FASTQ lists directly to STAR and
-BWA-MEM. Samples with WGS require germline VCF creation at
+BWA-MEM. Before any RNA alignment runs, STAR builds a shared genome index at
+`{reference}_idx` from the configured reference FASTA, so `reference` should
+point to the FASTA file rather than a prebuilt STAR index directory. Samples
+with WGS require germline VCF creation at
 `results/germline/{sample}_germline.vcf.gz`, and that generated VCF is used by
 variant-aware editing rules. Samples with external variants skip WGS-only rules
 and do not schedule workflow-generated VCF outputs. Downstream caller rules
@@ -73,7 +87,7 @@ Primary outputs include:
 - `results/germline/{sample}_germline.vcf.gz`: WGS-only germline SNVs from `{sample}.wgs.md.bam` for samples with WGS.
 
 Container paths and caller thresholds are defined in `config.yaml`; existing
-local SIFs cover STAR through `lodei.sif`, REDItools, JACUSA2, SPRINT, DeepRED,
+local SIFs cover STAR indexing and alignment through `lodei.sif`, REDItools, JACUSA2, SPRINT, DeepRED,
 editPredict, and REDI-NET. The WGS and Picard images need to be built from
 `containers/wgs` and `containers/picard` before a full production run:
 
@@ -85,5 +99,6 @@ Use `reditools2.min_cov` for both DNA/RNA and RNA-only REDItools2 coverage, and
 the `redinet` block to tune REDI-NET minimum coverage, A-to-G frequency, and
 minimum A-to-G substitution count. DNA coverage and germline variant rules are
 restricted to the MD-tagged WGS BAM path, `results/mapped/{sample}.wgs.md.bam`,
-so they are not scheduled for RNA BAMs. Real runs require the configured FASTQs,
-reference FASTA, and STAR genome index at `refs/genome.fa_idx`.
+so they are not scheduled for RNA BAMs. Real runs require the configured FASTQs
+and reference FASTA; the workflow generates the STAR genome index at
+`refs/genome.fa_idx`.
