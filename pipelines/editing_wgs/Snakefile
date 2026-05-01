@@ -2,6 +2,7 @@ configfile: "config.yaml"
 
 import os
 import re
+import math
 
 # Global Variables
 REF = config["reference"]
@@ -100,6 +101,22 @@ def editpredict_variant_arg(variants):
         if str(variant).endswith(".vcf.gz"):
             return f"--vcf {variant}"
     return ""
+
+
+def fasta_sequence_length(path):
+    """Return the total sequence length represented in a FASTA file."""
+    total = 0
+    with open(path, "r", encoding="utf-8") as handle:
+        for line in handle:
+            if not line.startswith(">"):
+                total += len(line.strip())
+    return total
+
+
+def star_genome_sa_index_nbases(wildcards, input):
+    """Return STAR's recommended SA index size for the configured reference."""
+    genome_length = max(fasta_sequence_length(input.ref), 1)
+    return max(1, min(14, int(math.log2(genome_length) / 2 - 1)))
 
 
 WGS_SAMPLES = [sample for sample in SAMPLES if has_wgs(sample)]

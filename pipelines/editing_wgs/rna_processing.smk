@@ -15,10 +15,13 @@ rule star_genome_generate:
     log:
         stdout=WORKDIR + "/logs/star_genome_generate.out",
         stderr=WORKDIR + "/logs/star_genome_generate.err"
+    params:
+        genome_sa_index_nbases=star_genome_sa_index_nbases
     shell:
         "mkdir -p {output.idx} && "
         "STAR --runThreadN {threads} --runMode genomeGenerate "
         "--genomeDir {output.idx} --genomeFastaFiles {input.ref} "
+        "--genomeSAindexNbases {params.genome_sa_index_nbases} "
         "1> {log.stdout} 2> {log.stderr}"
 
 
