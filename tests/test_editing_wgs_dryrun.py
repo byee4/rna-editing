@@ -1,4 +1,5 @@
 import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -12,33 +13,38 @@ class EditingWgsDryRunTest(unittest.TestCase):
     """Dry-run tests for all configured editing_wgs sample branches."""
 
     def test_all_sample_instance_types_are_schedulable(self):
-        """WGS, external VCF, and external BED sample instances build a DAG."""
-        result = subprocess.run(
-            [
-                str(SNAKEMAKE),
-                "--snakefile",
-                str(PIPELINE_DIR / "Snakefile"),
-                "--directory",
-                str(PIPELINE_DIR),
-                "--configfile",
-                str(PIPELINE_DIR / "tests" / "config.yaml"),
-                "--replace-workflow-config",
-                "--runtime-source-cache-path",
-                "/private/tmp/editing_wgs_snakemake_source_cache",
-                "--dry-run",
-                "--cores",
-                "1",
-            ],
-            cwd=REPO_ROOT,
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            check=False,
-        )
+        """All sample branches build a DAG, including the shared STAR index."""
+        with tempfile.TemporaryDirectory(
+            prefix="editing_wgs_snakemake_source_cache_",
+            dir="/private/tmp",
+        ) as source_cache:
+            result = subprocess.run(
+                [
+                    str(SNAKEMAKE),
+                    "--snakefile",
+                    str(PIPELINE_DIR / "Snakefile"),
+                    "--directory",
+                    str(PIPELINE_DIR),
+                    "--configfile",
+                    str(PIPELINE_DIR / "tests" / "config.yaml"),
+                    "--replace-workflow-config",
+                    "--runtime-source-cache-path",
+                    source_cache,
+                    "--dry-run",
+                    "--cores",
+                    "1",
+                ],
+                cwd=REPO_ROOT,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                check=False,
+            )
 
         self.assertEqual(result.returncode, 0, result.stdout)
-        self.assertIn("total                        45", result.stdout)
+        self.assertIn("total                        46", result.stdout)
         self.assertIn("bwa_mem_wgs                   2", result.stdout)
+        self.assertIn("star_genome_generate          1", result.stdout)
         self.assertIn("star_align_rna                4", result.stdout)
         self.assertIn("editpredict_filter            4", result.stdout)
 

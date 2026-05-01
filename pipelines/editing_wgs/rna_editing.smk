@@ -1,6 +1,7 @@
 # --- RNA Editing Detection (DNA-RNA Comparison) ---
 
-# REDItools2: The DNA-RNA script uses genomic reads to purge SNPs [9, 20, 21]
+# REDItools DNA/RNA mode uses genomic reads to purge likely SNPs [9, 20, 21].
+# Sources: GitHub https://github.com/BioinfoUNIBA/REDItools; publication https://doi.org/10.1093/bioinformatics/btt287
 rule reditools2_dnarna:
     input:
         rna_bam=WORKDIR + "/dedup/{sample}.rna.bam",
@@ -27,7 +28,8 @@ rule reditools2_dnarna:
         "1> {log.stdout} 2> {log.stderr}"
 
 
-# JACUSA2: call-2 mode in RDD (RNA-DNA Difference) mode [22, 23]
+# JACUSA2 call-2 compares RNA and DNA BAMs for RNA-DNA differences [22, 23].
+# Sources: GitHub https://github.com/dieterich-lab/JACUSA2; publication https://doi.org/10.1186/s13059-022-02676-0
 rule jacusa2_dnarna:
     input:
         rna_bam=WORKDIR + "/mapped/{sample}.rna.md.bam",
@@ -55,6 +57,7 @@ rule jacusa2_dnarna:
 # --- RNA-only Editing Detection and Classification ---
 
 # SPRINT takes coordinate-sorted BAMs and reports RNA editing candidates.
+# Sources: GitHub https://github.com/jumphone/SPRINT; publication https://doi.org/10.1093/bioinformatics/btx473
 rule sprint_from_bam:
     input:
         bam=get_rna_bam,
@@ -77,6 +80,7 @@ rule sprint_from_bam:
 
 
 # REDItools2 serial mode runs RNA-only candidate discovery from the RNA BAM.
+# Sources: GitHub https://github.com/BioinfoUNIBA/REDItools2; publication https://doi.org/10.1186/s12859-020-03562-x
 rule reditools2_serial:
     input:
         bam=get_rna_bam,
@@ -101,7 +105,8 @@ rule reditools2_serial:
         "1> {log.stdout} 2> {log.stderr}"
 
 
-# DeepRED scores SPRINT editing candidates with the configured DeepRED image.
+# DeepRed scores SPRINT editing candidates with the configured DeepRed image.
+# Sources: GitHub https://github.com/wenjiegroup/DeepRed; publication https://doi.org/10.1038/s41598-018-24298-y
 rule deepred_predict:
     input:
         snvs=WORKDIR + "/sprint/{sample}/regular.res"
@@ -127,7 +132,8 @@ rule deepred_predict:
         "1> {log.stdout} 2> {log.stderr}"
 
 
-# editPredict filters and scores SPRINT candidates against the reference genome.
+# EditPredict filters and scores SPRINT candidates against the reference genome.
+# Sources: GitHub https://github.com/wjd198605/EditPredict; publication https://doi.org/10.1016/j.ygeno.2021.09.016
 rule editpredict_filter:
     input:
         ref=REF,
@@ -155,7 +161,8 @@ rule editpredict_filter:
         "1>> {log.stdout} 2>> {log.stderr}"
 
 
-# REDI-NET classifies REDItools2 serial output into candidate editing classes.
+# REDInet classifies REDItools2 serial output into candidate editing classes.
+# Sources: GitHub https://github.com/BioinfoUNIBA/REDInet; publication https://doi.org/10.1093/bib/bbaf107
 rule redinet_classify:
     input:
         reditable=WORKDIR + "/reditools2/{sample}.tsv",
