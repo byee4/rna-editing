@@ -42,11 +42,12 @@ class EditingWgsDryRunTest(unittest.TestCase):
             )
 
         self.assertEqual(result.returncode, 0, result.stdout)
-        self.assertIn("total                        60", result.stdout)
+        self.assertIn("total                        58", result.stdout)
         self.assertIn("bwa_index                     1", result.stdout)
         self.assertIn("samtools_faidx                1", result.stdout)
         self.assertIn("samtools_index                8", result.stdout)
         self.assertIn("sprint_mapq_bam               4", result.stdout)
+        self.assertIn("reditools_for_redinet         4", result.stdout)
         self.assertIn("bwa_mem_wgs                   2", result.stdout)
         self.assertIn("star_genome_generate          1", result.stdout)
         self.assertIn("star_align_rna                4", result.stdout)

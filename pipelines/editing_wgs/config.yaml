@@ -34,15 +34,12 @@ samples:
       - "raw/p2_rna_R2.fastq.gz"
     variants: "refs/p2_variants.vcf.gz"
 
-reditools2:
-  threads: 24
-  min_cov: 10 # Minimum coverage for DNA-RNA and RNA-only serial modes [8, 9]
-
 jacusa2:
   threads: 8
   filters: "D,I,S" # recommended filters for read ends and introns [10, 11]
 
 redinet:
+  reditools_threads: 4
   min_coverage: 10
   ag_frequency: 0.01
   min_ag_subs: 2

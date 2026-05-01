@@ -3,11 +3,11 @@ set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-Usage: redinet_classify --reditable TABLE --reference FASTA --output TABLE [options]
+Usage: redinet_classify --reditable OUTTABLE.GZ --reference FASTA --output TABLE [options]
 
 Runs REDInet light inference when the upstream Package/Utilities script and
-model are available in /opt/redinet. The input should be a REDItools-derived
-table in the format accepted by REDInet.
+model are available in /opt/redinet. The input must be a bgzip-compressed,
+tabix-indexed REDItools outTable file.
 
 Options:
   --min-coverage N      Minimum coverage threshold.
@@ -39,6 +39,16 @@ done
 if [ -z "$reditable" ] || [ -z "$reference" ] || [ -z "$output" ]; then
   usage >&2
   exit 2
+fi
+
+if [ ! -s "$reditable" ]; then
+  echo "Missing REDInet input table: $reditable" >&2
+  exit 66
+fi
+
+if [ ! -s "${reditable}.tbi" ]; then
+  echo "Missing REDInet tabix index: ${reditable}.tbi" >&2
+  exit 66
 fi
 
 script="/opt/redinet/Package/Utilities/REDInet_Inference_light_ver.py"

@@ -125,10 +125,8 @@ WGS_SAMPLE_PATTERN = "|".join(re.escape(sample) for sample in WGS_SAMPLES) or r"
 
 rule all:
     input:
-        expand(WORKDIR + "/reditools2_dnarna/{sample}.tsv", sample=WGS_SAMPLES),
         expand(WORKDIR + "/jacusa2_dnarna/{sample}.out", sample=WGS_SAMPLES),
         expand(WORKDIR + "/sprint/{sample}/regular.res", sample=SAMPLES),
-        expand(WORKDIR + "/reditools2/{sample}.tsv", sample=SAMPLES),
         expand(WORKDIR + "/deepred/{sample}_predictions.txt", sample=SAMPLES),
         expand(WORKDIR + "/editpredict/{sample}_scores.txt", sample=SAMPLES),
         expand(WORKDIR + "/redinet/{sample}_classified.txt", sample=SAMPLES),

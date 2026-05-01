@@ -1,35 +1,5 @@
 # --- RNA Editing Detection (DNA-RNA Comparison) ---
 
-# REDItools DNA/RNA mode uses genomic reads to purge likely SNPs [9, 20, 21].
-# Sources: GitHub https://github.com/BioinfoUNIBA/REDItools; publication https://doi.org/10.1093/bioinformatics/btt287
-rule reditools2_dnarna:
-    input:
-        rna_bam=WORKDIR + "/dedup/{sample}.rna.bam",
-        rna_bai=WORKDIR + "/dedup/{sample}.rna.bam.bai",
-        wgs_bam=WORKDIR + "/dedup/{sample}.wgs.bam",
-        wgs_bai=WORKDIR + "/dedup/{sample}.wgs.bam.bai",
-        ref=REF,
-        fai=REF + ".fai"
-    output:
-        table=WORKDIR + f"/reditools2_dnarna/{{sample,{WGS_SAMPLE_PATTERN}}}.tsv"
-    wildcard_constraints:
-        sample=WGS_SAMPLE_PATTERN
-    threads: config["reditools2"]["threads"]
-    container: container_for("reditools")
-    resources:
-        mem_mb=lambda wildcards, attempt: 4096 * (1.5 ** (attempt - 1)),
-        runtime=lambda wildcards, attempt: 12000 * (2 ** (attempt - 1)) # Multi-day runtime for large WGS data [16]
-    params:
-        min_cov=config["reditools2"]["min_cov"]
-    log:
-        stdout=WORKDIR + "/logs/{sample}.reditools2.out",
-        stderr=WORKDIR + "/logs/{sample}.reditools2.err"
-    shell:
-        "python /opt/reditools/main/REDItoolDnaRna.py -i {input.rna_bam} -j {input.wgs_bam} "
-        "-f {input.ref} -o {output.table} "
-        "-c {params.min_cov},{params.min_cov} -q 30,30 -m 30,255 -v 3 "
-        "1> {log.stdout} 2> {log.stderr}"
-
 
 # JACUSA2 call-2 compares RNA and DNA BAMs for RNA-DNA differences [22, 23].
 # Sources: GitHub https://github.com/dieterich-lab/JACUSA2; publication https://doi.org/10.1186/s13059-022-02676-0
@@ -110,30 +80,48 @@ rule sprint_from_bam:
         "1> {log.stdout} 2> {log.stderr}"
 
 
-# REDItools2 serial mode runs RNA-only candidate discovery from the RNA BAM.
-# Sources: GitHub https://github.com/BioinfoUNIBA/REDItools2; publication https://doi.org/10.1186/s12859-020-03562-x
-rule reditools2_serial:
+# REDItools v1 extracts low-stringency RNA-only candidates for REDInet.
+# Sources: GitHub https://github.com/BioinfoUNIBA/REDItools; REDInet https://github.com/BioinfoUNIBA/REDInet
+rule reditools_for_redinet:
     input:
         bam=get_rna_bam,
-        ref=REF
+        bai=WORKDIR + "/dedup/{sample}.rna.bam.bai",
+        ref=REF,
+        fai=REF + ".fai"
     output:
-        table=WORKDIR + "/reditools2/{sample}.tsv"
-    threads: config["reditools2"]["threads"]
+        reditable=WORKDIR + "/redinet/{sample}/outTable.gz",
+        tbi=WORKDIR + "/redinet/{sample}/outTable.gz.tbi"
+    threads: config["redinet"]["reditools_threads"]
     resources:
-        mem_mb=lambda wildcards, attempt: 1350 * (1.5 ** (attempt - 1)),
+        mem_mb=lambda wildcards, attempt: 4096 * (1.5 ** (attempt - 1)),
         runtime=lambda wildcards, attempt: 12910 * (2 ** (attempt - 1))
-    benchmark: WORKDIR + "/benchmarks/{sample}.reditools2_serial.txt"
+    benchmark: WORKDIR + "/benchmarks/{sample}.reditools_for_redinet.txt"
     container: container_for("reditools")
     log:
-        stdout=WORKDIR + "/logs/{sample}.reditools2_serial.out",
-        stderr=WORKDIR + "/logs/{sample}.reditools2_serial.err"
+        stdout=WORKDIR + "/logs/{sample}.reditools_for_redinet.out",
+        stderr=WORKDIR + "/logs/{sample}.reditools_for_redinet.err"
     params:
-        min_cov=config["reditools2"]["min_cov"]
+        outdir=WORKDIR + "/redinet/{sample}"
     shell:
-        "python /opt/reditools2/src/cineca/reditools.py "
-        "-f {input.bam} -r {input.ref} -o {output.table} "
-        "-l {params.min_cov} -V "
-        "1> {log.stdout} 2> {log.stderr}"
+        r"""
+        set -euo pipefail
+        rm -rf {params.outdir}
+        mkdir -p {params.outdir}
+        python /opt/reditools/main/REDItoolDnaRna.py \
+            -o {params.outdir} -i {input.bam} -f {input.ref} \
+            -t {threads} \
+            -c 0,1 -m 0,255 -v 1 -q 0,30 \
+            -e -n 0.0 -N 0.0 -u -l -p -s 2 -g 2 -S \
+            1> {log.stdout} 2> {log.stderr}
+        outtable=$(find {params.outdir} -path "*/outTable_*" -type f | head -n 1)
+        if [ -z "$outtable" ]; then
+            echo "REDItools did not create an outTable_* file in {params.outdir}" >&2
+            exit 1
+        fi
+        bgzip -f "$outtable"
+        mv -f "${{outtable}}.gz" {output.reditable}
+        tabix -s 1 -b 2 -e 2 -c R {output.reditable}
+        """
 
 
 # DeepRed scores SPRINT editing candidates with the configured DeepRed image.
@@ -192,11 +180,12 @@ rule editpredict_filter:
         "1>> {log.stdout} 2>> {log.stderr}"
 
 
-# REDInet classifies REDItools2 serial output into candidate editing classes.
+# REDInet classifies tabix-indexed REDItools candidate tables into editing classes.
 # Sources: GitHub https://github.com/BioinfoUNIBA/REDInet; publication https://doi.org/10.1093/bib/bbaf107
 rule redinet_classify:
     input:
-        reditable=WORKDIR + "/reditools2/{sample}.tsv",
+        reditable=WORKDIR + "/redinet/{sample}/outTable.gz",
+        tbi=WORKDIR + "/redinet/{sample}/outTable.gz.tbi",
         ref=REF
     output:
         classified=WORKDIR + "/redinet/{sample}_classified.txt"
