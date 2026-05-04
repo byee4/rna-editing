@@ -95,9 +95,13 @@ Successful runs create:
 
 Some tools are old and require legacy runtimes. REDItools and SPRINT use Python
 2.7; SPRINT compiles BWA 0.7.12 and SAMtools 1.2 from source; SAILOR compiles
-SAMtools 1.3.1 and BCFtools 1.2 from source. RED is a Java/R/MySQL application
-distributed as a desktop-style jar, so its validation checks the runtime stack
-and jar contents rather than attempting to open the GUI.
+SAMtools 1.3.1 and BCFtools 1.2 from source. JACUSA2 uses mamba for OpenJDK
+17, curl, and SAMtools, then downloads the self-contained upstream release JAR
+to `/opt/jacusa2/jacusa2.jar`. The release JAR is required because the
+conda/bioconda Maven artifact is a thin library JAR without a `Main-Class`
+manifest entry or bundled runtime dependencies. RED is a Java/R/MySQL
+application distributed as a desktop-style jar, so its validation checks the
+runtime stack and jar contents rather than attempting to open the GUI.
 
 The DeepRed context is a mamba-managed runtime scaffold because the public
 upstream repository contains MATLAB/PBS driver scripts but not the trained
