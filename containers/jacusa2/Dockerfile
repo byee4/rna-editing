@@ -1,26 +1,25 @@
-FROM maven:3.9-eclipse-temurin-17 AS build
-
-RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-RUN git clone --depth 1 https://github.com/dieterich-lab/JACUSA2.git /src/jacusa2
-WORKDIR /src/jacusa2
-RUN mvn -DskipTests package \
-    && mkdir -p /opt/jacusa2 \
-    && find target -maxdepth 1 -type f -name "*.jar" -print -quit | xargs -I{} cp {} /opt/jacusa2/jacusa2.jar
-
-FROM eclipse-temurin:17-jre-jammy
+FROM condaforge/miniforge3:latest
 
 LABEL org.opencontainers.image.title="JACUSA2"
-LABEL org.opencontainers.image.description="Java 17 runtime with JACUSA2 and SAMtools for RNA editing and variant comparison workflows."
+LABEL org.opencontainers.image.description="Conda runtime with the self-contained JACUSA2 release JAR, OpenJDK 17, and SAMtools for RNA editing and variant comparison workflows."
 
-ENV DEBIAN_FRONTEND=noninteractive
+USER root
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        ca-certificates \
+RUN mamba install -y -n base -c conda-forge -c bioconda \
+        openjdk=17 \
+        curl \
         samtools \
-    && rm -rf /var/lib/apt/lists/*
+    && mamba clean -a -y \
+    && mkdir -p /opt/jacusa2 \
+    && curl -fL \
+        "https://github.com/dieterich-lab/JACUSA2/releases/download/v2.1.16/JACUSA_v2.1.16.jar" \
+        -o /opt/jacusa2/jacusa2.jar \
+    && echo "bf78cffe7e67c87b4f7ef2bef809c1fd0cab903edec8b32d6850e4827a587df6  /opt/jacusa2/jacusa2.jar" \
+        | sha256sum -c - \
+    && test -s /opt/jacusa2/jacusa2.jar
 
-COPY --from=build /opt/jacusa2/jacusa2.jar /opt/jacusa2/jacusa2.jar
+ENV PATH="/opt/conda/bin:${PATH}"
+
 COPY validate.sh /usr/local/bin/validate-jacusa2
 RUN chmod +x /usr/local/bin/validate-jacusa2
 
