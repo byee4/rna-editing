@@ -38,6 +38,12 @@ jacusa2:
   threads: 8
   filters: "D,I,S" # recommended filters for read ends and introns [10, 11]
 
+deepred:
+  # Optional path to a mounted MATLAB bin directory, for example:
+  # /usr/local/MATLAB/R2024b/bin
+  # Leave empty when MATLAB is already on PATH inside the container.
+  matlab_bin_dir: ""
+
 redinet:
   reditools_threads: 4
   min_coverage: 10

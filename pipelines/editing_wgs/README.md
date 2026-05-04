@@ -106,7 +106,9 @@ TOOLS="wgs picard sprint deepred editpredict redinet" scripts/validate_container
 
 Use the `redinet` block to tune the REDItools candidate-extraction thread count
 plus REDInet minimum coverage, A-to-G frequency, and minimum A-to-G substitution
-count. DNA coverage and germline variant rules are restricted to the MD-tagged
-WGS BAM path, `results/mapped/{sample}.wgs.md.bam`, so they are not scheduled
-for RNA BAMs. Real runs require the configured FASTQs and reference FASTA; the
-workflow generates the STAR genome index at `refs/genome.fa_idx`.
+count. Use `deepred.matlab_bin_dir` when MATLAB is mounted into the DeepRed
+container but its `matlab` executable is not already on `PATH`. DNA coverage
+and germline variant rules are restricted to the MD-tagged WGS BAM path,
+`results/mapped/{sample}.wgs.md.bam`, so they are not scheduled for RNA BAMs.
+Real runs require the configured FASTQs and reference FASTA; the workflow
+generates the STAR genome index at `refs/genome.fa_idx`.
