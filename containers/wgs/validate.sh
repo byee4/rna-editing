@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-bwa 2>&1 | head -n 3
+bwa 2>&1 | head -n 3 || true
 samtools --version | head -n 1
 bcftools --version | head -n 1
 tabix --version 2>&1 | head -n 1
