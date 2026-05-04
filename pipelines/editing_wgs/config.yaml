@@ -1,38 +1,76 @@
-WORKDIR: "results"
-reference: "refs/genome.fa"
-known_snps: "refs/known_snps.vcf" # Optional database filter
+WORKDIR: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/results/editing_wgs_data_full"
+reference: "/tscc/projects/ps-yeolab3/bay001/annotations/GRCh38/GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta"
+star_index: "GRCh38_no_alt_analysis_set_GCA_000001405.idx"
+# known_snps: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/refs/known_snps.vcf" # Optional database filter
 # Optional cohort-wide variant file for samples without WGS. Use either a
 # string applied to every non-WGS sample or a sample-to-file mapping.
 # variants: "refs/cohort_variants.vcf.gz"
 
-# Singularity/Apptainer images used by this workflow. Existing images live in
-# /Volumes/X9Pro/container_data/singularity_images; wgs.sif and picard.sif need
-# to be built from their Docker contexts before production execution.
-singularity_image_dir: "/Volumes/X9Pro/container_data/singularity_images"
+# Singularity/Apptainer images used by this workflow. Paths below point to the
+# repository singularity/ directory; wgs.sif and picard.sif may need to be
+# built from their Docker contexts before production execution.
+singularity_image_dir: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity"
 containers:
-  star: "/Volumes/X9Pro/container_data/singularity_images/lodei.sif"
-  wgs: "/Volumes/X9Pro/container_data/singularity_images/wgs.sif"
-  picard: "/Volumes/X9Pro/container_data/singularity_images/picard.sif"
-  samtools: "/Volumes/X9Pro/container_data/singularity_images/jacusa2.sif"
-  sprint: "/Volumes/X9Pro/container_data/singularity_images/sprint.sif"
-  reditools: "/Volumes/X9Pro/container_data/singularity_images/reditools.sif"
-  jacusa2: "/Volumes/X9Pro/container_data/singularity_images/jacusa2.sif"
-  deepred: "/Volumes/X9Pro/container_data/singularity_images/deepred.sif"
-  editpredict: "/Volumes/X9Pro/container_data/singularity_images/editpredict.sif"
-  redinet: "/Volumes/X9Pro/container_data/singularity_images/redinet.sif"
+  star: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/lodei.sif"
+  wgs: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/wgs.sif"
+  picard: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/picard.sif"
+  samtools: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/jacusa2.sif"
+  sprint: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/sprint.sif"
+  reditools: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/reditools.sif"
+  jacusa2: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/jacusa2.sif"
+  deepred: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/deepred.sif"
+  editpredict: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/editpredict.sif"
+  redinet: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/redinet.sif"
 
 # Mapping RNA data plus either WGS FASTQs or an external variant file per
-# sample. Use a string for single-end reads, or a two-item list for paired-end
-# reads. External variants must be .vcf.gz or .bed.gz.
+# sample. Use a string for one FASTQ, or a one/two-item list for FASTQ inputs.
+# External variants must be .vcf.gz or .bed.gz.
+# FASTQ modality checks (from files present in data/):
+# - HEK293_WGS/SRR10129632 is paired-end WGS (R1/R2).
+# - MULTI_CELL_RNA/SRR10319891-96 are single-end RNA.
+# - HEK293T_RNA/SRR5564268/72/73/74/75/76 are paired-end RNA (R1/R2).
+# - HEK293_NANOPORE/SRR9646141 is single-end long-read RNA and not used in
+#   this short-read STAR-based WGS+RNA workflow config.
 samples:
-  patient1:
-    rna: "raw/p1_rna.fastq.gz"
-    wgs: "raw/p1_wgs.fastq.gz"
-  patient2:
+  HEK293_with_WGS:
+    rna: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/MULTI_CELL_RNA/SRR10319891.fastq.gz"
+    wgs:
+      - "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/HEK293_WGS/SRR10129632_1.fastq.gz"
+      - "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/HEK293_WGS/SRR10129632_2.fastq.gz"
+  HEK293_RNA_Rep2:
+    rna: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/MULTI_CELL_RNA/SRR10319892.fastq.gz"
+  HEK293_RNA_Rep3:
+    rna: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/MULTI_CELL_RNA/SRR10319893.fastq.gz"
+  HEK293_RNA_Rep4:
+    rna: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/MULTI_CELL_RNA/SRR10319894.fastq.gz"
+  HEK293_RNA_Rep5:
+    rna: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/MULTI_CELL_RNA/SRR10319895.fastq.gz"
+  HEK293_RNA_Rep6:
+    rna: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/MULTI_CELL_RNA/SRR10319896.fastq.gz"
+  HEK293T_WT_RNA_Rep1:
     rna:
-      - "raw/p2_rna_R1.fastq.gz"
-      - "raw/p2_rna_R2.fastq.gz"
-    variants: "refs/p2_variants.vcf.gz"
+      - "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/HEK293T_RNA/SRR5564274_1.fastq.gz"
+      - "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/HEK293T_RNA/SRR5564274_2.fastq.gz"
+  HEK293T_WT_RNA_Rep2:
+    rna:
+      - "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/HEK293T_RNA/SRR5564275_1.fastq.gz"
+      - "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/HEK293T_RNA/SRR5564275_2.fastq.gz"
+  HEK293T_WT_RNA_Rep3:
+    rna:
+      - "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/HEK293T_RNA/SRR5564276_1.fastq.gz"
+      - "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/HEK293T_RNA/SRR5564276_2.fastq.gz"
+  HEK293T_ADAR1KO_RNA_Rep1:
+    rna:
+      - "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/HEK293T_RNA/SRR5564272_1.fastq.gz"
+      - "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/HEK293T_RNA/SRR5564272_2.fastq.gz"
+  HEK293T_ADAR1KO_RNA_Rep2:
+    rna:
+      - "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/HEK293T_RNA/SRR5564273_1.fastq.gz"
+      - "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/HEK293T_RNA/SRR5564273_2.fastq.gz"
+  HEK293T_ADAR1KO_RNA_Rep3:
+    rna:
+      - "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/HEK293T_RNA/SRR5564268_1.fastq.gz"
+      - "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/HEK293T_RNA/SRR5564268_2.fastq.gz"
 
 jacusa2:
   threads: 8

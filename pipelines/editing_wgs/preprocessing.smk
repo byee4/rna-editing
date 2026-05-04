@@ -10,6 +10,9 @@ rule mark_duplicates:
         metrics=WORKDIR + "/dedup/{sample}.{type}.metrics.txt"
     wildcard_constraints:
         type="rna|wgs"
+    resources:
+        mem_mb=lambda wildcards, attempt: 32000 * (1.5 ** (attempt - 1)),
+        runtime=lambda wildcards, attempt: 180 * (2 ** (attempt - 1))
     container: container_for("picard")
     log:
         stderr=WORKDIR + "/logs/{sample}.{type}.mark_duplicates.err"
@@ -29,6 +32,9 @@ rule samtools_calmd:
         bam=WORKDIR + "/mapped/{sample}.{type}.md.bam"
     wildcard_constraints:
         type="rna|wgs"
+    resources:
+        mem_mb=lambda wildcards, attempt: 32000 * (1.5 ** (attempt - 1)),
+        runtime=lambda wildcards, attempt: 180 * (2 ** (attempt - 1))
     container: container_for("samtools")
     log:
         stderr=WORKDIR + "/logs/{sample}.{type}.calmd.err"

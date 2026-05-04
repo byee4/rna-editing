@@ -49,7 +49,18 @@ def main() -> int:
         default=os.environ.get("DEEPRED_ROOT", "/opt/DeepRed"),
         help="Directory containing the upstream DeepRed code directory or a parent with ./DeepRed.",
     )
+    parser.add_argument("--matlab-bin-dir", help="Path to the directory containing the 'matlab' binary")
     args = parser.parse_args()
+
+    # 1. Inject MATLAB into the container's PATH if provided
+    if args.matlab_bin_dir:
+        os.environ["PATH"] = f"{args.matlab_bin_dir}{os.pathsep}{os.environ.get('PATH', '')}"
+
+    # 2. Hard validation before running the Perl scripts
+    if not shutil.which("matlab"):
+        print("ERROR: 'matlab' executable not found in PATH. Ensure MATLAB is mounted "
+              "and the correct path is passed via --matlab-bin-dir.", file=sys.stderr)
+        return 1
 
     run_root = run_root_for(args.deepred_root)
     code_root = (
