@@ -54,7 +54,7 @@ rule sprint_mapq_bam:
         samtools view -h {input.bam} > {params.in_sam} 2> {log.stderr}
         python /opt/sprint/utilities/changesammapq.py {params.in_sam} {params.mapq_sam} \
             1> {log.stdout} 2>> {log.stderr}
-        samtools sort -@ {threads} -o {output.bam} {params.mapq_sam} 2>> {log.stderr}
+        samtools sort -@ {threads} -T {params.indir}/tmp -o {output.bam} {params.mapq_sam} 2>> {log.stderr}
         rm -f {params.in_sam} {params.mapq_sam}
         """
 
@@ -64,7 +64,7 @@ rule sprint_from_bam:
         bam=WORKDIR + "/sprint_mapq/{sample}.bam",
         ref=REF
     output:
-        res=WORKDIR + "/sprint/{sample}/regular.res"
+        res=WORKDIR + "/sprint/{sample}/SPRINT_identified_regular.res"
     resources:
         mem_mb=lambda wildcards, attempt: 12500 * (1.5 ** (attempt - 1)),
         runtime=lambda wildcards, attempt: 1400 * (2 ** (attempt - 1))
@@ -76,7 +76,7 @@ rule sprint_from_bam:
     params:
         outdir=WORKDIR + "/sprint/{sample}"
     shell:
-        "sprint_from_bam {input.bam} {input.ref} {params.outdir} samtools "
+        "python /opt/sprint/sprint_from_bam.py {input.bam} {input.ref} {params.outdir} samtools "
         "1> {log.stdout} 2> {log.stderr}"
 
 
@@ -128,7 +128,7 @@ rule reditools_for_redinet:
 # Sources: GitHub https://github.com/wenjiegroup/DeepRed; publication https://doi.org/10.1038/s41598-018-24298-y
 rule deepred_predict:
     input:
-        snvs=WORKDIR + "/sprint/{sample}/regular.res"
+        snvs=WORKDIR + "/sprint/{sample}/SPRINT_identified_regular.res"
     output:
         vcf=temp(WORKDIR + "/deepred/{sample}.gatk.raw.vcf"),
         pred=WORKDIR + "/deepred/{sample}_predictions.txt"
@@ -157,7 +157,7 @@ rule deepred_predict:
 rule editpredict_filter:
     input:
         ref=REF,
-        pos=WORKDIR + "/sprint/{sample}/regular.res",
+        pos=WORKDIR + "/sprint/{sample}/SPRINT_identified_regular.res",
         variants=variant_input
     output:
         positions=temp(WORKDIR + "/editpredict/{sample}_positions.tsv"),
@@ -189,7 +189,7 @@ rule redinet_classify:
         tbi=WORKDIR + "/redinet/{sample}/outTable.gz.tbi",
         ref=REF
     output:
-        classified=WORKDIR + "/redinet/{sample}_classified.txt"
+        classified=WORKDIR + "/redinet/{sample}_classified.txt.predictions.tsv"
     resources:
         mem_mb=lambda wildcards, attempt: 4096 * (1.5 ** (attempt - 1)),
         runtime=lambda wildcards, attempt: 120 * (2 ** (attempt - 1))
@@ -203,7 +203,16 @@ rule redinet_classify:
         ag_frequency=config["redinet"]["ag_frequency"],
         min_ag_subs=config["redinet"]["min_ag_subs"]
     shell:
-        "redinet_classify --reditable {input.reditable} --reference {input.ref} "
-        "--output {output.classified} --min-coverage {params.min_coverage} "
-        "--ag-frequency {params.ag_frequency} --min-ag-subs {params.min_ag_subs} "
-        "1> {log.stdout} 2> {log.stderr}"
+        r"""
+        set -euo pipefail
+        nrows=$(zcat {input.reditable} | tail -n +2 | wc -l)
+        if [ "$nrows" -eq 0 ]; then
+            echo "outTable.gz has no data rows; skipping classification" > {log.stdout}
+            touch {output.classified}
+        else
+            redinet_classify --reditable {input.reditable} --reference {input.ref} \
+                --output {output.classified} --min-coverage {params.min_coverage} \
+                --ag-frequency {params.ag_frequency} --min-ag-subs {params.min_ag_subs} \
+                1> {log.stdout} 2> {log.stderr}
+        fi
+        """

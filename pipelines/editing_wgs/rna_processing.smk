@@ -47,5 +47,6 @@ rule star_align_rna:
     shell:
         "STAR --runThreadN {threads} --genomeDir {input.star_index} --readFilesIn {input.fastq} "
         "--readFilesCommand zcat --outSAMtype BAM SortedByCoordinate "
+        "--outSAMattrRGline ID:{wildcards.sample} SM:{wildcards.sample} "
         "--outFileNamePrefix {params.prefix} 1> {log.stdout} 2> {log.stderr} && "
         "mv -f {params.star_bam} {output.bam}"

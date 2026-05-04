@@ -7,8 +7,9 @@ import shlex
 
 # Global Variables
 REF = config["reference"]
-STAR_INDEX = REF + "_idx"
+STAR_INDEX = config["star_index"]
 WORKDIR = config["WORKDIR"]
+os.makedirs(WORKDIR + "/logs", exist_ok=True)
 SAMPLES = list(config["samples"].keys())
 SIF_DIR = config.get("singularity_image_dir", "/Volumes/X9Pro/container_data/singularity_images")
 CONTAINERS = config.get("containers", {})
@@ -133,10 +134,10 @@ WGS_SAMPLE_PATTERN = "|".join(re.escape(sample) for sample in WGS_SAMPLES) or r"
 rule all:
     input:
         expand(WORKDIR + "/jacusa2_dnarna/{sample}.out", sample=WGS_SAMPLES),
-        expand(WORKDIR + "/sprint/{sample}/regular.res", sample=SAMPLES),
+        expand(WORKDIR + "/sprint/{sample}/SPRINT_identified_regular.res", sample=SAMPLES),
         expand(WORKDIR + "/deepred/{sample}_predictions.txt", sample=SAMPLES),
         expand(WORKDIR + "/editpredict/{sample}_scores.txt", sample=SAMPLES),
-        expand(WORKDIR + "/redinet/{sample}_classified.txt", sample=SAMPLES),
+        expand(WORKDIR + "/redinet/{sample}_classified.txt.predictions.tsv", sample=SAMPLES),
         expand(WORKDIR + "/wgs_coverage/{sample}.cov", sample=WGS_SAMPLES),
         expand(WORKDIR + "/germline/{sample}_germline.vcf.gz.tbi", sample=WGS_SAMPLES)
 

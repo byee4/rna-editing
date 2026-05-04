@@ -19,7 +19,8 @@ rule bwa_mem_wgs:
     log:
         stderr=WORKDIR + "/logs/{sample}.bwa_mem.err"
     shell:
-        "bwa mem -t {threads} {input.ref} {input.fastq} 2> {log.stderr} | "
+        "bwa mem -t {threads} -R '@RG\\tID:{wildcards.sample}\\tSM:{wildcards.sample}' "
+        "{input.ref} {input.fastq} 2> {log.stderr} | "
         "samtools sort -@ {threads} -o {output.bam} -"
 
 
