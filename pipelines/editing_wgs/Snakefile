@@ -3,6 +3,7 @@ configfile: "config.yaml"
 import os
 import re
 import math
+import shlex
 
 # Global Variables
 REF = config["reference"]
@@ -101,6 +102,12 @@ def editpredict_variant_arg(variants):
         if str(variant).endswith(".vcf.gz"):
             return f"--vcf {variant}"
     return ""
+
+
+def deepred_matlab_arg():
+    """Return DeepRed's optional MATLAB binary directory argument."""
+    matlab_bin_dir = config.get("deepred", {}).get("matlab_bin_dir")
+    return f"--matlab-bin-dir {shlex.quote(str(matlab_bin_dir))}" if matlab_bin_dir else ""
 
 
 def fasta_sequence_length(path):

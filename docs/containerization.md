@@ -99,13 +99,18 @@ SAMtools 1.3.1 and BCFtools 1.2 from source. RED is a Java/R/MySQL application
 distributed as a desktop-style jar, so its validation checks the runtime stack
 and jar contents rather than attempting to open the GUI.
 
-The DeepRed context is a runtime scaffold because no matching local SIF or
-checked-in upstream implementation/model is available. Its wrapper accepts a
-DeepRed-ready candidate SNV table, stages it in the upstream `Raw_Data/<project>`
-layout next to the `DeepRed` code directory, and runs
-`Preprocess_input_data_for_DeepRed.pl` followed by `Run_DeepRed.pl` when the
-source and model artifacts are installed under `DEEPRED_ROOT` or `/opt/DeepRed`;
-otherwise it fails with a plain-English setup message. EditPredict and REDInet
+The DeepRed context is a mamba-managed runtime scaffold because the public
+upstream repository contains MATLAB/PBS driver scripts but not the trained
+model artifacts needed for production prediction. Its image includes Python,
+Perl, NumPy, pandas, scikit-learn, and the X11 libraries MATLAB commonly needs
+for `-nodisplay` execution (`libXt`, `libXext`, `libXmu`, and `libXpm`, exposed
+from `/opt/conda/lib`). The wrapper accepts a DeepRed-ready candidate SNV table,
+stages it in the upstream `Raw_Data/<project>` layout next to the `DeepRed` code
+directory, and runs `Preprocess_input_data_for_DeepRed.pl` followed by
+`Run_DeepRed.pl` when MATLAB is available on `PATH` and the source/model
+artifacts are installed under `DEEPRED_ROOT` or `/opt/DeepRed`. If MATLAB is
+mounted elsewhere, pass `--matlab-bin-dir` or set `MATLAB_BIN_DIR`; otherwise
+the wrapper fails with a plain-English setup message. EditPredict and REDInet
 include upstream checkouts plus thin wrappers, but their input adapters should
 be reviewed with real workflow data before production use. Picard is packaged
 separately for duplicate marking because no matching Picard SIF exists in the
