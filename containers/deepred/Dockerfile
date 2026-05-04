@@ -1,17 +1,22 @@
-FROM python:3.8-slim
+FROM condaforge/miniforge3:latest
 
 LABEL org.opencontainers.image.title="DeepRed wrapper"
-LABEL org.opencontainers.image.description="Runtime scaffold for DeepRed RNA editing prediction; upstream source/model artifacts must be supplied before production use."
+LABEL org.opencontainers.image.description="Mamba-managed runtime scaffold for DeepRed RNA editing prediction; upstream MATLAB/source/model artifacts must be supplied before production use."
 
-ENV DEBIAN_FRONTEND=noninteractive \
-    PYTHONUNBUFFERED=1
+ENV PYTHONUNBUFFERED=1
+ENV LD_LIBRARY_PATH="/opt/conda/lib"
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        ca-certificates \
-        git \
-    && rm -rf /var/lib/apt/lists/* \
-    && python -m pip install --no-cache-dir --upgrade pip setuptools wheel \
-    && python -m pip install --no-cache-dir numpy pandas scikit-learn
+RUN mamba install -y -n base -c conda-forge \
+        python=3.11 \
+        perl \
+        numpy \
+        pandas \
+        scikit-learn \
+        xorg-libxt \
+        xorg-libxext \
+        xorg-libxmu \
+        xorg-libxpm \
+    && mamba clean -a -y
 
 COPY deepred_predict /usr/local/bin/deepred_predict
 COPY validate.sh /usr/local/bin/validate-deepred

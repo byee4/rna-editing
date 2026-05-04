@@ -143,11 +143,12 @@ rule deepred_predict:
     params:
         vcf_script=DEEPRED_VCF_SCRIPT,
         project=lambda wildcards: wildcards.sample,
-        sample=lambda wildcards: wildcards.sample
+        sample=lambda wildcards: wildcards.sample,
+        matlab_arg=deepred_matlab_arg
     shell:
         "python {params.vcf_script} {input.snvs} {output.vcf} && "
         "deepred_predict --input-vcf {output.vcf} --project {params.project} "
-        "--sample {params.sample} --output {output.pred} "
+        "--sample {params.sample} --output {output.pred} {params.matlab_arg} "
         "1> {log.stdout} 2> {log.stderr}"
 
 
