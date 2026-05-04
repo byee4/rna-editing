@@ -101,10 +101,11 @@ Successful runs create:
 
 Some tools are old and require legacy runtimes. REDItools and SPRINT use Python
 2.7; SPRINT compiles BWA 0.7.12 and SAMtools 1.2 from source; SAILOR compiles
-SAMtools 1.3.1 and BCFtools 1.2 from source. JACUSA2 is installed with mamba
-from conda-forge/bioconda so the SIF contains OpenJDK 17, the executable
-JACUSA2 jar exposed at `/opt/jacusa2/jacusa2.jar`, and SAMtools for the
-`editing_wgs` rules that reuse the same image. RED is a Java/R/MySQL
+SAMtools 1.3.1 and BCFtools 1.2 from source. JACUSA2 uses mamba for OpenJDK
+17, curl, and SAMtools, then downloads the self-contained upstream release JAR
+to `/opt/jacusa2/jacusa2.jar`. The release JAR is required because the
+conda/bioconda Maven artifact is a thin library JAR without a `Main-Class`
+manifest entry or bundled runtime dependencies. RED is a Java/R/MySQL
 application distributed as a desktop-style jar, so its validation checks the
 runtime stack and jar contents rather than attempting to open the GUI.
 
