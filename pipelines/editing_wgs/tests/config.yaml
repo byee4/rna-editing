@@ -42,6 +42,9 @@ jacusa2:
   threads: 1
   filters: "D,I,S"
 
+deepred:
+  matlab_bin_dir: ""
+
 redinet:
   reditools_threads: 1
   min_coverage: 1
