@@ -115,10 +115,14 @@ def main() -> int:
     if args.reference:
         ref_link = os.path.join(run_root, "ucsc.hg19.fasta")
         ref_path = os.path.abspath(args.reference)
-        if os.path.islink(ref_link):
+        try:
             os.remove(ref_link)
-        if not os.path.exists(ref_link):
+        except FileNotFoundError:
+            pass
+        try:
             os.symlink(ref_path, ref_link)
+        except FileExistsError:
+            pass
 
     copy_input_vcf(args.input_vcf, run_root, args.project, args.sample)
     try:
