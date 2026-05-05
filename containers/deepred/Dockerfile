@@ -6,9 +6,10 @@ LABEL org.opencontainers.image.description="Mamba-managed runtime scaffold for D
 ENV PYTHONUNBUFFERED=1
 ENV LD_LIBRARY_PATH="/opt/conda/lib"
 
-RUN mamba install -y -n base -c conda-forge \
+RUN mamba install -y -n base -c conda-forge -c bioconda \
         python=3.11 \
         perl \
+        perl-bioperl \
         numpy \
         pandas \
         scikit-learn \
