@@ -13,7 +13,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && python -m pip install --no-cache-dir --upgrade pip setuptools wheel \
     && python -m pip install --no-cache-dir biopython h5py keras numpy pandas tensorflow-cpu
 
-RUN git clone --depth 1 https://github.com/wjd198605/EditPredict.git /opt/editpredict
+RUN git clone --depth 1 https://github.com/wjd198605/EditPredict.git /opt/editpredict && \
+    expand -t 4 /opt/editpredict/get_seq.py > /tmp/get_seq_fixed.py && \
+    mv /tmp/get_seq_fixed.py /opt/editpredict/get_seq.py && \
+    sed -i 's/offset=args\.length\/2/offset=args.length\/\/2/g' /opt/editpredict/get_seq.py
 
 COPY fix_upstream.py /tmp/fix_editpredict_upstream.py
 RUN python /tmp/fix_editpredict_upstream.py \
