@@ -1,0 +1,32 @@
+{
+  "stage_id": "1-requirements",
+  "completed_utc": "2026-05-05T22:15:00Z",
+  "decision": {
+    "gate_result": "PASS",
+    "rationale": "All 20 FRs defined, 17 ACs specified, 0 critical gaps, all 11 context files populated."
+  },
+  "outputs": [
+    {"path": ".forge/stages/1-requirements/architect-prompt.md", "description": "Primary architect input: 11-section prompt with FRs, ACs, assumptions, decisions"},
+    {"path": ".forge/stages/1-requirements/context/01-vision-and-goals.md", "description": "Project vision and success metrics"},
+    {"path": ".forge/stages/1-requirements/context/02-user-experience.md", "description": "Developer UX: before/after, build steps"},
+    {"path": ".forge/stages/1-requirements/context/03-user-flows.md", "description": "Full data flow diagram and rule dependency graph"},
+    {"path": ".forge/stages/1-requirements/context/04-data-models.md", "description": "File types, naming conventions, wildcard structure, config additions"},
+    {"path": ".forge/stages/1-requirements/context/05-business-logic.md", "description": "Rule-by-rule containerization spec: before/after shell commands, container assignments"},
+    {"path": ".forge/stages/1-requirements/context/06-api-integrations.md", "description": "Container image sources (build-time); no runtime APIs"},
+    {"path": ".forge/stages/1-requirements/context/07-security-requirements.md", "description": "No user paths, no cluster-specific paths, shell safety"},
+    {"path": ".forge/stages/1-requirements/context/08-edge-cases.md", "description": "9 edge cases: empty submodule, STAR intermediates, picard wrapper, jacusa2 no wildcards, etc."},
+    {"path": ".forge/stages/1-requirements/context/09-acceptance-criteria.md", "description": "Full 17-AC list plus resource defaults table per rule"},
+    {"path": ".forge/stages/1-requirements/context/10-technical-constraints.md", "description": "Snakemake 9+, apptainer SDM, TSCC profile, bind mounts, no-change list"},
+    {"path": ".forge/stages/1-requirements/context/11-code-references.md", "description": "File paths, container_for() pattern, shell before/after for each rule, tool install paths"}
+  ],
+  "key_findings": [
+    "14 rules total need container:/log:/resources: directives (3 preprocessing + 6 tools + 5 downstream)",
+    "5 existing containers reusable: picard, reditools, sprint, wgs, jacusa2",
+    "4 new Dockerfiles needed: star, red_ml, fastx, morales_downstream",
+    "config.yaml needs: singularity_image_dir, containers block, downstream_scripts_dir; remove tools section",
+    "bcftools AND star_mapping both need set -euo pipefail (2 rules, not just 1)",
+    "jacusa2 and all downstream rules have no wildcards — log paths use rule names only",
+    "mark_duplicates must call picard wrapper, not java -jar"
+  ],
+  "next_stage_context": "Architect should decompose into ~8 tasks: (1) Snakefile header additions, (2) config.yaml changes, (3) preprocessing.smk containerization, (4) tools.smk containerization, (5) downstream.smk containerization, (6) containers/star/ Dockerfile, (7) containers/red_ml/ Dockerfile, (8) containers/fastx/ + containers/morales_downstream/ Dockerfiles. Tasks 1-5 are sequential (depend on each other); tasks 6-8 are independent and can be done in parallel."
+}

@@ -1,0 +1,688 @@
+{
+  "communities": {
+    "0": [
+      "claude_deepred_sif",
+      "claude_editpredict_sif",
+      "claude_lodei_sif",
+      "claude_picard",
+      "claude_picard_sif",
+      "claude_rna_processing_smk",
+      "claude_star_aligner",
+      "containerization_amd64",
+      "containerization_apptainer",
+      "containerization_buildx",
+      "containerization_sif_output",
+      "containerization_validate_sh",
+      "containerization_x9pro",
+      "editing_wgs_config_full",
+      "editing_wgs_config_gene",
+      "editing_wgs_config_rand",
+      "editing_wgs_grch38_fasta",
+      "editing_wgs_hek293_with_wgs",
+      "editing_wgs_hek293t_adar1ko_samples",
+      "editing_wgs_hek293t_wt_samples",
+      "editing_wgs_jacusa2_filters",
+      "editing_wgs_matlab_bin",
+      "editing_wgs_redinet_params",
+      "editing_wgs_slurm_bin",
+      "editing_wgs_star_index",
+      "morales_config_picard",
+      "morales_config_star",
+      "tests_config_dryrun",
+      "tests_config_external_bed",
+      "tests_config_external_vcf"
+    ],
+    "1": [
+      "claude_deepred",
+      "claude_editpredict",
+      "claude_jacusa2",
+      "claude_jacusa2_sif",
+      "claude_rna_editing_smk",
+      "claude_sprint",
+      "claude_sprint_sif",
+      "claude_sprint_to_deepred_script",
+      "claude_sprint_to_editpredict_script",
+      "containerization_deepred_matlab",
+      "deepred_input_cols",
+      "deepred_preprocess_pl",
+      "deepred_readme",
+      "deepred_run_pl",
+      "dockerfile_jacusa2_container",
+      "dockerfile_java17",
+      "editing_wgs_deepred_root",
+      "editing_wgs_readme",
+      "github_deepred_repo",
+      "github_demining_repo",
+      "github_editpredict_repo",
+      "github_flare_repo",
+      "github_jacusa2_repo",
+      "github_sprint_repo",
+      "morales_config_jacusa2",
+      "morales_config_sprint",
+      "snakefile_audit_sprint_mapq"
+    ],
+    "2": [
+      "claude_redinet",
+      "claude_redinet_sif",
+      "claude_reditools",
+      "claude_reditools_sif",
+      "dockerfile_python27",
+      "dockerfile_reditools_container",
+      "dockerfile_sprint_container",
+      "editing_config_deepred_sif",
+      "editing_config_editpredict_sif",
+      "editing_config_hek293_samples",
+      "editing_config_jacusa2_pairs",
+      "editing_config_jacusa2_sif",
+      "editing_config_redinet_sif",
+      "editing_config_reditools_sif",
+      "editing_config_sprint_sif",
+      "editing_pipeline",
+      "github_redinet_repo",
+      "github_reditools2_repo",
+      "github_reditools_repo",
+      "github_redits_repo",
+      "morales_config_reditools2",
+      "snakefile_audit_redinet_twostep"
+    ],
+    "3": [
+      "scripts_make_small_fastq_dataset_cigar_ref_span",
+      "scripts_make_small_fastq_dataset_filter_fastq_by_names_paired",
+      "scripts_make_small_fastq_dataset_filter_fastq_by_names_single",
+      "scripts_make_small_fastq_dataset_genomicinterval",
+      "scripts_make_small_fastq_dataset_infer_default_output_prefix",
+      "scripts_make_small_fastq_dataset_interval_overlaps",
+      "scripts_make_small_fastq_dataset_iter_fastq",
+      "scripts_make_small_fastq_dataset_main",
+      "scripts_make_small_fastq_dataset_mapped_reads_overlapping_genes",
+      "scripts_make_small_fastq_dataset_normalize_qname",
+      "scripts_make_small_fastq_dataset_open_maybe_gz",
+      "scripts_make_small_fastq_dataset_parse_fastq_name",
+      "scripts_make_small_fastq_dataset_parse_gtf_gene_intervals",
+      "scripts_make_small_fastq_dataset_py",
+      "scripts_make_small_fastq_dataset_rationale_47",
+      "scripts_make_small_fastq_dataset_reservoir_sample_paired",
+      "scripts_make_small_fastq_dataset_reservoir_sample_single",
+      "scripts_make_small_fastq_dataset_run_star_alignment",
+      "scripts_make_small_fastq_dataset_write_fastq"
+    ],
+    "4": [
+      "claude_grch38_ref",
+      "claude_pipeline_editing_wgs",
+      "claude_singularity",
+      "claude_slurm",
+      "claude_snakemake",
+      "claude_tscc",
+      "env_yaml_snakemake",
+      "env_yaml_snakemake_version",
+      "morales_config_grch38",
+      "readme_download_variant_script",
+      "readme_hek293_variants",
+      "readme_rna_editing_repo",
+      "tscc2_apptainer_args",
+      "tscc2_condo_partition",
+      "tscc2_csd792_account",
+      "tscc2_profile",
+      "tscc2_slurm_executor"
+    ],
+    "5": [
+      "claude_bcftools",
+      "claude_bwa",
+      "claude_indexing_smk",
+      "claude_preprocessing_smk",
+      "claude_samtools",
+      "claude_snakefile_editing_wgs",
+      "claude_wgs_processing_smk",
+      "claude_wgs_sif",
+      "morales_config_bwa",
+      "snakefile_audit_editing_wgs_pipeline",
+      "snakefile_audit_wgs_sif",
+      "wgs_hek293t",
+      "wgs_hepg2",
+      "wgs_hg38_ref",
+      "wgs_k562",
+      "wgs_pipeline",
+      "wgs_wgs_sif"
+    ],
+    "6": [
+      "scripts_sprint_to_deepred_vcf_convert_sprint_res_to_deepred_vcf",
+      "scripts_sprint_to_deepred_vcf_main",
+      "scripts_sprint_to_deepred_vcf_parse_edit_type",
+      "scripts_sprint_to_deepred_vcf_py",
+      "scripts_sprint_to_deepred_vcf_rationale_19",
+      "scripts_sprint_to_deepred_vcf_rationale_31",
+      "scripts_sprint_to_deepred_vcf_rationale_71",
+      "tests_test_sprint_to_deepred_vcf_py",
+      "tests_test_sprint_to_deepred_vcf_rationale_12",
+      "tests_test_sprint_to_deepred_vcf_rationale_9",
+      "tests_test_sprint_to_deepred_vcf_sprinttodeepredvcftest",
+      "tests_test_sprint_to_deepred_vcf_sprinttodeepredvcftest_test_regular_res_rows_are_converted_to_ref_alt_vcf"
+    ],
+    "7": [
+      "minfunc_mcholc_absolute",
+      "minfunc_mcholc_mexfunction",
+      "minfunc_mcholc_mymax",
+      "minfunc_mcholc_permute",
+      "minfunc_mcholc_permutecols",
+      "minfunc_mcholc_permuteint",
+      "minfunc_mcholc_permuterows",
+      "singularity_data_deepred_matlab_code_of_deepred_minfunc_mcholc_c"
+    ],
+    "8": [
+      "scripts_sprint_to_editpredict_positions_convert_sprint_positions",
+      "scripts_sprint_to_editpredict_positions_main",
+      "scripts_sprint_to_editpredict_positions_normalize_chromosome",
+      "scripts_sprint_to_editpredict_positions_py",
+      "scripts_sprint_to_editpredict_positions_rationale_15",
+      "scripts_sprint_to_editpredict_positions_rationale_32",
+      "scripts_sprint_to_editpredict_positions_rationale_66"
+    ],
+    "9": [
+      "tests_test_editing_wgs_dryrun_editingwgsdryruntest",
+      "tests_test_editing_wgs_dryrun_editingwgsdryruntest_test_all_sample_instance_types_are_schedulable",
+      "tests_test_editing_wgs_dryrun_py",
+      "tests_test_editing_wgs_dryrun_rationale_13",
+      "tests_test_editing_wgs_dryrun_rationale_16"
+    ],
+    "10": [
+      "logistic_mexutil_mxcreatedoublematrixe",
+      "logistic_mexutil_mxcreatenumericarraye",
+      "logistic_mexutil_mxcreatenumericmatrixe",
+      "singularity_data_deepred_matlab_code_of_deepred_minfunc_logistic_mexutil_c"
+    ],
+    "11": [
+      "logistic_repmatc_memrep",
+      "logistic_repmatc_mexfunction",
+      "logistic_repmatc_repmat",
+      "singularity_data_deepred_matlab_code_of_deepred_minfunc_logistic_repmatc_c"
+    ],
+    "12": [
+      "containers_editpredict_fix_upstream_py",
+      "editpredict_fix_upstream_main",
+      "editpredict_fix_upstream_patch_edit_predict",
+      "editpredict_fix_upstream_patch_get_seq"
+    ],
+    "13": [
+      "minfunc_lbfgsc_mexfunction",
+      "singularity_data_deepred_matlab_code_of_deepred_minfunc_lbfgsc_c"
+    ],
+    "14": [
+      "agents_bd",
+      "agents_noninteractive_shell"
+    ],
+    "15": [
+      "dockerfile_sailor_container",
+      "github_sailor_repo"
+    ],
+    "16": [
+      "dockerfile_lodei_container",
+      "github_lodei_repo"
+    ],
+    "17": [
+      "dockerfile_red_container",
+      "github_red_repo"
+    ],
+    "18": [
+      "singularity_data_deepred_c1_ensemble_score1_m"
+    ],
+    "19": [
+      "singularity_data_deepred_c4_ensemble_score4_m"
+    ],
+    "20": [
+      "singularity_data_deepred_b2_combine_individual_classifier_m"
+    ],
+    "21": [
+      "singularity_data_deepred_c3_ensemble_score3_m"
+    ],
+    "22": [
+      "singularity_data_deepred_b1_train_individual_classifier_m"
+    ],
+    "23": [
+      "singularity_data_deepred_a2_load_data_chr_m"
+    ],
+    "24": [
+      "singularity_data_deepred_c2_ensemble_score2_m"
+    ],
+    "25": [
+      "singularity_data_deepred_matlab_code_of_deepred_sigm_m"
+    ],
+    "26": [
+      "singularity_data_deepred_matlab_code_of_deepred_lf_hmmsupervisedlearning_fromexistedmodel_m"
+    ],
+    "27": [
+      "singularity_data_deepred_matlab_code_of_deepred_logsumexp_m"
+    ],
+    "28": [
+      "singularity_data_deepred_matlab_code_of_deepred_unsupervisedstackedaecost_m"
+    ],
+    "29": [
+      "singularity_data_deepred_matlab_code_of_deepred_supervisedlearnig_m"
+    ],
+    "30": [
+      "singularity_data_deepred_matlab_code_of_deepred_softmaxtup_m"
+    ],
+    "31": [
+      "singularity_data_deepred_matlab_code_of_deepred_params2stack_m"
+    ],
+    "32": [
+      "singularity_data_deepred_matlab_code_of_deepred_softmaxtrain_m"
+    ],
+    "33": [
+      "singularity_data_deepred_matlab_code_of_deepred_lf_hmmsupervisedlearning_m"
+    ],
+    "34": [
+      "singularity_data_deepred_matlab_code_of_deepred_em_init_kmeans_m"
+    ],
+    "35": [
+      "singularity_data_deepred_matlab_code_of_deepred_softmaxcost_m"
+    ],
+    "36": [
+      "singularity_data_deepred_matlab_code_of_deepred_dbntrain_m"
+    ],
+    "37": [
+      "singularity_data_deepred_matlab_code_of_deepred_emgm_m"
+    ],
+    "38": [
+      "singularity_data_deepred_matlab_code_of_deepred_supervisedstackedaepredict_m"
+    ],
+    "39": [
+      "singularity_data_deepred_matlab_code_of_deepred_supervisedfinetuning_m"
+    ],
+    "40": [
+      "singularity_data_deepred_matlab_code_of_deepred_logdet_m"
+    ],
+    "41": [
+      "singularity_data_deepred_matlab_code_of_deepred_mixgauss_prob_m"
+    ],
+    "42": [
+      "singularity_data_deepred_matlab_code_of_deepred_unsupervisedstackedaepredict_m"
+    ],
+    "43": [
+      "singularity_data_deepred_matlab_code_of_deepred_stack2params_m"
+    ],
+    "44": [
+      "singularity_data_deepred_matlab_code_of_deepred_unsupervisedfinetuning_m"
+    ],
+    "45": [
+      "singularity_data_deepred_matlab_code_of_deepred_sqdist_m"
+    ],
+    "46": [
+      "singularity_data_deepred_matlab_code_of_deepred_dbnsetup_m"
+    ],
+    "47": [
+      "singularity_data_deepred_matlab_code_of_deepred_gaussian_prob_m"
+    ],
+    "48": [
+      "singularity_data_deepred_matlab_code_of_deepred_lf_hmmviterbi_m"
+    ],
+    "49": [
+      "singularity_data_deepred_matlab_code_of_deepred_rbmtrain_m"
+    ],
+    "50": [
+      "singularity_data_deepred_matlab_code_of_deepred_unsupervisedlearnig_m"
+    ],
+    "51": [
+      "singularity_data_deepred_matlab_code_of_deepred_supervisedstackedaecost_m"
+    ],
+    "52": [
+      "singularity_data_deepred_matlab_code_of_deepred_isposdef_m"
+    ],
+    "53": [
+      "singularity_data_deepred_matlab_code_of_deepred_rbmup_m"
+    ],
+    "54": [
+      "singularity_data_deepred_matlab_code_of_deepred_sigmrnd_m"
+    ],
+    "55": [
+      "singularity_data_deepred_matlab_code_of_deepred_minfunc_example_minfunc_lr_m"
+    ],
+    "56": [
+      "singularity_data_deepred_matlab_code_of_deepred_minfunc_armijobacktrack_m"
+    ],
+    "57": [
+      "singularity_data_deepred_matlab_code_of_deepred_minfunc_polyinterp_m"
+    ],
+    "58": [
+      "singularity_data_deepred_matlab_code_of_deepred_minfunc_wolfelinesearch_m"
+    ],
+    "59": [
+      "singularity_data_deepred_matlab_code_of_deepred_minfunc_mchol_m"
+    ],
+    "60": [
+      "singularity_data_deepred_matlab_code_of_deepred_minfunc_lbfgs_m"
+    ],
+    "61": [
+      "singularity_data_deepred_matlab_code_of_deepred_minfunc_autotensor_m"
+    ],
+    "62": [
+      "singularity_data_deepred_matlab_code_of_deepred_minfunc_conjgrad_m"
+    ],
+    "63": [
+      "singularity_data_deepred_matlab_code_of_deepred_minfunc_lbfgsupdate_m"
+    ],
+    "64": [
+      "singularity_data_deepred_matlab_code_of_deepred_minfunc_taylormodel_m"
+    ],
+    "65": [
+      "singularity_data_deepred_matlab_code_of_deepred_minfunc_minfunc_processinputoptions_m"
+    ],
+    "66": [
+      "singularity_data_deepred_matlab_code_of_deepred_minfunc_islegal_m"
+    ],
+    "67": [
+      "singularity_data_deepred_matlab_code_of_deepred_minfunc_minfunc_m"
+    ],
+    "68": [
+      "singularity_data_deepred_matlab_code_of_deepred_minfunc_mcholinc_m"
+    ],
+    "69": [
+      "singularity_data_deepred_matlab_code_of_deepred_minfunc_calloutput_m"
+    ],
+    "70": [
+      "singularity_data_deepred_matlab_code_of_deepred_minfunc_precondtriu_m"
+    ],
+    "71": [
+      "singularity_data_deepred_matlab_code_of_deepred_minfunc_precondtriudiag_m"
+    ],
+    "72": [
+      "singularity_data_deepred_matlab_code_of_deepred_minfunc_dampedupdate_m"
+    ],
+    "73": [
+      "singularity_data_deepred_matlab_code_of_deepred_minfunc_example_minfunc_m"
+    ],
+    "74": [
+      "singularity_data_deepred_matlab_code_of_deepred_minfunc_autograd_m"
+    ],
+    "75": [
+      "singularity_data_deepred_matlab_code_of_deepred_minfunc_rosenbrock_m"
+    ],
+    "76": [
+      "singularity_data_deepred_matlab_code_of_deepred_minfunc_preconddiag_m"
+    ],
+    "77": [
+      "singularity_data_deepred_matlab_code_of_deepred_minfunc_autohv_m"
+    ],
+    "78": [
+      "singularity_data_deepred_matlab_code_of_deepred_minfunc_autohess_m"
+    ],
+    "79": [
+      "singularity_data_deepred_matlab_code_of_deepred_minfunc_logistic_logisticloss_m"
+    ],
+    "80": [
+      "singularity_data_deepred_matlab_code_of_deepred_minfunc_logistic_mylogsumexp_m"
+    ],
+    "81": [
+      "singularity_data_deepred_matlab_code_of_deepred_minfunc_logistic_mexutil_h"
+    ],
+    "82": [
+      "singularity_data_deepred_matlab_code_of_deepred_minfunc_logistic_logisticdiagprecond_m"
+    ],
+    "83": [
+      "singularity_data_deepred_matlab_code_of_deepred_minfunc_logistic_logistichv_m"
+    ],
+    "84": [
+      "github_giremi_repo"
+    ],
+    "85": [
+      "github_lgiremi_repo"
+    ],
+    "86": [
+      "github_resscanner_repo"
+    ],
+    "87": [
+      "github_redml_repo"
+    ],
+    "88": [
+      "github_dinopore_repo"
+    ],
+    "89": [
+      "github_fastqc_repo"
+    ],
+    "90": [
+      "morales_config_hisat2"
+    ],
+    "91": [
+      "morales_config_redml"
+    ]
+  },
+  "cohesion": {
+    "0": 0.08,
+    "1": 0.09,
+    "2": 0.1,
+    "3": 0.22,
+    "4": 0.13,
+    "5": 0.15,
+    "6": 0.2,
+    "7": 0.46,
+    "8": 0.38,
+    "9": 0.4,
+    "10": 0.67,
+    "11": 1.0,
+    "12": 0.83,
+    "13": 1.0,
+    "14": 1.0,
+    "15": 1.0,
+    "16": 1.0,
+    "17": 1.0,
+    "18": 1.0,
+    "19": 1.0,
+    "20": 1.0,
+    "21": 1.0,
+    "22": 1.0,
+    "23": 1.0,
+    "24": 1.0,
+    "25": 1.0,
+    "26": 1.0,
+    "27": 1.0,
+    "28": 1.0,
+    "29": 1.0,
+    "30": 1.0,
+    "31": 1.0,
+    "32": 1.0,
+    "33": 1.0,
+    "34": 1.0,
+    "35": 1.0,
+    "36": 1.0,
+    "37": 1.0,
+    "38": 1.0,
+    "39": 1.0,
+    "40": 1.0,
+    "41": 1.0,
+    "42": 1.0,
+    "43": 1.0,
+    "44": 1.0,
+    "45": 1.0,
+    "46": 1.0,
+    "47": 1.0,
+    "48": 1.0,
+    "49": 1.0,
+    "50": 1.0,
+    "51": 1.0,
+    "52": 1.0,
+    "53": 1.0,
+    "54": 1.0,
+    "55": 1.0,
+    "56": 1.0,
+    "57": 1.0,
+    "58": 1.0,
+    "59": 1.0,
+    "60": 1.0,
+    "61": 1.0,
+    "62": 1.0,
+    "63": 1.0,
+    "64": 1.0,
+    "65": 1.0,
+    "66": 1.0,
+    "67": 1.0,
+    "68": 1.0,
+    "69": 1.0,
+    "70": 1.0,
+    "71": 1.0,
+    "72": 1.0,
+    "73": 1.0,
+    "74": 1.0,
+    "75": 1.0,
+    "76": 1.0,
+    "77": 1.0,
+    "78": 1.0,
+    "79": 1.0,
+    "80": 1.0,
+    "81": 1.0,
+    "82": 1.0,
+    "83": 1.0,
+    "84": 1.0,
+    "85": 1.0,
+    "86": 1.0,
+    "87": 1.0,
+    "88": 1.0,
+    "89": 1.0,
+    "90": 1.0,
+    "91": 1.0
+  },
+  "gods": [
+    {
+      "id": "editing_wgs_config_full",
+      "label": "editing_wgs Full Production Config",
+      "degree": 22
+    },
+    {
+      "id": "editing_pipeline",
+      "label": "editing Pipeline (pipelines/editing)",
+      "degree": 17
+    },
+    {
+      "id": "wgs_pipeline",
+      "label": "WGS Pipeline (pipelines/WGS)",
+      "degree": 13
+    },
+    {
+      "id": "claude_deepred",
+      "label": "DeepRED Deep Learning Predictor",
+      "degree": 11
+    },
+    {
+      "id": "scripts_make_small_fastq_dataset_main",
+      "label": "main()",
+      "degree": 10
+    },
+    {
+      "id": "claude_pipeline_editing_wgs",
+      "label": "editing_wgs Primary Pipeline",
+      "degree": 10
+    },
+    {
+      "id": "claude_sprint",
+      "label": "SPRINT RNA Editing Caller",
+      "degree": 10
+    },
+    {
+      "id": "claude_reditools",
+      "label": "REDItools v1 Candidate Extractor",
+      "degree": 10
+    },
+    {
+      "id": "claude_jacusa2",
+      "label": "JACUSA2 DNA/RNA Comparison Caller",
+      "degree": 9
+    },
+    {
+      "id": "claude_redinet",
+      "label": "REDInet TCN Classifier",
+      "degree": 8
+    }
+  ],
+  "surprises": [
+    {
+      "source": "JACUSA2 Tool (Morales et al. config)",
+      "target": "JACUSA2 DNA/RNA Comparison Caller",
+      "source_files": [
+        "pipelines/Morales_et_all/config.yaml",
+        "CLAUDE.md"
+      ],
+      "confidence": "INFERRED",
+      "relation": "semantically_similar_to",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; semantically similar concepts with no structural link; peripheral node `JACUSA2 Tool (Morales et al. config)` unexpectedly reaches hub `JACUSA2 DNA/RNA Comparison Caller`"
+    },
+    {
+      "source": "SPRINT Tool (Morales et al. config)",
+      "target": "SPRINT RNA Editing Caller",
+      "source_files": [
+        "pipelines/Morales_et_all/config.yaml",
+        "CLAUDE.md"
+      ],
+      "confidence": "INFERRED",
+      "relation": "semantically_similar_to",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; semantically similar concepts with no structural link; peripheral node `SPRINT Tool (Morales et al. config)` unexpectedly reaches hub `SPRINT RNA Editing Caller`"
+    },
+    {
+      "source": "REDItools2 Tool (Morales et al. config)",
+      "target": "REDItools v1 Candidate Extractor",
+      "source_files": [
+        "pipelines/Morales_et_all/config.yaml",
+        "CLAUDE.md"
+      ],
+      "confidence": "INFERRED",
+      "relation": "semantically_similar_to",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; semantically similar concepts with no structural link; peripheral node `REDItools2 Tool (Morales et al. config)` unexpectedly reaches hub `REDItools v1 Candidate Extractor`"
+    },
+    {
+      "source": "GRCh38 Reference (Morales et al. config)",
+      "target": "GRCh38 Reference FASTA",
+      "source_files": [
+        "pipelines/Morales_et_all/config.yaml",
+        "CLAUDE.md"
+      ],
+      "confidence": "INFERRED",
+      "relation": "semantically_similar_to",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; semantically similar concepts with no structural link"
+    },
+    {
+      "source": "STAR Aligner (Morales et al. config)",
+      "target": "STAR RNA Aligner",
+      "source_files": [
+        "pipelines/Morales_et_all/config.yaml",
+        "CLAUDE.md"
+      ],
+      "confidence": "INFERRED",
+      "relation": "semantically_similar_to",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; semantically similar concepts with no structural link"
+    }
+  ],
+  "questions": [
+    {
+      "type": "bridge_node",
+      "question": "Why does `editing_wgs Full Production Config` connect `Community 0` to `Community 1`, `Community 2`, `Community 5`?",
+      "why": "High betweenness centrality (0.056) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `editing Pipeline (pipelines/editing)` connect `Community 2` to `Community 1`, `Community 4`, `Community 5`?",
+      "why": "High betweenness centrality (0.053) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `editing_wgs Primary Pipeline` connect `Community 4` to `Community 1`, `Community 2`, `Community 5`?",
+      "why": "High betweenness centrality (0.044) - this node is a cross-community bridge."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 3 inferred relationships involving `editing_wgs Full Production Config` (e.g. with `editing_wgs Gene Example Config (APP/GAPDH)` and `editing_wgs Random Example Config`) actually correct?",
+      "why": "`editing_wgs Full Production Config` has 3 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 2 inferred relationships involving `WGS Pipeline (pipelines/WGS)` (e.g. with `editing Pipeline (pipelines/editing)` and `editing_wgs Primary Pipeline`) actually correct?",
+      "why": "`WGS Pipeline (pipelines/WGS)` has 2 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "isolated_nodes",
+      "question": "What connects `Tests for converting SPRINT RES rows into DeepRed candidate SNVs.`, `SPRINT one-based end coordinates and edit types become DeepRed rows.`, `Dry-run tests for all configured editing_wgs sample branches.` to the rest of the system?",
+      "why": "81 weakly-connected nodes found - possible documentation gaps or missing edges."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `Community 0` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.08 - nodes in this community are weakly interconnected."
+    }
+  ]
+}

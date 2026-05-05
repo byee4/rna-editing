@@ -1,0 +1,92 @@
+# Forge Pipeline: Full pipeline run on push to main
+# Copy to .github/workflows/forge-pipeline.yml in your project
+#
+# Prerequisites:
+#   - ANTHROPIC_API_KEY secret configured in repo settings
+#   - claude CLI installed (npm install -g @anthropic-ai/claude-code)
+#   - .forge/ directory initialized (run /forge init locally first)
+#
+# Behavior:
+#   - Triggers on push to main (configurable)
+#   - Runs selected forge stages in CI mode (FORGE_CI=1)
+#   - Auto-selects defaults for all prompts
+#   - Uploads stage artifacts
+
+name: Forge Pipeline
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      stages:
+        description: "Stages to run (comma-separated, e.g., review,security)"
+        required: false
+        default: "review,security"
+
+permissions:
+  contents: read
+
+env:
+  FORGE_CI: "1"
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Claude CLI
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Install forge tools
+        run: pip install uv && uv sync 2>/dev/null || true
+
+      - name: Secret scan (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: false
+
+      - name: Determine stages
+        id: stages
+        run: |
+          STAGES="${{ github.event.inputs.stages || 'review,security' }}"
+          echo "stages=$STAGES" >> "$GITHUB_OUTPUT"
+
+      - name: Run forge stages
+        run: |
+          IFS=',' read -ra STAGES <<< "${{ steps.stages.outputs.stages }}"
+          for stage in "${STAGES[@]}"; do
+            stage=$(echo "$stage" | xargs)  # trim whitespace
+            echo "::group::Stage: $stage"
+            claude -p "Run /forge $stage in CI mode. Auto-select all defaults. Report results as JSON." 2>&1 || true
+            echo "::endgroup::"
+          done
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: forge-artifacts
+          path: |
+            .forge/stages/*/
+            .forge/state.json
+            .forge/history/
+          if-no-files-found: ignore

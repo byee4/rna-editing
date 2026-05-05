@@ -1,0 +1,34 @@
+{
+  "stage_id": "1-requirements",
+  "status": "READY_FOR_ARCHITECT",
+  "completed_utc": "2026-05-05T22:15:00Z",
+  "task": "Morales_et_al Pipeline — Snakemake 9+ Compliance and Containerization",
+  "clarification_rounds": 0,
+  "acceptance_criteria_count": 17,
+  "context_files_count": 11,
+  "critical_gaps": 0,
+  "functional_requirements_count": 20,
+  "outputs": [
+    ".forge/stages/1-requirements/architect-prompt.md",
+    ".forge/stages/1-requirements/context/01-vision-and-goals.md",
+    ".forge/stages/1-requirements/context/02-user-experience.md",
+    ".forge/stages/1-requirements/context/03-user-flows.md",
+    ".forge/stages/1-requirements/context/04-data-models.md",
+    ".forge/stages/1-requirements/context/05-business-logic.md",
+    ".forge/stages/1-requirements/context/06-api-integrations.md",
+    ".forge/stages/1-requirements/context/07-security-requirements.md",
+    ".forge/stages/1-requirements/context/08-edge-cases.md",
+    ".forge/stages/1-requirements/context/09-acceptance-criteria.md",
+    ".forge/stages/1-requirements/context/10-technical-constraints.md",
+    ".forge/stages/1-requirements/context/11-code-references.md"
+  ],
+  "key_decisions": [
+    "container_for() pattern copied directly from editing_wgs/Snakefile lines 14-25",
+    "5 existing containers reused: picard, reditools, sprint, wgs (for bcftools+add_md_tag), jacusa2",
+    "4 new Dockerfiles: star, red_ml, fastx, morales_downstream",
+    "add_md_tag uses wgs container (not jacusa2) per C-005",
+    "downstream scripts use config[downstream_scripts_dir] with params.downstream_dir per rule",
+    "mark_duplicates calls picard wrapper not java -jar",
+    "bcftools and star_mapping both need set -euo pipefail added"
+  ]
+}

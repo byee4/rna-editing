@@ -149,6 +149,7 @@ rule deepred_predict:
         reference_arg=deepred_reference_arg,
         slurm_bin_dir_arg=deepred_slurm_bin_dir_arg
     shell:
+        "module load slurm && "
         "python {params.vcf_script} {input.snvs} {output.vcf} && "
         "deepred_predict --input-vcf {output.vcf} --project {params.project} "
         "--sample {params.sample} --output {output.pred} {params.matlab_arg} {params.deepred_root_arg} "

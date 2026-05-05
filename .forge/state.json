@@ -2,9 +2,11 @@
   "schema_version": "1.0.0",
   "pipeline_id": "forge-8a8d6b83",
   "created_utc": "2026-05-02T16:05:43Z",
-  "updated_utc": "2026-05-02T16:05:43Z",
-  "current_stage": null,
-  "stages": {},
+  "updated_utc": "2026-05-05T21:30:00Z",
+  "current_stage": "1-requirements",
+  "stages": {
+    "0-research": {"status": "COMPLETE", "completed_utc": "2026-05-05T21:30:00Z"}
+  },
   "cost": {
     "total_input_tokens": 0,
     "total_output_tokens": 0,

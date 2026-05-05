@@ -96,10 +96,12 @@ Run all dry-run DAG tests (validates workflow planning without executing contain
 conda run -p .conda/editing-wgs-snakemake python -m unittest tests/test_editing_wgs_dryrun.py
 ```
 
-Run a single test file:
+**Note:** `test_editing_wgs_dryrun.py` creates a `tempfile.TemporaryDirectory` under `/private/tmp`, which is a macOS path. On Linux/TSCC, this test will fail unless `/private/tmp` exists or the test is patched to use `/tmp`.
+
+Run the unit test for the SPRINT adapter script (no conda env needed):
 
 ```bash
-conda run -p .conda/editing-wgs-snakemake python -m unittest tests/test_sprint_to_deepred_vcf.py
+python -m unittest tests/test_sprint_to_deepred_vcf.py
 ```
 
 Run a single dry-run manually:
@@ -123,7 +125,7 @@ TOOLS="reditools jacusa2" scripts/validate_containers.sh  # specific tools
 TOOLS="wgs picard sprint deepred editpredict redinet picard" scripts/validate_containers.sh
 ```
 
-The default output root is `/Volumes/X9Pro/container_data` (macOS external drive). Override with `CONTAINER_DATA_ROOT` and `SIF_OUTPUT_DIR` environment variables.
+The default output root is `/Volumes/X9Pro/container_data` (macOS external drive). Override with `CONTAINER_DATA_ROOT` and `SIF_OUTPUT_DIR` environment variables. TSCC runs `amd64`; build with `DOCKER_PLATFORM=linux/amd64` when building on Apple Silicon.
 
 Each container in `containers/<tool>/` has a `Dockerfile` and a `validate.sh` script. The validation command inside each image is `validate-<tool>`.
 
@@ -133,7 +135,7 @@ Each container in `containers/<tool>/` has a `Dockerfile` and a `validate.sh` sc
 
 **`pipelines/editing_wgs/`** (primary, actively developed): Matched RNA/WGS workflow. Accepts per-sample RNA FASTQs plus either paired WGS FASTQs or a pre-computed `.vcf.gz`/`.bed.gz` variant file. Produces both DNA/RNA comparison outputs (JACUSA2, WGS-only samples only) and RNA-only outputs (SPRINT, REDInet, with DeepRED and editPredict currently deactivated in `rule all`).
 
-**`pipelines/editing/`** (older, BAM-based): Takes pre-aligned BAMs. Runs SPRINT, JACUSA2 (with explicit pair config), REDItools2, DeepRED, editPredict, and REDInet. Differs structurally: samples map to BAM paths, not FASTQs.
+**`pipelines/editing/`** (older, BAM-based): Takes pre-aligned BAMs. Runs SPRINT, JACUSA2 (with explicit `jacusa2_pairs` config), REDItools2, DeepRED, editPredict, and REDInet. Differs structurally: samples map to BAM paths, not FASTQs; pairs for JACUSA2 are configured explicitly rather than derived from WGS sample detection.
 
 ### editing_wgs Module Structure
 
@@ -170,6 +172,7 @@ External variants (.vcf.gz/.bed.gz)  →  JACUSA2 / editPredict (when WGS absent
 ### Key Design Points
 
 - **WGS vs. no-WGS branching**: `has_wgs(sample)` controls which rules are scheduled. WGS samples get JACUSA2 and germline VCFs; non-WGS samples can supply an external `.vcf.gz` or `.bed.gz`.
+- **STAR index**: `star_index` in config is the output *directory path* for `star_genome_generate`. The workflow builds the index if it doesn't exist. It is not a path to an existing prebuilt index; the workflow creates it from the reference FASTA.
 - **SPRINT MAPQ rewrite**: STAR emits MAPQ=255 for unique alignments. SPRINT rejects this, so `sprint_mapq_bam` rewrites MAPQ to 30 via SPRINT's own `changesammapq.py` without modifying the shared deduplicated BAM.
 - **REDInet two-step**: REDItools v1 runs first with low-stringency filters to generate `outTable_*`, which is bgzip+tabix-indexed as `outTable.gz`; REDInet then classifies from that indexed table.
 - **DeepRED/editPredict deactivated**: These are commented out in `rule all` in `Snakefile` as of the most recent commits due to unresolved container issues. The rules still exist in `rna_editing.smk`.

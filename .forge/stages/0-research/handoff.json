@@ -1,0 +1,24 @@
+{
+  "stage_id": "0-research",
+  "completed_utc": "2026-05-05T21:30:00Z",
+  "decision": {
+    "gate_result": "PASS",
+    "rationale": "Full audit complete. Issues cataloged, container gaps identified, conflicts resolved."
+  },
+  "outputs": [
+    {"path": ".forge/stages/0-research/prd.md", "description": "Product requirements with acceptance criteria"},
+    {"path": ".forge/stages/0-research/codebase-audit.md", "description": "Full audit: syntax issues, container gaps, script discoverability"},
+    {"path": ".forge/stages/0-research/conflicts-resolved.md", "description": "5 conflicts identified and resolved"},
+    {"path": ".forge/stages/0-research/graphify-initial/", "description": "Knowledge graph (260 nodes, 254 edges)"}
+  ],
+  "key_findings": [
+    "0 of 9 rules in Morales pipeline have container: directives",
+    "4 new Dockerfiles needed: star, red_ml, fastx, morales_downstream",
+    "5 existing Dockerfiles reusable: picard, reditools, sprint, wgs (bcftools+samtools), jacusa2",
+    "Downstream scripts are relative paths to empty git submodule",
+    "config.yaml tools: section uses ~/bin/ paths that break in containers",
+    "No log: or resources: directives in any rule",
+    "shell: pipe in bcftools rule lacks set -euo pipefail"
+  ],
+  "next_stage_context": "The architect needs to produce tasks for: (1) add container_for() helper + containers: block to Snakefile/config, (2) add container:/log:/resources: to each rule, (3) update shell commands for containerized tools, (4) fix downstream script paths, (5) create 4 new Dockerfiles. The editing_wgs Snakefile is the canonical pattern to follow."
+}

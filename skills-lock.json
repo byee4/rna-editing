@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "skills": {
+    "biopython": {
+      "source": "K-Dense-AI/scientific-agent-skills",
+      "sourceType": "github",
+      "skillPath": "scientific-skills/biopython/SKILL.md",
+      "computedHash": "a2bd1f968a1a44efcf07d93eccb06e3d547a6fbe38249e62d537e60f3d783cfc"
+    },
+    "bioservices": {
+      "source": "K-Dense-AI/scientific-agent-skills",
+      "sourceType": "github",
+      "skillPath": "scientific-skills/bioservices/SKILL.md",
+      "computedHash": "8f19a68abfafd7640bbdfd3e5972c5634e535dab1480e904523b5cbce4fd1733"
+    },
+    "pysam": {
+      "source": "K-Dense-AI/scientific-agent-skills",
+      "sourceType": "github",
+      "skillPath": "scientific-skills/pysam/SKILL.md",
+      "computedHash": "856681b142c33bfb9245dee42e75a1b7b0594e1771e18aafbf5a775dfcb9663f"
+    },
+    "scikit-bio": {
+      "source": "K-Dense-AI/scientific-agent-skills",
+      "sourceType": "github",
+      "skillPath": "scientific-skills/scikit-bio/SKILL.md",
+      "computedHash": "998a08f09ce1604eeb1ac32f607a55768143006b3f436040c9c26e4d94b33104"
+    }
+  }
+}

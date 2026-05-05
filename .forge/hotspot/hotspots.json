@@ -1,0 +1,51 @@
+{
+  "timestamp": "2026-05-05T17:13:14.017219+00:00",
+  "project_dir": ".",
+  "days_analyzed": 90,
+  "total_files_analyzed": 6,
+  "top_3_percent_file_count": 1,
+  "hotspots": [
+    {
+      "path": "scripts/make_small_fastq_dataset.py",
+      "churn": 0.3333,
+      "complexity": 1.0,
+      "gamma_score": 0.3333,
+      "risk_level": "HIGH"
+    },
+    {
+      "path": "tests/test_editing_wgs_dryrun.py",
+      "churn": 1.0,
+      "complexity": 0.1682,
+      "gamma_score": 0.1682,
+      "risk_level": "MEDIUM"
+    },
+    {
+      "path": "scripts/sprint_to_deepred_vcf.py",
+      "churn": 0.3333,
+      "complexity": 0.2993,
+      "gamma_score": 0.0998,
+      "risk_level": "LOW"
+    },
+    {
+      "path": "scripts/sprint_to_editpredict_positions.py",
+      "churn": 0.3333,
+      "complexity": 0.2819,
+      "gamma_score": 0.094,
+      "risk_level": "LOW"
+    },
+    {
+      "path": "containers/editpredict/fix_upstream.py",
+      "churn": 0.3333,
+      "complexity": 0.1235,
+      "gamma_score": 0.0412,
+      "risk_level": "LOW"
+    },
+    {
+      "path": "tests/test_sprint_to_deepred_vcf.py",
+      "churn": 0.3333,
+      "complexity": 0.0789,
+      "gamma_score": 0.0263,
+      "risk_level": "LOW"
+    }
+  ]
+}

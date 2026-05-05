@@ -1,0 +1,192 @@
+# Forge CI: Lint, Test, Build, SAST, and SCA
+# Copy to .github/workflows/forge-ci.yml in your project.
+#
+# This workflow runs standard quality gates on every push and PR to main.
+# It complements forge-pipeline.yml (which runs forge stages) by providing
+# the conventional CI checks that release/SKILL.md verifies before shipping.
+#
+# Customize: comment out or remove jobs that don't apply to your stack.
+# The detect-stack job sets output flags so downstream jobs skip gracefully.
+
+name: Forge CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  security-events: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Detect project stack ──────────────────────────────────
+  detect-stack:
+    runs-on: ubuntu-latest
+    outputs:
+      has_node: ${{ steps.detect.outputs.has_node }}
+      has_python: ${{ steps.detect.outputs.has_python }}
+      has_rust: ${{ steps.detect.outputs.has_rust }}
+      has_go: ${{ steps.detect.outputs.has_go }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: detect
+        run: |
+          echo "has_node=$([[ -f package.json ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "has_python=$([[ -f pyproject.toml || -f requirements.txt || -f setup.py ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "has_rust=$([[ -f Cargo.toml ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "has_go=$([[ -f go.mod ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+  # ── Lint ──────────────────────────────────────────────────
+  lint:
+    needs: detect-stack
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lint (Node/ESLint)
+        if: needs.detect-stack.outputs.has_node == 'true'
+        run: |
+          npm ci --ignore-scripts
+          npx eslint . --max-warnings=0 || true
+
+      - name: Lint (Python/Ruff)
+        if: needs.detect-stack.outputs.has_python == 'true'
+        run: |
+          pip install ruff
+          ruff check .
+
+      - name: Lint (Rust/Clippy)
+        if: needs.detect-stack.outputs.has_rust == 'true'
+        run: cargo clippy -- -D warnings
+
+      - name: Lint (Go/vet)
+        if: needs.detect-stack.outputs.has_go == 'true'
+        run: |
+          go vet ./...
+          if command -v golangci-lint &>/dev/null; then golangci-lint run; fi
+
+  # ── Test ──────────────────────────────────────────────────
+  test:
+    needs: detect-stack
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test (Node)
+        if: needs.detect-stack.outputs.has_node == 'true'
+        run: |
+          npm ci --ignore-scripts
+          npm test -- --coverage || npx vitest --coverage || true
+
+      - name: Test (Python)
+        if: needs.detect-stack.outputs.has_python == 'true'
+        run: |
+          pip install uv
+          uv sync 2>/dev/null || pip install -e ".[test]" 2>/dev/null || pip install -r requirements.txt
+          python -m pytest --tb=short --cov=. --cov-report=xml || true
+
+      - name: Test (Rust)
+        if: needs.detect-stack.outputs.has_rust == 'true'
+        run: cargo test
+
+      - name: Test (Go)
+        if: needs.detect-stack.outputs.has_go == 'true'
+        run: go test -race -coverprofile=coverage.out ./...
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: |
+            coverage/
+            coverage.xml
+            coverage.out
+          if-no-files-found: ignore
+
+  # ── Build ─────────────────────────────────────────────────
+  build:
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build (Node)
+        if: needs.detect-stack.outputs.has_node == 'true'
+        run: |
+          npm ci --ignore-scripts
+          npm run build || true
+
+      - name: Build (Python)
+        if: needs.detect-stack.outputs.has_python == 'true'
+        run: |
+          pip install uv
+          uv build 2>/dev/null || python -m build 2>/dev/null || true
+
+      - name: Build (Rust)
+        if: needs.detect-stack.outputs.has_rust == 'true'
+        run: cargo build --release
+
+      - name: Build (Go)
+        if: needs.detect-stack.outputs.has_go == 'true'
+        run: go build ./...
+
+  # ── SAST (Static Application Security Testing) ───────────
+  sast:
+    needs: detect-stack
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Semgrep scan
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/default
+            p/owasp-top-ten
+            p/security-audit
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+        continue-on-error: true
+
+      - name: Secret scan (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ── SCA (Software Composition Analysis) ──────────────────
+  sca:
+    needs: detect-stack
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: npm audit
+        if: needs.detect-stack.outputs.has_node == 'true'
+        run: |
+          npm ci --ignore-scripts
+          npm audit --audit-level=high || true
+
+      - name: pip-audit
+        if: needs.detect-stack.outputs.has_python == 'true'
+        run: |
+          pip install pip-audit
+          pip-audit -r requirements.txt 2>/dev/null || pip-audit 2>/dev/null || true
+
+      - name: cargo-audit
+        if: needs.detect-stack.outputs.has_rust == 'true'
+        run: |
+          cargo install cargo-audit
+          cargo audit
+
+      - name: govulncheck
+        if: needs.detect-stack.outputs.has_go == 'true'
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...

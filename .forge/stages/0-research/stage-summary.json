@@ -1,0 +1,34 @@
+{
+  "stage_id": "0-research",
+  "completed_utc": "2026-05-05T21:30:00Z",
+  "artifacts_produced": [
+    {"path": ".forge/stages/0-research/prd.md", "description": "PRD with 9 acceptance criteria"},
+    {"path": ".forge/stages/0-research/codebase-audit.md", "description": "Full audit: 5 breaking issues, 7 recommended fixes, container gap table"},
+    {"path": ".forge/stages/0-research/conflicts-resolved.md", "description": "5 conflicts with resolutions"},
+    {"path": ".forge/stages/0-research/handoff.json", "description": "Stage handoff with key findings"}
+  ],
+  "key_decisions": [
+    {"dr_id": "DR-001", "summary": "Create containers/red_ml/ separately from containers/red/ — they are different tools"},
+    {"dr_id": "DR-002", "summary": "Use containers/wgs/ for add_md_tag and bcftools rules (already has samtools+bcftools)"},
+    {"dr_id": "DR-003", "summary": "Create containers/star/ rather than reusing lodei.sif for clarity"},
+    {"dr_id": "DR-004", "summary": "Add downstream_scripts_dir to config.yaml; use {params.downstream_dir}/ in shell"},
+    {"dr_id": "DR-005", "summary": "Follow editing_wgs container_for() + containers: config block pattern exactly"}
+  ],
+  "open_issues": [
+    {"summary": "Downstream/Benchmark submodule is empty — scripts must be initialized before pipeline runs"},
+    {"summary": "RED-ML Perl/R container needs version pinning for red_ML.pl and R packages"},
+    {"summary": "profiles/tscc2/config.yaml may need --software-deployment-method apptainer update for Snakemake 9"}
+  ],
+  "resumption_context": "Research is complete. The Morales_et_all pipeline needs: (1) container_for() helper + SIF_DIR/CONTAINERS globals added to Snakefile, (2) containers: block in config.yaml with 9 tool→SIF mappings, (3) container:/log:/resources: added to all 9 rules, (4) shell commands updated to use container-native executables instead of ~/bin paths, (5) downstream script paths via config key, (6) 4 new Dockerfiles: containers/star/, containers/red_ml/, containers/fastx/, containers/morales_downstream/. The editing_wgs/ pipeline is the reference for all patterns.",
+  "next_stage_must_read": [
+    ".forge/stages/0-research/codebase-audit.md",
+    ".forge/stages/0-research/prd.md",
+    ".forge/stages/0-research/conflicts-resolved.md",
+    "pipelines/editing_wgs/Snakefile",
+    "pipelines/Morales_et_all/Snakefile",
+    "pipelines/Morales_et_all/preprocessing.smk",
+    "pipelines/Morales_et_all/tools.smk",
+    "pipelines/Morales_et_all/downstream.smk",
+    "pipelines/Morales_et_all/config.yaml"
+  ]
+}

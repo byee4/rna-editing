@@ -1,0 +1,2145 @@
+{
+  "nodes": [
+    {
+      "id": "singularity_data_deepred_c1_ensemble_score1_m",
+      "label": "C1_ensemble_score1.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/C1_ensemble_score1.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_c4_ensemble_score4_m",
+      "label": "C4_ensemble_score4.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/C4_ensemble_score4.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_b2_combine_individual_classifier_m",
+      "label": "B2_combine_individual_classifier.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/B2_combine_individual_classifier.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_c3_ensemble_score3_m",
+      "label": "C3_ensemble_score3.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/C3_ensemble_score3.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_b1_train_individual_classifier_m",
+      "label": "B1_train_individual_classifier.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/B1_train_individual_classifier.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_a2_load_data_chr_m",
+      "label": "A2_load_data_chr.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/A2_load_data_chr.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_c2_ensemble_score2_m",
+      "label": "C2_ensemble_score2.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/C2_ensemble_score2.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_sigm_m",
+      "label": "sigm.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/sigm.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_lf_hmmsupervisedlearning_fromexistedmodel_m",
+      "label": "lf_HMMSupervisedLearning_FromExistedModel - \u526f\u672c.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/lf_HMMSupervisedLearning_FromExistedModel - \u526f\u672c.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_logsumexp_m",
+      "label": "logsumexp.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/logsumexp.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_unsupervisedstackedaecost_m",
+      "label": "unsupervisedstackedAECost.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/unsupervisedstackedAECost.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_supervisedlearnig_m",
+      "label": "supervisedlearnig.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/supervisedlearnig.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_softmaxtup_m",
+      "label": "softmaxtup.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/softmaxtup.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_params2stack_m",
+      "label": "params2stack.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/params2stack.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_softmaxtrain_m",
+      "label": "softmaxtrain.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/softmaxtrain.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_lf_hmmsupervisedlearning_m",
+      "label": "lf_HMMSupervisedLearning.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/lf_HMMSupervisedLearning.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_em_init_kmeans_m",
+      "label": "EM_init_kmeans.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/EM_init_kmeans.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_softmaxcost_m",
+      "label": "softmaxCost.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/softmaxCost.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_dbntrain_m",
+      "label": "dbntrain.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/dbntrain.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_emgm_m",
+      "label": "emgm.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/emgm.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_supervisedstackedaepredict_m",
+      "label": "supervisedstackedAEPredict.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/supervisedstackedAEPredict.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_supervisedfinetuning_m",
+      "label": "supervisedfinetuning.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/supervisedfinetuning.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_logdet_m",
+      "label": "logdet.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/logdet.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_lf_hmmsupervisedlearning_fromexistedmodel_m",
+      "label": "lf_HMMSupervisedLearning_FromExistedModel.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/lf_HMMSupervisedLearning_FromExistedModel.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_mixgauss_prob_m",
+      "label": "mixgauss_prob.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/mixgauss_prob.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_unsupervisedstackedaepredict_m",
+      "label": "unsupervisedstackedAEPredict.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/unsupervisedstackedAEPredict.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_stack2params_m",
+      "label": "stack2params.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/stack2params.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_unsupervisedfinetuning_m",
+      "label": "unsupervisedfinetuning.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/unsupervisedfinetuning.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_sqdist_m",
+      "label": "sqdist.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/sqdist.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_dbnsetup_m",
+      "label": "dbnsetup.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/dbnsetup.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_gaussian_prob_m",
+      "label": "gaussian_prob.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/gaussian_prob.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_lf_hmmviterbi_m",
+      "label": "lf_HMMViterbi.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/lf_HMMViterbi.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_rbmtrain_m",
+      "label": "rbmtrain.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/rbmtrain.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_unsupervisedlearnig_m",
+      "label": "unsupervisedlearnig.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/unsupervisedlearnig.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_supervisedstackedaecost_m",
+      "label": "supervisedstackedAECost.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/supervisedstackedAECost.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_lf_hmmsupervisedlearning_m",
+      "label": "lf_HMMSupervisedLearning - \u526f\u672c.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/lf_HMMSupervisedLearning - \u526f\u672c.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_isposdef_m",
+      "label": "isposdef.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/isposdef.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_rbmup_m",
+      "label": "rbmup.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/rbmup.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_sigmrnd_m",
+      "label": "sigmrnd.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/sigmrnd.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_minfunc_example_minfunc_lr_m",
+      "label": "example_minFunc_LR.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/example_minFunc_LR.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_minfunc_armijobacktrack_m",
+      "label": "ArmijoBacktrack.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/ArmijoBacktrack.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_minfunc_polyinterp_m",
+      "label": "polyinterp.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/polyinterp.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_minfunc_wolfelinesearch_m",
+      "label": "WolfeLineSearch.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/WolfeLineSearch.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_minfunc_mchol_m",
+      "label": "mchol.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/mchol.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_minfunc_lbfgs_m",
+      "label": "lbfgs.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/lbfgs.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_minfunc_autotensor_m",
+      "label": "autoTensor.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/autoTensor.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_minfunc_conjgrad_m",
+      "label": "conjGrad.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/conjGrad.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_minfunc_lbfgsupdate_m",
+      "label": "lbfgsUpdate.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/lbfgsUpdate.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_minfunc_taylormodel_m",
+      "label": "taylorModel.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/taylorModel.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_minfunc_minfunc_processinputoptions_m",
+      "label": "minFunc_processInputOptions.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/minFunc_processInputOptions.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_minfunc_lbfgsc_c",
+      "label": "lbfgsC.c",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/lbfgsC.c",
+      "source_location": "L1"
+    },
+    {
+      "id": "minfunc_lbfgsc_mexfunction",
+      "label": "mexFunction()",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/lbfgsC.c",
+      "source_location": "L8"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_minfunc_islegal_m",
+      "label": "isLegal.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/isLegal.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_minfunc_minfunc_m",
+      "label": "minFunc.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/minFunc.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_minfunc_mcholinc_m",
+      "label": "mcholinc.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/mcholinc.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_minfunc_calloutput_m",
+      "label": "callOutput.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/callOutput.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_minfunc_precondtriu_m",
+      "label": "precondTriu.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/precondTriu.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_minfunc_precondtriudiag_m",
+      "label": "precondTriuDiag.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/precondTriuDiag.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_minfunc_dampedupdate_m",
+      "label": "dampedUpdate.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/dampedUpdate.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_minfunc_example_minfunc_m",
+      "label": "example_minFunc.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/example_minFunc.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_minfunc_autograd_m",
+      "label": "autoGrad.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/autoGrad.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_minfunc_rosenbrock_m",
+      "label": "rosenbrock.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/rosenbrock.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_minfunc_preconddiag_m",
+      "label": "precondDiag.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/precondDiag.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_minfunc_autohv_m",
+      "label": "autoHv.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/autoHv.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_minfunc_mcholc_c",
+      "label": "mcholC.c",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/mcholC.c",
+      "source_location": "L1"
+    },
+    {
+      "id": "minfunc_mcholc_mymax",
+      "label": "mymax()",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/mcholC.c",
+      "source_location": "L4"
+    },
+    {
+      "id": "minfunc_mcholc_absolute",
+      "label": "absolute()",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/mcholC.c",
+      "source_location": "L12"
+    },
+    {
+      "id": "minfunc_mcholc_permuteint",
+      "label": "permuteInt()",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/mcholC.c",
+      "source_location": "L20"
+    },
+    {
+      "id": "minfunc_mcholc_permute",
+      "label": "permute()",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/mcholC.c",
+      "source_location": "L28"
+    },
+    {
+      "id": "minfunc_mcholc_permuterows",
+      "label": "permuteRows()",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/mcholC.c",
+      "source_location": "L36"
+    },
+    {
+      "id": "minfunc_mcholc_permutecols",
+      "label": "permuteCols()",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/mcholC.c",
+      "source_location": "L48"
+    },
+    {
+      "id": "minfunc_mcholc_mexfunction",
+      "label": "mexFunction()",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/mcholC.c",
+      "source_location": "L60"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_minfunc_autohess_m",
+      "label": "autoHess.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/autoHess.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_minfunc_logistic_mexutil_c",
+      "label": "mexutil.c",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/logistic/mexutil.c",
+      "source_location": "L1"
+    },
+    {
+      "id": "logistic_mexutil_mxcreatenumericarraye",
+      "label": "mxCreateNumericArrayE()",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/logistic/mexutil.c",
+      "source_location": "L5"
+    },
+    {
+      "id": "logistic_mexutil_mxcreatenumericmatrixe",
+      "label": "mxCreateNumericMatrixE()",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/logistic/mexutil.c",
+      "source_location": "L25"
+    },
+    {
+      "id": "logistic_mexutil_mxcreatedoublematrixe",
+      "label": "mxCreateDoubleMatrixE()",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/logistic/mexutil.c",
+      "source_location": "L38"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_minfunc_logistic_logisticloss_m",
+      "label": "LogisticLoss.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/logistic/LogisticLoss.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_minfunc_logistic_mylogsumexp_m",
+      "label": "mylogsumexp.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/logistic/mylogsumexp.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_minfunc_logistic_mexutil_h",
+      "label": "mexutil.h",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/logistic/mexutil.h",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_minfunc_logistic_repmatc_c",
+      "label": "repmatC.c",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/logistic/repmatC.c",
+      "source_location": "L1"
+    },
+    {
+      "id": "logistic_repmatc_memrep",
+      "label": "memrep()",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/logistic/repmatC.c",
+      "source_location": "L11"
+    },
+    {
+      "id": "logistic_repmatc_repmat",
+      "label": "repmat()",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/logistic/repmatC.c",
+      "source_location": "L34"
+    },
+    {
+      "id": "logistic_repmatc_mexfunction",
+      "label": "mexFunction()",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/logistic/repmatC.c",
+      "source_location": "L56"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_minfunc_logistic_logisticdiagprecond_m",
+      "label": "LogisticDiagPrecond.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/logistic/LogisticDiagPrecond.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "singularity_data_deepred_matlab_code_of_deepred_minfunc_logistic_logistichv_m",
+      "label": "LogisticHv.m",
+      "file_type": "code",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/logistic/LogisticHv.m",
+      "source_location": "L1"
+    },
+    {
+      "id": "containers_editpredict_fix_upstream_py",
+      "label": "fix_upstream.py",
+      "file_type": "code",
+      "source_file": "containers/editpredict/fix_upstream.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "editpredict_fix_upstream_patch_get_seq",
+      "label": "patch_get_seq()",
+      "file_type": "code",
+      "source_file": "containers/editpredict/fix_upstream.py",
+      "source_location": "L10"
+    },
+    {
+      "id": "editpredict_fix_upstream_patch_edit_predict",
+      "label": "patch_edit_predict()",
+      "file_type": "code",
+      "source_file": "containers/editpredict/fix_upstream.py",
+      "source_location": "L18"
+    },
+    {
+      "id": "editpredict_fix_upstream_main",
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "containers/editpredict/fix_upstream.py",
+      "source_location": "L65"
+    },
+    {
+      "id": "tests_test_sprint_to_deepred_vcf_py",
+      "label": "test_sprint_to_deepred_vcf.py",
+      "file_type": "code",
+      "source_file": "tests/test_sprint_to_deepred_vcf.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "tests_test_sprint_to_deepred_vcf_sprinttodeepredvcftest",
+      "label": "SprintToDeepRedVcfTest",
+      "file_type": "code",
+      "source_file": "tests/test_sprint_to_deepred_vcf.py",
+      "source_location": "L8"
+    },
+    {
+      "id": "tests_test_sprint_to_deepred_vcf_sprinttodeepredvcftest_test_regular_res_rows_are_converted_to_ref_alt_vcf",
+      "label": ".test_regular_res_rows_are_converted_to_ref_alt_vcf()",
+      "file_type": "code",
+      "source_file": "tests/test_sprint_to_deepred_vcf.py",
+      "source_location": "L11"
+    },
+    {
+      "id": "tests_test_sprint_to_deepred_vcf_rationale_9",
+      "label": "Tests for converting SPRINT RES rows into DeepRed candidate SNVs.",
+      "file_type": "rationale",
+      "source_file": "tests/test_sprint_to_deepred_vcf.py",
+      "source_location": "L9"
+    },
+    {
+      "id": "tests_test_sprint_to_deepred_vcf_rationale_12",
+      "label": "SPRINT one-based end coordinates and edit types become DeepRed rows.",
+      "file_type": "rationale",
+      "source_file": "tests/test_sprint_to_deepred_vcf.py",
+      "source_location": "L12"
+    },
+    {
+      "id": "tests_test_editing_wgs_dryrun_py",
+      "label": "test_editing_wgs_dryrun.py",
+      "file_type": "code",
+      "source_file": "tests/test_editing_wgs_dryrun.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "tests_test_editing_wgs_dryrun_editingwgsdryruntest",
+      "label": "EditingWgsDryRunTest",
+      "file_type": "code",
+      "source_file": "tests/test_editing_wgs_dryrun.py",
+      "source_location": "L12"
+    },
+    {
+      "id": "tests_test_editing_wgs_dryrun_editingwgsdryruntest_test_all_sample_instance_types_are_schedulable",
+      "label": ".test_all_sample_instance_types_are_schedulable()",
+      "file_type": "code",
+      "source_file": "tests/test_editing_wgs_dryrun.py",
+      "source_location": "L15"
+    },
+    {
+      "id": "tests_test_editing_wgs_dryrun_rationale_13",
+      "label": "Dry-run tests for all configured editing_wgs sample branches.",
+      "file_type": "rationale",
+      "source_file": "tests/test_editing_wgs_dryrun.py",
+      "source_location": "L13"
+    },
+    {
+      "id": "tests_test_editing_wgs_dryrun_rationale_16",
+      "label": "All sample branches build a DAG, including the shared STAR index.",
+      "file_type": "rationale",
+      "source_file": "tests/test_editing_wgs_dryrun.py",
+      "source_location": "L16"
+    },
+    {
+      "id": "scripts_sprint_to_deepred_vcf_py",
+      "label": "sprint_to_deepred_vcf.py",
+      "file_type": "code",
+      "source_file": "scripts/sprint_to_deepred_vcf.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "scripts_sprint_to_deepred_vcf_parse_edit_type",
+      "label": "parse_edit_type()",
+      "file_type": "code",
+      "source_file": "scripts/sprint_to_deepred_vcf.py",
+      "source_location": "L18"
+    },
+    {
+      "id": "scripts_sprint_to_deepred_vcf_convert_sprint_res_to_deepred_vcf",
+      "label": "convert_sprint_res_to_deepred_vcf()",
+      "file_type": "code",
+      "source_file": "scripts/sprint_to_deepred_vcf.py",
+      "source_location": "L30"
+    },
+    {
+      "id": "scripts_sprint_to_deepred_vcf_main",
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "scripts/sprint_to_deepred_vcf.py",
+      "source_location": "L70"
+    },
+    {
+      "id": "scripts_sprint_to_deepred_vcf_rationale_19",
+      "label": "Return REF and ALT bases from a SPRINT edit type token.",
+      "file_type": "rationale",
+      "source_file": "scripts/sprint_to_deepred_vcf.py",
+      "source_location": "L19"
+    },
+    {
+      "id": "scripts_sprint_to_deepred_vcf_rationale_31",
+      "label": "Write DeepRed chromosome/position/ref/alt rows from SPRINT RES calls.",
+      "file_type": "rationale",
+      "source_file": "scripts/sprint_to_deepred_vcf.py",
+      "source_location": "L31"
+    },
+    {
+      "id": "scripts_sprint_to_deepred_vcf_rationale_71",
+      "label": "Run the SPRINT-to-DeepRed VCF conversion command.",
+      "file_type": "rationale",
+      "source_file": "scripts/sprint_to_deepred_vcf.py",
+      "source_location": "L71"
+    },
+    {
+      "id": "scripts_sprint_to_editpredict_positions_py",
+      "label": "sprint_to_editpredict_positions.py",
+      "file_type": "code",
+      "source_file": "scripts/sprint_to_editpredict_positions.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "scripts_sprint_to_editpredict_positions_normalize_chromosome",
+      "label": "normalize_chromosome()",
+      "file_type": "code",
+      "source_file": "scripts/sprint_to_editpredict_positions.py",
+      "source_location": "L14"
+    },
+    {
+      "id": "scripts_sprint_to_editpredict_positions_convert_sprint_positions",
+      "label": "convert_sprint_positions()",
+      "file_type": "code",
+      "source_file": "scripts/sprint_to_editpredict_positions.py",
+      "source_location": "L31"
+    },
+    {
+      "id": "scripts_sprint_to_editpredict_positions_main",
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "scripts/sprint_to_editpredict_positions.py",
+      "source_location": "L65"
+    },
+    {
+      "id": "scripts_sprint_to_editpredict_positions_rationale_15",
+      "label": "Return the chromosome token format accepted by EditPredict get_seq.py.",
+      "file_type": "rationale",
+      "source_file": "scripts/sprint_to_editpredict_positions.py",
+      "source_location": "L15"
+    },
+    {
+      "id": "scripts_sprint_to_editpredict_positions_rationale_32",
+      "label": "Write EditPredict chromosome/locus rows from a SPRINT regular RES file.",
+      "file_type": "rationale",
+      "source_file": "scripts/sprint_to_editpredict_positions.py",
+      "source_location": "L32"
+    },
+    {
+      "id": "scripts_sprint_to_editpredict_positions_rationale_66",
+      "label": "Run the SPRINT-to-EditPredict position conversion command.",
+      "file_type": "rationale",
+      "source_file": "scripts/sprint_to_editpredict_positions.py",
+      "source_location": "L66"
+    },
+    {
+      "id": "scripts_make_small_fastq_dataset_py",
+      "label": "make_small_fastq_dataset.py",
+      "file_type": "code",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "scripts_make_small_fastq_dataset_genomicinterval",
+      "label": "GenomicInterval",
+      "file_type": "code",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L35"
+    },
+    {
+      "id": "scripts_make_small_fastq_dataset_open_maybe_gz",
+      "label": "open_maybe_gz()",
+      "file_type": "code",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L40"
+    },
+    {
+      "id": "scripts_make_small_fastq_dataset_normalize_qname",
+      "label": "normalize_qname()",
+      "file_type": "code",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L46"
+    },
+    {
+      "id": "scripts_make_small_fastq_dataset_iter_fastq",
+      "label": "iter_fastq()",
+      "file_type": "code",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L54"
+    },
+    {
+      "id": "scripts_make_small_fastq_dataset_parse_fastq_name",
+      "label": "parse_fastq_name()",
+      "file_type": "code",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L68"
+    },
+    {
+      "id": "scripts_make_small_fastq_dataset_write_fastq",
+      "label": "write_fastq()",
+      "file_type": "code",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L74"
+    },
+    {
+      "id": "scripts_make_small_fastq_dataset_reservoir_sample_single",
+      "label": "reservoir_sample_single()",
+      "file_type": "code",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L84"
+    },
+    {
+      "id": "scripts_make_small_fastq_dataset_reservoir_sample_paired",
+      "label": "reservoir_sample_paired()",
+      "file_type": "code",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L97"
+    },
+    {
+      "id": "scripts_make_small_fastq_dataset_parse_gtf_gene_intervals",
+      "label": "parse_gtf_gene_intervals()",
+      "file_type": "code",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L131"
+    },
+    {
+      "id": "scripts_make_small_fastq_dataset_interval_overlaps",
+      "label": "interval_overlaps()",
+      "file_type": "code",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L164"
+    },
+    {
+      "id": "scripts_make_small_fastq_dataset_cigar_ref_span",
+      "label": "cigar_ref_span()",
+      "file_type": "code",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L176"
+    },
+    {
+      "id": "scripts_make_small_fastq_dataset_run_star_alignment",
+      "label": "run_star_alignment()",
+      "file_type": "code",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L193"
+    },
+    {
+      "id": "scripts_make_small_fastq_dataset_mapped_reads_overlapping_genes",
+      "label": "mapped_reads_overlapping_genes()",
+      "file_type": "code",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L241"
+    },
+    {
+      "id": "scripts_make_small_fastq_dataset_filter_fastq_by_names_single",
+      "label": "filter_fastq_by_names_single()",
+      "file_type": "code",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L265"
+    },
+    {
+      "id": "scripts_make_small_fastq_dataset_filter_fastq_by_names_paired",
+      "label": "filter_fastq_by_names_paired()",
+      "file_type": "code",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L283"
+    },
+    {
+      "id": "scripts_make_small_fastq_dataset_infer_default_output_prefix",
+      "label": "infer_default_output_prefix()",
+      "file_type": "code",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L325"
+    },
+    {
+      "id": "scripts_make_small_fastq_dataset_main",
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L335"
+    },
+    {
+      "id": "scripts_make_small_fastq_dataset_rationale_47",
+      "label": "Normalize read names to match between SAM and FASTQ headers.",
+      "file_type": "rationale",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L47"
+    }
+  ],
+  "edges": [
+    {
+      "source": "singularity_data_deepred_matlab_code_of_deepred_minfunc_lbfgsc_c",
+      "target": "math",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/lbfgsC.c",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "singularity_data_deepred_matlab_code_of_deepred_minfunc_lbfgsc_c",
+      "target": "mex",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/lbfgsC.c",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "singularity_data_deepred_matlab_code_of_deepred_minfunc_lbfgsc_c",
+      "target": "minfunc_lbfgsc_mexfunction",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/lbfgsC.c",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "singularity_data_deepred_matlab_code_of_deepred_minfunc_mcholc_c",
+      "target": "math",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/mcholC.c",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "singularity_data_deepred_matlab_code_of_deepred_minfunc_mcholc_c",
+      "target": "mex",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/mcholC.c",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "singularity_data_deepred_matlab_code_of_deepred_minfunc_mcholc_c",
+      "target": "minfunc_mcholc_mymax",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/mcholC.c",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "singularity_data_deepred_matlab_code_of_deepred_minfunc_mcholc_c",
+      "target": "minfunc_mcholc_absolute",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/mcholC.c",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "singularity_data_deepred_matlab_code_of_deepred_minfunc_mcholc_c",
+      "target": "minfunc_mcholc_permuteint",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/mcholC.c",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "singularity_data_deepred_matlab_code_of_deepred_minfunc_mcholc_c",
+      "target": "minfunc_mcholc_permute",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/mcholC.c",
+      "source_location": "L28",
+      "weight": 1.0
+    },
+    {
+      "source": "singularity_data_deepred_matlab_code_of_deepred_minfunc_mcholc_c",
+      "target": "minfunc_mcholc_permuterows",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/mcholC.c",
+      "source_location": "L36",
+      "weight": 1.0
+    },
+    {
+      "source": "singularity_data_deepred_matlab_code_of_deepred_minfunc_mcholc_c",
+      "target": "minfunc_mcholc_permutecols",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/mcholC.c",
+      "source_location": "L48",
+      "weight": 1.0
+    },
+    {
+      "source": "singularity_data_deepred_matlab_code_of_deepred_minfunc_mcholc_c",
+      "target": "minfunc_mcholc_mexfunction",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/mcholC.c",
+      "source_location": "L60",
+      "weight": 1.0
+    },
+    {
+      "source": "minfunc_mcholc_mexfunction",
+      "target": "minfunc_mcholc_mymax",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/mcholC.c",
+      "source_location": "L119",
+      "weight": 1.0
+    },
+    {
+      "source": "minfunc_mcholc_mexfunction",
+      "target": "minfunc_mcholc_absolute",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/mcholC.c",
+      "source_location": "L119",
+      "weight": 1.0
+    },
+    {
+      "source": "minfunc_mcholc_mexfunction",
+      "target": "minfunc_mcholc_permute",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/mcholC.c",
+      "source_location": "L154",
+      "weight": 1.0
+    },
+    {
+      "source": "minfunc_mcholc_mexfunction",
+      "target": "minfunc_mcholc_permuteint",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/mcholC.c",
+      "source_location": "L155",
+      "weight": 1.0
+    },
+    {
+      "source": "minfunc_mcholc_mexfunction",
+      "target": "minfunc_mcholc_permuterows",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/mcholC.c",
+      "source_location": "L156",
+      "weight": 1.0
+    },
+    {
+      "source": "minfunc_mcholc_mexfunction",
+      "target": "minfunc_mcholc_permutecols",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/mcholC.c",
+      "source_location": "L157",
+      "weight": 1.0
+    },
+    {
+      "source": "singularity_data_deepred_matlab_code_of_deepred_minfunc_logistic_mexutil_c",
+      "target": "mexutil",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/logistic/mexutil.c",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "singularity_data_deepred_matlab_code_of_deepred_minfunc_logistic_mexutil_c",
+      "target": "logistic_mexutil_mxcreatenumericarraye",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/logistic/mexutil.c",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "singularity_data_deepred_matlab_code_of_deepred_minfunc_logistic_mexutil_c",
+      "target": "logistic_mexutil_mxcreatenumericmatrixe",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/logistic/mexutil.c",
+      "source_location": "L25",
+      "weight": 1.0
+    },
+    {
+      "source": "singularity_data_deepred_matlab_code_of_deepred_minfunc_logistic_mexutil_c",
+      "target": "logistic_mexutil_mxcreatedoublematrixe",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/logistic/mexutil.c",
+      "source_location": "L38",
+      "weight": 1.0
+    },
+    {
+      "source": "logistic_mexutil_mxcreatedoublematrixe",
+      "target": "logistic_mexutil_mxcreatenumericmatrixe",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/logistic/mexutil.c",
+      "source_location": "L41",
+      "weight": 1.0
+    },
+    {
+      "source": "singularity_data_deepred_matlab_code_of_deepred_minfunc_logistic_mexutil_h",
+      "target": "mex",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/logistic/mexutil.h",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "singularity_data_deepred_matlab_code_of_deepred_minfunc_logistic_repmatc_c",
+      "target": "mexutil",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/logistic/repmatC.c",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "singularity_data_deepred_matlab_code_of_deepred_minfunc_logistic_repmatc_c",
+      "target": "string",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/logistic/repmatC.c",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "singularity_data_deepred_matlab_code_of_deepred_minfunc_logistic_repmatc_c",
+      "target": "logistic_repmatc_memrep",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/logistic/repmatC.c",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "singularity_data_deepred_matlab_code_of_deepred_minfunc_logistic_repmatc_c",
+      "target": "logistic_repmatc_repmat",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/logistic/repmatC.c",
+      "source_location": "L34",
+      "weight": 1.0
+    },
+    {
+      "source": "singularity_data_deepred_matlab_code_of_deepred_minfunc_logistic_repmatc_c",
+      "target": "logistic_repmatc_mexfunction",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/logistic/repmatC.c",
+      "source_location": "L56",
+      "weight": 1.0
+    },
+    {
+      "source": "logistic_repmatc_repmat",
+      "target": "logistic_repmatc_memrep",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/logistic/repmatC.c",
+      "source_location": "L53",
+      "weight": 1.0
+    },
+    {
+      "source": "logistic_repmatc_mexfunction",
+      "target": "logistic_repmatc_repmat",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/logistic/repmatC.c",
+      "source_location": "L141",
+      "weight": 1.0
+    },
+    {
+      "source": "logistic_repmatc_mexfunction",
+      "target": "logistic_repmatc_memrep",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "singularity/data/DeepRed/Matlab_code_of_DeepRed/minFunc/logistic/repmatC.c",
+      "source_location": "L142",
+      "weight": 1.0
+    },
+    {
+      "source": "containers_editpredict_fix_upstream_py",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "containers/editpredict/fix_upstream.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "containers_editpredict_fix_upstream_py",
+      "target": "editpredict_fix_upstream_patch_get_seq",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "containers/editpredict/fix_upstream.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "containers_editpredict_fix_upstream_py",
+      "target": "editpredict_fix_upstream_patch_edit_predict",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "containers/editpredict/fix_upstream.py",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "containers_editpredict_fix_upstream_py",
+      "target": "editpredict_fix_upstream_main",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "containers/editpredict/fix_upstream.py",
+      "source_location": "L65",
+      "weight": 1.0
+    },
+    {
+      "source": "editpredict_fix_upstream_main",
+      "target": "editpredict_fix_upstream_patch_get_seq",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "containers/editpredict/fix_upstream.py",
+      "source_location": "L66",
+      "weight": 1.0
+    },
+    {
+      "source": "editpredict_fix_upstream_main",
+      "target": "editpredict_fix_upstream_patch_edit_predict",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "containers/editpredict/fix_upstream.py",
+      "source_location": "L67",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_sprint_to_deepred_vcf_py",
+      "target": "tempfile",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_sprint_to_deepred_vcf.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_sprint_to_deepred_vcf_py",
+      "target": "unittest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_sprint_to_deepred_vcf.py",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_sprint_to_deepred_vcf_py",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_sprint_to_deepred_vcf.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_sprint_to_deepred_vcf_py",
+      "target": "scripts_sprint_to_deepred_vcf",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_sprint_to_deepred_vcf.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_sprint_to_deepred_vcf_py",
+      "target": "tests_test_sprint_to_deepred_vcf_sprinttodeepredvcftest",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_sprint_to_deepred_vcf.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_sprint_to_deepred_vcf_sprinttodeepredvcftest",
+      "target": "tests_test_sprint_to_deepred_vcf_sprinttodeepredvcftest_test_regular_res_rows_are_converted_to_ref_alt_vcf",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_sprint_to_deepred_vcf.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_sprint_to_deepred_vcf_rationale_9",
+      "target": "tests_test_sprint_to_deepred_vcf_sprinttodeepredvcftest",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_sprint_to_deepred_vcf.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_sprint_to_deepred_vcf_rationale_12",
+      "target": "tests_test_sprint_to_deepred_vcf_sprinttodeepredvcftest_test_regular_res_rows_are_converted_to_ref_alt_vcf",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_sprint_to_deepred_vcf.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_editing_wgs_dryrun_py",
+      "target": "subprocess",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_editing_wgs_dryrun.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_editing_wgs_dryrun_py",
+      "target": "tempfile",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_editing_wgs_dryrun.py",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_editing_wgs_dryrun_py",
+      "target": "unittest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_editing_wgs_dryrun.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_editing_wgs_dryrun_py",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_editing_wgs_dryrun.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_editing_wgs_dryrun_py",
+      "target": "tests_test_editing_wgs_dryrun_editingwgsdryruntest",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_editing_wgs_dryrun.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_editing_wgs_dryrun_editingwgsdryruntest",
+      "target": "tests_test_editing_wgs_dryrun_editingwgsdryruntest_test_all_sample_instance_types_are_schedulable",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_editing_wgs_dryrun.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_editing_wgs_dryrun_rationale_13",
+      "target": "tests_test_editing_wgs_dryrun_editingwgsdryruntest",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_editing_wgs_dryrun.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_editing_wgs_dryrun_rationale_16",
+      "target": "tests_test_editing_wgs_dryrun_editingwgsdryruntest_test_all_sample_instance_types_are_schedulable",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_editing_wgs_dryrun.py",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_sprint_to_deepred_vcf_py",
+      "target": "argparse",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/sprint_to_deepred_vcf.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_sprint_to_deepred_vcf_py",
+      "target": "os",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/sprint_to_deepred_vcf.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_sprint_to_deepred_vcf_py",
+      "target": "scripts_sprint_to_deepred_vcf_parse_edit_type",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/sprint_to_deepred_vcf.py",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_sprint_to_deepred_vcf_py",
+      "target": "scripts_sprint_to_deepred_vcf_convert_sprint_res_to_deepred_vcf",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/sprint_to_deepred_vcf.py",
+      "source_location": "L30",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_sprint_to_deepred_vcf_py",
+      "target": "scripts_sprint_to_deepred_vcf_main",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/sprint_to_deepred_vcf.py",
+      "source_location": "L70",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_sprint_to_deepred_vcf_convert_sprint_res_to_deepred_vcf",
+      "target": "scripts_sprint_to_deepred_vcf_parse_edit_type",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/sprint_to_deepred_vcf.py",
+      "source_location": "L64",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_sprint_to_deepred_vcf_main",
+      "target": "scripts_sprint_to_deepred_vcf_convert_sprint_res_to_deepred_vcf",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/sprint_to_deepred_vcf.py",
+      "source_location": "L82",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_sprint_to_deepred_vcf_rationale_19",
+      "target": "scripts_sprint_to_deepred_vcf_parse_edit_type",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/sprint_to_deepred_vcf.py",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_sprint_to_deepred_vcf_rationale_31",
+      "target": "scripts_sprint_to_deepred_vcf_convert_sprint_res_to_deepred_vcf",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/sprint_to_deepred_vcf.py",
+      "source_location": "L31",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_sprint_to_deepred_vcf_rationale_71",
+      "target": "scripts_sprint_to_deepred_vcf_main",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/sprint_to_deepred_vcf.py",
+      "source_location": "L71",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_sprint_to_editpredict_positions_py",
+      "target": "argparse",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/sprint_to_editpredict_positions.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_sprint_to_editpredict_positions_py",
+      "target": "os",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/sprint_to_editpredict_positions.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_sprint_to_editpredict_positions_py",
+      "target": "scripts_sprint_to_editpredict_positions_normalize_chromosome",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/sprint_to_editpredict_positions.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_sprint_to_editpredict_positions_py",
+      "target": "scripts_sprint_to_editpredict_positions_convert_sprint_positions",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/sprint_to_editpredict_positions.py",
+      "source_location": "L31",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_sprint_to_editpredict_positions_py",
+      "target": "scripts_sprint_to_editpredict_positions_main",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/sprint_to_editpredict_positions.py",
+      "source_location": "L65",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_sprint_to_editpredict_positions_convert_sprint_positions",
+      "target": "scripts_sprint_to_editpredict_positions_normalize_chromosome",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/sprint_to_editpredict_positions.py",
+      "source_location": "L46",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_sprint_to_editpredict_positions_main",
+      "target": "scripts_sprint_to_editpredict_positions_convert_sprint_positions",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/sprint_to_editpredict_positions.py",
+      "source_location": "L77",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_sprint_to_editpredict_positions_rationale_15",
+      "target": "scripts_sprint_to_editpredict_positions_normalize_chromosome",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/sprint_to_editpredict_positions.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_sprint_to_editpredict_positions_rationale_32",
+      "target": "scripts_sprint_to_editpredict_positions_convert_sprint_positions",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/sprint_to_editpredict_positions.py",
+      "source_location": "L32",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_sprint_to_editpredict_positions_rationale_66",
+      "target": "scripts_sprint_to_editpredict_positions_main",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/sprint_to_editpredict_positions.py",
+      "source_location": "L66",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_py",
+      "target": "argparse",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_py",
+      "target": "gzip",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_py",
+      "target": "random",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_py",
+      "target": "re",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_py",
+      "target": "shutil",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_py",
+      "target": "subprocess",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_py",
+      "target": "sys",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L23",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_py",
+      "target": "collections",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L24",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_py",
+      "target": "dataclasses",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L25",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_py",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L26",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_py",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L27",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_py",
+      "target": "pysam",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L28",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_py",
+      "target": "tqdm",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L29",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_py",
+      "target": "scripts_make_small_fastq_dataset_genomicinterval",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L35",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_py",
+      "target": "scripts_make_small_fastq_dataset_open_maybe_gz",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_py",
+      "target": "scripts_make_small_fastq_dataset_normalize_qname",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L46",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_py",
+      "target": "scripts_make_small_fastq_dataset_iter_fastq",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L54",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_py",
+      "target": "scripts_make_small_fastq_dataset_parse_fastq_name",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L68",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_py",
+      "target": "scripts_make_small_fastq_dataset_write_fastq",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L74",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_py",
+      "target": "scripts_make_small_fastq_dataset_reservoir_sample_single",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L84",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_py",
+      "target": "scripts_make_small_fastq_dataset_reservoir_sample_paired",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L97",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_py",
+      "target": "scripts_make_small_fastq_dataset_parse_gtf_gene_intervals",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L131",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_py",
+      "target": "scripts_make_small_fastq_dataset_interval_overlaps",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L164",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_py",
+      "target": "scripts_make_small_fastq_dataset_cigar_ref_span",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L176",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_py",
+      "target": "scripts_make_small_fastq_dataset_run_star_alignment",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L193",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_py",
+      "target": "scripts_make_small_fastq_dataset_mapped_reads_overlapping_genes",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L241",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_py",
+      "target": "scripts_make_small_fastq_dataset_filter_fastq_by_names_single",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L265",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_py",
+      "target": "scripts_make_small_fastq_dataset_filter_fastq_by_names_paired",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L283",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_py",
+      "target": "scripts_make_small_fastq_dataset_infer_default_output_prefix",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L325",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_py",
+      "target": "scripts_make_small_fastq_dataset_main",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L335",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_iter_fastq",
+      "target": "scripts_make_small_fastq_dataset_open_maybe_gz",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L55",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_parse_fastq_name",
+      "target": "scripts_make_small_fastq_dataset_normalize_qname",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L71",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_reservoir_sample_single",
+      "target": "scripts_make_small_fastq_dataset_iter_fastq",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L87",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_reservoir_sample_paired",
+      "target": "scripts_make_small_fastq_dataset_iter_fastq",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L100",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_parse_gtf_gene_intervals",
+      "target": "scripts_make_small_fastq_dataset_genomicinterval",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L154",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_mapped_reads_overlapping_genes",
+      "target": "scripts_make_small_fastq_dataset_interval_overlaps",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L259",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_mapped_reads_overlapping_genes",
+      "target": "scripts_make_small_fastq_dataset_normalize_qname",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L260",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_filter_fastq_by_names_single",
+      "target": "scripts_make_small_fastq_dataset_iter_fastq",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L269",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_filter_fastq_by_names_single",
+      "target": "scripts_make_small_fastq_dataset_parse_fastq_name",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L270",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_filter_fastq_by_names_paired",
+      "target": "scripts_make_small_fastq_dataset_iter_fastq",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L288",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_filter_fastq_by_names_paired",
+      "target": "scripts_make_small_fastq_dataset_parse_fastq_name",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L306",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_main",
+      "target": "scripts_make_small_fastq_dataset_infer_default_output_prefix",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L364",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_main",
+      "target": "scripts_make_small_fastq_dataset_parse_gtf_gene_intervals",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L383",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_main",
+      "target": "scripts_make_small_fastq_dataset_run_star_alignment",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L393",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_main",
+      "target": "scripts_make_small_fastq_dataset_mapped_reads_overlapping_genes",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L402",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_main",
+      "target": "scripts_make_small_fastq_dataset_filter_fastq_by_names_paired",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L406",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_main",
+      "target": "scripts_make_small_fastq_dataset_write_fastq",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L407",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_main",
+      "target": "scripts_make_small_fastq_dataset_filter_fastq_by_names_single",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L411",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_main",
+      "target": "scripts_make_small_fastq_dataset_reservoir_sample_paired",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L420",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_main",
+      "target": "scripts_make_small_fastq_dataset_reservoir_sample_single",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L425",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_make_small_fastq_dataset_rationale_47",
+      "target": "scripts_make_small_fastq_dataset_normalize_qname",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/make_small_fastq_dataset.py",
+      "source_location": "L47",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_sprint_to_deepred_vcf_sprinttodeepredvcftest_test_regular_res_rows_are_converted_to_ref_alt_vcf",
+      "target": "scripts_sprint_to_deepred_vcf_convert_sprint_res_to_deepred_vcf",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "tests/test_sprint_to_deepred_vcf.py",
+      "source_location": "L22",
+      "weight": 1.0
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}
