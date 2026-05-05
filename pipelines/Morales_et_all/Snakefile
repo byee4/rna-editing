@@ -1,0 +1,21 @@
+import os
+
+# Load the configuration file
+configfile: "config.yaml"
+
+# Include modular workflows
+include: "preprocessing.smk"
+include: "tools.smk"
+include: "downstream.smk"
+
+# Define the target outputs for the entire workflow
+rule all:
+    input:
+        # Preprocessing outputs
+        expand("results/mapped/{condition}_{sample}.rmdup.bam", condition=config["conditions"], sample=config["samples"]),
+        # Tool outputs
+        expand("results/tools/reditools/{condition}_{sample}.output", condition=config["conditions"], sample=config["samples"]),
+        expand("results/tools/bcftools/{condition}_{sample}.bcf", condition=config["conditions"], sample=config["samples"]),
+        "results/tools/jacusa2/Jacusa.out",
+        # Final downstream checkpoint
+        "results/downstream/multiple_analysis.done"

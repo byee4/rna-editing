@@ -144,11 +144,15 @@ rule deepred_predict:
         vcf_script=DEEPRED_VCF_SCRIPT,
         project=lambda wildcards: wildcards.sample,
         sample=lambda wildcards: wildcards.sample,
-        matlab_arg=deepred_matlab_arg
+        matlab_arg=deepred_matlab_arg,
+        deepred_root_arg=deepred_root_arg,
+        reference_arg=deepred_reference_arg,
+        slurm_bin_dir_arg=deepred_slurm_bin_dir_arg
     shell:
         "python {params.vcf_script} {input.snvs} {output.vcf} && "
         "deepred_predict --input-vcf {output.vcf} --project {params.project} "
-        "--sample {params.sample} --output {output.pred} {params.matlab_arg} "
+        "--sample {params.sample} --output {output.pred} {params.matlab_arg} {params.deepred_root_arg} "
+        "{params.reference_arg} {params.slurm_bin_dir_arg} "
         "1> {log.stdout} 2> {log.stderr}"
 
 
@@ -174,11 +178,15 @@ rule editpredict_filter:
         positions_script=EDITPREDICT_POSITIONS_SCRIPT,
         variant_arg=lambda wildcards, input: editpredict_variant_arg(input.variants)
     shell:
-        "python {params.positions_script} {input.pos} {output.positions} "
-        "1> {log.stdout} 2> {log.stderr} && "
-        "editpredict_score --reference {input.ref} --positions {output.positions} "
-        "--output {output.out} {params.variant_arg} "
-        "1>> {log.stdout} 2>> {log.stderr}"
+        r"""
+        set -euo pipefail
+        export TMPDIR=/tmp
+        python {params.positions_script} {input.pos} {output.positions} \
+            1> {log.stdout} 2> {log.stderr}
+        editpredict_score --reference {input.ref} --positions {output.positions} \
+            --output {output.out} {params.variant_arg} \
+            1>> {log.stdout} 2>> {log.stderr}
+        """
 
 
 # REDInet classifies tabix-indexed REDItools candidate tables into editing classes.
@@ -201,7 +209,8 @@ rule redinet_classify:
     params:
         min_coverage=config["redinet"]["min_coverage"],
         ag_frequency=config["redinet"]["ag_frequency"],
-        min_ag_subs=config["redinet"]["min_ag_subs"]
+        min_ag_subs=config["redinet"]["min_ag_subs"],
+        output_prefix=lambda wildcards: WORKDIR + f"/redinet/{wildcards.sample}_classified.txt"
     shell:
         r"""
         set -euo pipefail
@@ -211,7 +220,7 @@ rule redinet_classify:
             touch {output.classified}
         else
             redinet_classify --reditable {input.reditable} --reference {input.ref} \
-                --output {output.classified} --min-coverage {params.min_coverage} \
+                --output {params.output_prefix} --min-coverage {params.min_coverage} \
                 --ag-frequency {params.ag_frequency} --min-ag-subs {params.min_ag_subs} \
                 1> {log.stdout} 2> {log.stderr}
         fi

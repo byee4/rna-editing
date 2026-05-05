@@ -1,0 +1,62 @@
+# ==========================================
+# General Execution Parameters
+# ==========================================
+threads: 8
+
+# ==========================================
+# Experimental Design
+# ==========================================
+conditions:
+  - WT
+  - ADAR1KO
+samples:
+  - clone1
+  - clone2
+  - clone3
+aligners:
+  - star
+  - bwa
+  - hisat2
+
+# ==========================================
+# References and Annotations
+# ==========================================
+references:
+  fasta: "~/data/genome/Reference.fa"
+  star_index: "~/data/genome/star/"
+  gtf: "~/data/genome/GRCh38.gtf"
+  rmsk: "~/data/genome/hg38_repeat.bed"
+  dbsnp: "~/data/genome/snp138.txt"
+  simple_repeat: "~/data/genome/hg19.simpleRepeat.bed"
+  alu_bed: "~/data/genome/hg19.alu.bed"
+  db_path: "/binf-isilon/rennie/gsn480/data/compare_tools/dataset1/dbRNA-Editing"
+
+# ==========================================
+# Tool Executables & Scripts
+# ==========================================
+tools:
+  picard_jar: "~/bin/picard-tools/MarkDuplicates.jar"
+  reditools_script: "~/bin/reditools2.0-master/src/cineca/reditools.py"
+  sprint_bin: "~/bin/SPRINT/bin/sprint_from_bam"
+  jacusa2_jar: "/binf-isilon/rennie/gsn480/scratch/bin/JACUSA_v2.0.2-RC.jar"
+  red_ml_script: "~/bin/RED-ML/bin/red_ML.pl"
+  samtools_bin: "~/bin/samtools"
+
+# ==========================================
+# Tool Specific Parameters
+# ==========================================
+params:
+  fastx_trimmer:
+    quality: 33
+    length: 130
+  star:
+    sjdbOverhang: 129
+    map_quality: 20
+  bcftools:
+    max_depth: 10000
+    map_quality: 20
+    base_quality: 20
+  red_ml:
+    p_value: 0.5
+  jacusa2:
+    pileup_filter: "D"

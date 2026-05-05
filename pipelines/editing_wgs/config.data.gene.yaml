@@ -82,6 +82,11 @@ jacusa2:
   threads: 8
   filters: "D,I,S"
 
+deepred:
+  matlab_bin_dir: "/cm/shared/apps/spack/0.17.3/cpu/opt/spack/linux-rocky9-cascadelake/gcc-11.2.0/matlab-2022b-6eej3gxctnhbflpfpnmc5qjssh2o7qi6/bin"
+  deepred_root: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/data/DeepRed"
+  slurm_bin_dir: "/cm/shared/apps/slurm/current/bin"
+
 redinet:
   reditools_threads: 4
   min_coverage: 10

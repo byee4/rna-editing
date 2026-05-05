@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.0.0",
+  "project": {
+    "name": "rna-editing",
+    "root": "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing"
+  },
+  "archetype": "data-pipeline",
+  "stack": {
+    "language": "Python",
+    "framework": "Snakemake",
+    "database": "",
+    "orm": "",
+    "ui_library": "",
+    "test_framework": "pytest",
+    "package_manager": ""
+  },
+  "verification": {
+    "test": "pytest tests/",
+    "lint": "",
+    "typecheck": "",
+    "build": ""
+  },
+  "deploy": {
+    "platform": "",
+    "command": ""
+  },
+  "ci": {
+    "scaffolded": true,
+    "provider": "github-actions"
+  },
+  "integrations": {
+    "forge_tooling": false,
+    "graphify": true,
+    "codemap": true,
+    "aidesigner": false,
+    "beads": true
+  },
+  "code_graph": {
+    "provider": "serena",
+    "enabled": true
+  },
+  "topology": {
+    "parallel_groups": [
+      [
+        "6-security",
+        "7-docs"
+      ]
+    ],
+    "parallel_prereqs": {
+      "6-security": "5-qa",
+      "7-docs": "5-qa"
+    }
+  },
+  "stages": {
+    "enabled": [
+      "0-research",
+      "1-requirements",
+      "2-architect",
+      "2.5-spec",
+      "2.75-tdad",
+      "3.0-test-scaffold",
+      "3-implement",
+      "3.5-polish",
+      "3.75-performance",
+      "4-review",
+      "5-qa",
+      "6-security",
+      "6.5-resilience",
+      "7-docs",
+      "7.5-observability",
+      "8-release"
+    ]
+  },
+  "wiki": {
+    "enabled": true
+  },
+  "created_utc": "2026-05-02T16:05:43Z",
+  "updated_utc": "2026-05-02T16:05:43Z"
+}

@@ -80,7 +80,14 @@ deepred:
   # Optional path to a mounted MATLAB bin directory, for example:
   # /usr/local/MATLAB/R2024b/bin
   # Leave empty when MATLAB is already on PATH inside the container.
-  matlab_bin_dir: ""
+  matlab_bin_dir: "/cm/shared/apps/spack/0.17.3/cpu/opt/spack/linux-rocky9-cascadelake/gcc-11.2.0/matlab-2022b-6eej3gxctnhbflpfpnmc5qjssh2o7qi6/bin"
+  # Path to a host checkout of wenjiegroup/DeepRed (must be under a bind-mounted directory).
+  # Clone with: git clone https://github.com/wenjiegroup/DeepRed <path>
+  # Leave empty to use the default /opt/DeepRed inside the container.
+  deepred_root: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/data/DeepRed"
+  # Directory containing sbatch and other SLURM binaries. Required when DeepRed
+  # submits sub-jobs from inside the container (sbatch is not available by default).
+  slurm_bin_dir: "/cm/shared/apps/slurm/current/bin"
 
 redinet:
   reditools_threads: 4
