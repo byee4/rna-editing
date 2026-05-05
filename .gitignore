@@ -5,3 +5,7 @@
 **/.snakemake/
 __pycache__/
 **/__pycache__/
+*.sif
+**/.ipynb_checkpoints/
+.ipynb_checkpoints/
+singularity/

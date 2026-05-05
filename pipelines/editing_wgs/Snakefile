@@ -105,10 +105,28 @@ def editpredict_variant_arg(variants):
     return ""
 
 
-def deepred_matlab_arg():
+def deepred_matlab_arg(wildcards):
     """Return DeepRed's optional MATLAB binary directory argument."""
     matlab_bin_dir = config.get("deepred", {}).get("matlab_bin_dir")
     return f"--matlab-bin-dir {shlex.quote(str(matlab_bin_dir))}" if matlab_bin_dir else ""
+
+
+def deepred_root_arg(wildcards):
+    """Return DeepRed's optional source root argument."""
+    root = config.get("deepred", {}).get("deepred_root")
+    return f"--deepred-root {shlex.quote(str(root))}" if root else ""
+
+
+def deepred_reference_arg(wildcards):
+    """Return DeepRed's reference FASTA argument, taken from the global reference."""
+    ref = config.get("reference")
+    return f"--reference {shlex.quote(str(ref))}" if ref else ""
+
+
+def deepred_slurm_bin_dir_arg(wildcards):
+    """Return DeepRed's optional SLURM bin directory argument."""
+    slurm_bin_dir = config.get("deepred", {}).get("slurm_bin_dir")
+    return f"--slurm-bin-dir {shlex.quote(str(slurm_bin_dir))}" if slurm_bin_dir else ""
 
 
 def fasta_sequence_length(path):
