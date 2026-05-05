@@ -58,6 +58,65 @@ if [ ! -s "$script" ]; then
   exit 127
 fi
 
+mkdir -p "$(dirname "$output")"
+
+candidate_count="$(
+  python - "$reditable" "$min_coverage" "$ag_frequency" "$min_ag_subs" <<'PY'
+import ast
+import gzip
+import sys
+
+reditable, min_coverage, ag_frequency, min_ag_subs = sys.argv[1:]
+min_coverage = int(min_coverage)
+ag_frequency = float(ag_frequency)
+min_ag_subs = int(min_ag_subs)
+count = 0
+
+with gzip.open(reditable, "rt") as handle:
+    for line_number, raw_line in enumerate(handle, start=1):
+        line = raw_line.rstrip("\n").split("\t")
+        if len(line) < 8 or line[0].startswith("Region"):
+            continue
+        try:
+            bases = ast.literal_eval(line[6])
+            total = sum(bases)
+            ag_count = bases[2]
+            coverage = int(line[4])
+        except (ValueError, SyntaxError, TypeError, IndexError):
+            sys.exit(f"Malformed REDInet input row {line_number}: expected REDItools outTable columns")
+        if (
+            line[2] == "A"
+            and line[4] != "-"
+            and coverage >= min_coverage
+            and "AG" in line[7]
+            and total > 0
+            and ag_count / total >= ag_frequency
+            and ag_count >= min_ag_subs
+        ):
+            count += 1
+
+print(count)
+PY
+)"
+
+if [ "$candidate_count" -eq 0 ]; then
+  predictions="${output}.predictions.tsv"
+  features="${output}.feature_vectors.tsv"
+  parameters="${output}.REDInet_ligth_ver_parameters.tsv"
+  : > "$features"
+  printf 'region\tposition\tStrand\tFreqAGrna\t[A,C,G,T]\tstart\tstop\tint_len\tTabixLen\tsnp_proba\ted_proba\ty_hat\n' > "$predictions"
+  {
+    echo "###### REDInet wrapper"
+    echo "No candidate A-to-G editing sites passed REDInet prefilters."
+    echo "Input: $reditable"
+    echo "Minimum coverage: $min_coverage"
+    echo "Minimum A-to-G frequency: $ag_frequency"
+    echo "Minimum A-to-G substitutions: $min_ag_subs"
+  } > "$parameters"
+  echo "REDInet found no candidate A-to-G editing sites; wrote empty outputs for prefix: $output" >&2
+  exit 0
+fi
+
 python "$script" \
   -r "$reditable" \
   -m "$model" \
