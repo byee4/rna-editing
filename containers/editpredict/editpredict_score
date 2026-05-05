@@ -52,7 +52,7 @@ if [ -n "$vcf" ]; then
   esac
 fi
 
-python /opt/editpredict/get_seq.py -f "$reference" -p "$positions" -m b -l 100 "${vcf_args[@]}" > "$tmpdir/sequences.txt"
+python /opt/editpredict/get_seq.py -f "$reference" -p "$positions" -m b -l 200 "${vcf_args[@]}" > "$tmpdir/sequences.txt"
 python /opt/editpredict/editPredict.py \
   -f "$tmpdir/sequences.txt" \
   -c /opt/editpredict/editPredict_construction_alu.h5 \
