@@ -54,7 +54,23 @@ def main() -> int:
         default=os.environ.get("MATLAB_BIN_DIR"),
         help="Directory containing the MATLAB executable, for example /usr/local/MATLAB/R2024b/bin.",
     )
+    parser.add_argument(
+        "--reference",
+        default=os.environ.get("DEEPRED_REFERENCE"),
+        help="Reference FASTA file. Exposed to DeepRed internals as DEEPRED_REFERENCE env variable.",
+    )
+    parser.add_argument(
+        "--slurm-bin-dir",
+        default=os.environ.get("SLURM_BIN_DIR"),
+        help="Directory containing sbatch and other SLURM binaries, e.g. /cm/shared/apps/slurm/current/bin.",
+    )
     args = parser.parse_args()
+
+    if args.slurm_bin_dir:
+        slurm_bin_dir = os.path.abspath(args.slurm_bin_dir)
+        os.environ["PATH"] = "{}{}{}".format(
+            slurm_bin_dir, os.pathsep, os.environ.get("PATH", "")
+        )
 
     if args.matlab_bin_dir:
         matlab_bin_dir = os.path.abspath(args.matlab_bin_dir)
@@ -95,6 +111,18 @@ def main() -> int:
             file=sys.stderr,
         )
         return 127
+
+    if args.reference:
+        ref_link = os.path.join(run_root, "ucsc.hg19.fasta")
+        ref_path = os.path.abspath(args.reference)
+        try:
+            os.remove(ref_link)
+        except FileNotFoundError:
+            pass
+        try:
+            os.symlink(ref_path, ref_link)
+        except FileExistsError:
+            pass
 
     copy_input_vcf(args.input_vcf, run_root, args.project, args.sample)
     try:

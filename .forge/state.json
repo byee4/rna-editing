@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0.0",
+  "pipeline_id": "forge-8a8d6b83",
+  "created_utc": "2026-05-02T16:05:43Z",
+  "updated_utc": "2026-05-02T16:05:43Z",
+  "current_stage": null,
+  "stages": {},
+  "cost": {
+    "total_input_tokens": 0,
+    "total_output_tokens": 0,
+    "total_estimated_usd": 0,
+    "per_stage": {}
+  },
+  "loop_count": {}
+}
