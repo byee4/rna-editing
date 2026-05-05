@@ -52,6 +52,12 @@ if [ -n "$vcf" ]; then
   esac
 fi
 
+# No editing candidates to score — produce empty output and exit cleanly.
+if [ ! -s "$positions" ]; then
+  touch "$output"
+  exit 0
+fi
+
 (
   cd "$tmpdir"
   python /opt/editpredict/get_seq.py -f "$reference" -p "$positions" -m b -l 200 "${vcf_args[@]}"
