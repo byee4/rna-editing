@@ -52,9 +52,17 @@ if [ -n "$vcf" ]; then
   esac
 fi
 
-python /opt/editpredict/get_seq.py -f "$reference" -p "$positions" -m b -l 100 "${vcf_args[@]}" > "$tmpdir/sequences.txt"
+(
+  cd "$tmpdir"
+  python /opt/editpredict/get_seq.py -f "$reference" -p "$positions" -m b -l 100 "${vcf_args[@]}"
+)
+sequences="$tmpdir/human_b_flanking_100.txt"
+if [ ! -s "$sequences" ]; then
+  echo "EditPredict sequence extraction did not produce $sequences" >&2
+  exit 1
+fi
 python /opt/editpredict/editPredict.py \
-  -f "$tmpdir/sequences.txt" \
-  -c /opt/editpredict/editPredict_construction_alu.h5 \
-  -w /opt/editpredict/editPredict_weight_alu.json \
+  -f "$sequences" \
+  -c /opt/editpredict/editPredict_weight_alu.json \
+  -w /opt/editpredict/editPredict_construction_alu.h5 \
   > "$output"
