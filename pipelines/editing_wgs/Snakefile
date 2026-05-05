@@ -153,8 +153,8 @@ rule all:
     input:
         expand(WORKDIR + "/jacusa2_dnarna/{sample}.out", sample=WGS_SAMPLES),
         expand(WORKDIR + "/sprint/{sample}/SPRINT_identified_regular.res", sample=SAMPLES),
-        expand(WORKDIR + "/deepred/{sample}_predictions.txt", sample=SAMPLES),
-        expand(WORKDIR + "/editpredict/{sample}_scores.txt", sample=SAMPLES),
+        # expand(WORKDIR + "/deepred/{sample}_predictions.txt", sample=SAMPLES),
+        # expand(WORKDIR + "/editpredict/{sample}_scores.txt", sample=SAMPLES),
         expand(WORKDIR + "/redinet/{sample}_classified.txt.predictions.tsv", sample=SAMPLES),
         expand(WORKDIR + "/wgs_coverage/{sample}.cov", sample=WGS_SAMPLES),
         expand(WORKDIR + "/germline/{sample}_germline.vcf.gz.tbi", sample=WGS_SAMPLES)
