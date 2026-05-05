@@ -18,6 +18,9 @@ editing callers can be maintained independently:
 - `rna_editing.smk`: DNA/RNA comparison callers plus RNA-only editing and
   classification rules.
 
+Use `config.data.example.yaml` for the tracked example inputs under
+`data/small_examples/random`, and `config.yaml` for the full `data/` inputs.
+
 Run with Singularity/Apptainer enabled:
 
 ```bash
@@ -95,10 +98,11 @@ Primary outputs include:
 - `results/wgs_coverage/{sample}.cov`: WGS-only coverage from `{sample}.wgs.md.bam` for samples with WGS.
 - `results/germline/{sample}_germline.vcf.gz`: WGS-only germline SNVs from `{sample}.wgs.md.bam` for samples with WGS.
 
-Container paths and caller thresholds are defined in `config.yaml`; existing
-local SIFs cover STAR indexing and alignment through `lodei.sif`, REDItools, JACUSA2, SPRINT, DeepRED,
-editPredict, and REDI-NET. The WGS and Picard images need to be built from
-`containers/wgs` and `containers/picard` before a full production run:
+Container paths and caller thresholds are defined in `config.yaml`; the tracked
+local SIFs cover STAR indexing and alignment through `lodei.sif`, REDItools,
+JACUSA2, and SPRINT. `wgs.sif` and `picard.sif` need to be built and placed in
+`singularity/` before a full production run, and the workflow also expects the
+DeepRED, editPredict, and REDInet SIF paths configured there:
 
 ```bash
 TOOLS="wgs picard sprint deepred editpredict redinet" scripts/validate_containers.sh

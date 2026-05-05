@@ -1,0 +1,89 @@
+# Example config for running pipelines/editing_wgs/Snakefile against the
+# small datasets in data/small_examples/gene_APP_GAPDH. All paths are absolute so this
+# config can be used from any working directory.
+
+WORKDIR: "/tscc/nfs/home/bay001/projects/codebase/rna-editing/examples/small_example"
+
+reference: "/tscc/projects/ps-yeolab3/bay001/annotations/GRCh38/GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta"
+star_index: "GRCh38_no_alt_analysis_set_GCA_000001405.idx"
+# Optional known SNP database filter. No .vcf/.vcf.gz was present under data/
+# when this example was generated.
+# known_snps: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/refs/known_snps.vcf"
+
+singularity_image_dir: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity"
+containers:
+  # Available images found in singularity/.
+  star: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/lodei.sif"
+  samtools: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/jacusa2.sif"
+  sprint: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/sprint.sif"
+  reditools: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/reditools.sif"
+  jacusa2: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/jacusa2.sif"
+
+  # Required by the current Snakefile, but no matching SIFs were present in
+  # singularity/ at generation time. Build or add these before a full run.
+  wgs: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/wgs.sif"
+  picard: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/picard.sif"
+  deepred: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/deepred.sif"
+  editpredict: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/editpredict.sif"
+  redinet: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/redinet.sif"
+
+# FASTQ modality checks (from files present in data/small_examples/gene_APP_GAPDH):
+# - HEK293_WGS_SRR10129632 is paired-end WGS (R1/R2).
+# - MULTI_CELL_RNA_SRR10319891-96 are single-end RNA (R1 only).
+# - HEK293T_RNA_SRR5564268/72/73/74/75/76 are paired-end RNA (R1/R2).
+# - HEK293_NANOPORE_SRR9646141 is single-end long-read RNA (R1 only) and is
+#   not included below because this workflow currently expects STAR short-read
+#   alignment and WGS/RNA pairing logic.
+samples:
+  HEK293_with_WGS:
+    rna: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/small_examples/gene_APP_GAPDH/MULTI_CELL_RNA_SRR10319891_R1.fastq.gz"
+    wgs:
+      - "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/small_examples/gene_APP_GAPDH/HEK293_WGS_SRR10129632_R1.fastq.gz"
+      - "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/small_examples/gene_APP_GAPDH/HEK293_WGS_SRR10129632_R2.fastq.gz"
+
+  HEK293_RNA_Rep2:
+    rna: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/small_examples/gene_APP_GAPDH/MULTI_CELL_RNA_SRR10319892_R1.fastq.gz"
+  HEK293_RNA_Rep3:
+    rna: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/small_examples/gene_APP_GAPDH/MULTI_CELL_RNA_SRR10319893_R1.fastq.gz"
+  HEK293_RNA_Rep4:
+    rna: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/small_examples/gene_APP_GAPDH/MULTI_CELL_RNA_SRR10319894_R1.fastq.gz"
+  HEK293_RNA_Rep5:
+    rna: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/small_examples/gene_APP_GAPDH/MULTI_CELL_RNA_SRR10319895_R1.fastq.gz"
+  HEK293_RNA_Rep6:
+    rna: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/small_examples/gene_APP_GAPDH/MULTI_CELL_RNA_SRR10319896_R1.fastq.gz"
+
+  HEK293T_WT_RNA_Rep1:
+    rna:
+      - "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/small_examples/gene_APP_GAPDH/HEK293T_RNA_SRR5564274_R1.fastq.gz"
+      - "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/small_examples/gene_APP_GAPDH/HEK293T_RNA_SRR5564274_R2.fastq.gz"
+  HEK293T_WT_RNA_Rep2:
+    rna:
+      - "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/small_examples/gene_APP_GAPDH/HEK293T_RNA_SRR5564275_R1.fastq.gz"
+      - "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/small_examples/gene_APP_GAPDH/HEK293T_RNA_SRR5564275_R2.fastq.gz"
+  HEK293T_WT_RNA_Rep3:
+    rna:
+      - "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/small_examples/gene_APP_GAPDH/HEK293T_RNA_SRR5564276_R1.fastq.gz"
+      - "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/small_examples/gene_APP_GAPDH/HEK293T_RNA_SRR5564276_R2.fastq.gz"
+
+  HEK293T_ADAR1KO_RNA_Rep1:
+    rna:
+      - "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/small_examples/gene_APP_GAPDH/HEK293T_RNA_SRR5564272_R1.fastq.gz"
+      - "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/small_examples/gene_APP_GAPDH/HEK293T_RNA_SRR5564272_R2.fastq.gz"
+  HEK293T_ADAR1KO_RNA_Rep2:
+    rna:
+      - "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/small_examples/gene_APP_GAPDH/HEK293T_RNA_SRR5564273_R1.fastq.gz"
+      - "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/small_examples/gene_APP_GAPDH/HEK293T_RNA_SRR5564273_R2.fastq.gz"
+  HEK293T_ADAR1KO_RNA_Rep3:
+    rna:
+      - "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/small_examples/gene_APP_GAPDH/HEK293T_RNA_SRR5564268_R1.fastq.gz"
+      - "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/small_examples/gene_APP_GAPDH/HEK293T_RNA_SRR5564268_R2.fastq.gz"
+
+jacusa2:
+  threads: 8
+  filters: "D,I,S"
+
+redinet:
+  reditools_threads: 4
+  min_coverage: 10
+  ag_frequency: 0.01
+  min_ag_subs: 2

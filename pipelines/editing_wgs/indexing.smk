@@ -28,6 +28,9 @@ rule bwa_index:
         pac=REF + ".pac",
         sa=REF + ".sa"
     container: container_for("wgs")
+    resources:
+        runtime=lambda wildcards, attempt: 120 * (2 ** (attempt - 1)),
+        mem_mb=lambda wildcards, attempt: 20000 * (1.5 ** (attempt - 1))
     shell:
         "bwa index {input.ref}"
 
