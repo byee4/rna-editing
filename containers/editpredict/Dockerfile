@@ -15,6 +15,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN git clone --depth 1 https://github.com/wjd198605/EditPredict.git /opt/editpredict
 
+COPY fix_upstream.py /tmp/fix_editpredict_upstream.py
+RUN python /tmp/fix_editpredict_upstream.py \
+    && rm -f /tmp/fix_editpredict_upstream.py
+
 COPY editpredict_score /usr/local/bin/editpredict_score
 COPY validate.sh /usr/local/bin/validate-editpredict
 RUN chmod +x /usr/local/bin/editpredict_score /usr/local/bin/validate-editpredict
