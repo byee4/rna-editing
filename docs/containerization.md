@@ -64,6 +64,12 @@ missing Snakefile dependencies can be built explicitly:
 TOOLS="wgs deepred editpredict redinet picard" scripts/validate_containers.sh
 ```
 
+TSCC runs on `amd64` hosts. Build or convert the WGS Singularity image with
+`DOCKER_PLATFORM=linux/amd64` before deploying it there; an `arm64` SIF built
+from an Apple Silicon Docker image will fail with an architecture mismatch.
+The deployable WGS image should be named `singularity/wgs.sif` in the TSCC
+checkout.
+
 Useful environment variables:
 
 | Variable | Default | Purpose |
