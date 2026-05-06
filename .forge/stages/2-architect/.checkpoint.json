@@ -1,0 +1,53 @@
+{
+  "stage_id": "2-architect",
+  "phase": "explore-complete",
+  "captured_utc": "2026-05-05T22:10:00Z",
+  "codebase_findings": {
+    "morales_pipeline_files": [
+      "pipelines/Morales_et_all/Snakefile (21 lines, no container_for, no SIF_DIR)",
+      "pipelines/Morales_et_all/preprocessing.smk (3 rules, 0 container/log/resources)",
+      "pipelines/Morales_et_all/tools.smk (6 rules, 0 container/log/resources)",
+      "pipelines/Morales_et_all/downstream.smk (5 rules, 0 container/log/resources, bare 'python Downstream/*.py' paths)",
+      "pipelines/Morales_et_all/config.yaml (tools section has 6 ~/bin and /binf-isilon/ paths)"
+    ],
+    "canonical_pattern_source": "pipelines/editing_wgs/Snakefile lines 14-25 (container_for) and rna_editing.smk lines 6-29 (rule with container/log/resources/threads)",
+    "existing_containers_reusable": ["picard", "reditools", "sprint", "wgs", "jacusa2"],
+    "container_install_paths_verified": {
+      "picard": "/opt/picard/picard.jar via /usr/local/bin/picard wrapper",
+      "jacusa2": "/opt/jacusa2/jacusa2.jar (ENTRYPOINT java -jar; do not rely on entrypoint, call java -jar explicitly)",
+      "sprint": "/opt/sprint/sprint_from_bam.py (Python 2.7 ubuntu:18.04 base)",
+      "reditools": "reditools.py at /opt/reditools2/src/cineca/reditools.py on PATH; Python 2.7 image; numpy 1.16.6, pysam 0.15.4",
+      "wgs": "samtools, bcftools, bwa, tabix on PATH (apt install ubuntu:22.04)"
+    },
+    "validate_container_script": "scripts/validate_containers.sh — uses TOOLS env var; expects containers/<tool>/Dockerfile and validate.sh; runs validate-<tool> inside the SIF",
+    "tscc_profile": "profiles/tscc2/config.yaml uses software-deployment-method: apptainer; default mem_mb=20000, runtime=30; partition=condo; account=csd792",
+    "downstream_submodule": "Benchmark-of-RNA-Editing-Detection-Tools/ exists as empty submodule (verified by ls)"
+  },
+  "pattern_inventory": {
+    "container_for_helper": "def container_for(tool): return CONTAINERS.get(tool, f\"{SIF_DIR}/{tool}.sif\")",
+    "log_directive": "log: stdout=...{wildcards}.{rule}.out, stderr=...{wildcards}.{rule}.err (or single .log)",
+    "resources_pattern": "mem_mb=lambda wildcards, attempt: BASE * (1.5 ** (attempt - 1)), runtime=lambda wildcards, attempt: BASE * (2 ** (attempt - 1))",
+    "shell_safety": "set -euo pipefail at top of any multi-command or piped shell block",
+    "dockerfile_conventions": "WORKDIR /work; LABEL title+description; tool wrappers in /usr/local/bin/; validate.sh -> /usr/local/bin/validate-<tool> with exit 0",
+    "log_redirection": "1> {log.stdout} 2> {log.stderr} appended to shell commands (some rules use 2>> for append)"
+  },
+  "risk_areas": {
+    "high": [
+      "RED-ML Dockerfile: requires Perl 5 + R + R packages (caret, data.table, ROCR, randomForest); base image and CRAN package install reliability",
+      "Mark_duplicates wrapper substitution: Failure to call /usr/local/bin/picard wrapper (rather than java -jar) breaks the rule"
+    ],
+    "medium": [
+      "FASTX-Toolkit availability via bioconda for amd64 — generally available but can break",
+      "STAR base image choice: must be standalone (do not depend on lodei.sif)",
+      "downstream submodule emptiness — pipeline dry-run still passes but execution fails; only mitigation is config.yaml comment"
+    ],
+    "low": [
+      "Resource lambda exponential backoff producing very large mem_mb on attempt=4 (1.5^3 = 3.375x); SLURM partitions may reject",
+      "samtools_calmd output format ambiguity (SAM vs BAM); preserve current behavior to avoid breaking change",
+      "EC-9 (sprint Python 2.7 container) is inherited, not introduced"
+    ]
+  },
+  "hotspot_integration": "Hotspot list contains only test/script files unrelated to Morales pipeline; no high-churn .smk files. No additional review burden from hotspots.",
+  "conflicts_resolved_referenced": ["C-001 RED vs RED-ML", "C-002 STAR new container", "C-003 downstream submodule", "C-004 tools section removal", "C-005 add_md_tag uses wgs"],
+  "ready_for_design": true
+}

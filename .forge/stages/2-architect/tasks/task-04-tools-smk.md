@@ -1,3 +1,22 @@
+# Task 04: Containerize tools.smk (6 rules)
+
+<!-- DEPENDENCIES: 02 -->
+<!-- LABELS: phase-3, stage:3-implement, smk-edit -->
+<!-- VERIFIES: AC-4 (9/14), AC-5 (9/14), AC-6 (9/14), AC-7, AC-9, AC-17, FR-4, FR-5, FR-6, FR-7, FR-9, FR-10, FR-11, FR-12, FR-20, SEC-1 -->
+
+## Goal
+
+Fully rewrite `pipelines/Morales_et_all/tools.smk` to add `container:`, `log:`, and `resources:` directives to all 6 rules, remove all user-specific and cluster-specific tool paths, and route tool invocations through containerized executables on PATH.
+
+## Files Modified
+
+- `pipelines/Morales_et_all/tools.smk`
+
+## Full Rewritten File
+
+Replace the entire file content with:
+
+```python
 rule reditools:
     input:
         bam="results/mapped/{condition}_{sample}.rmdup.bam"
@@ -151,3 +170,35 @@ rule jacusa2:
         java -jar /opt/jacusa2/jacusa2.jar call-2 -a {params.pileup} -p {threads} -r {output} $wt_list $ko_list \
             1> {log.stdout} 2> {log.stderr}
         """
+```
+
+## Acceptance Criteria
+
+- [ ] `grep -c "^rule " pipelines/Morales_et_all/tools.smk` returns `6`
+- [ ] `grep -c "    container: container_for" pipelines/Morales_et_all/tools.smk` returns `6`
+- [ ] `grep -c "^    log:" pipelines/Morales_et_all/tools.smk` returns `6`
+- [ ] `grep -c "^    resources:" pipelines/Morales_et_all/tools.smk` returns `6`
+- [ ] `grep -c "set -euo pipefail" pipelines/Morales_et_all/tools.smk` returns `6`
+- [ ] `grep "params.script\|params.sprint_bin\|params.jacusa_jar\|params.samtools_bin\|params.reditools_script\|params.red_ml_script" pipelines/Morales_et_all/tools.smk` returns no matches (PASS)
+- [ ] `grep "~/bin\|/binf-isilon" pipelines/Morales_et_all/tools.smk` returns no matches (PASS)
+- [ ] `grep "container_for(\"wgs\")" pipelines/Morales_et_all/tools.smk` returns 2 matches (bcftools and add_md_tag)
+- [ ] `grep "container_for(\"jacusa2\")" pipelines/Morales_et_all/tools.smk` returns 1 match
+- [ ] `python -c "import ast; ast.parse(open('pipelines/Morales_et_all/tools.smk').read())"` exits 0
+- [ ] No other file is modified
+
+## Verification
+
+```bash
+grep -c "^rule \|container: container_for\|^    log:\|^    resources:\|set -euo pipefail" pipelines/Morales_et_all/tools.smk
+grep "params.script\|params.sprint_bin\|params.jacusa_jar\|params.samtools_bin" pipelines/Morales_et_all/tools.smk || echo "PASS: no hardcoded tool params"
+grep "~/bin\|/binf-isilon" pipelines/Morales_et_all/tools.smk || echo "PASS: no user paths"
+python -c "import ast; ast.parse(open('pipelines/Morales_et_all/tools.smk').read()); print('syntax OK')"
+```
+
+## Notes
+
+- `add_md_tag` uses `container_for("wgs")` — NOT `container_for("jacusa2")` per D-7. `wgs.sif` contains SAMtools; pulling the full JACUSA2 mamba env just for `samtools calmd` wastes space.
+- `bcftools` and `add_md_tag` write a sentinel `echo "... done"` to `{log.stdout}` because these rules write primary output via pipe or direct `>` redirect; routing stdout to the BAM/BCF stream AND to a log file requires two-handle separation. This satisfies Snakemake's named-log-handle requirement per D-8.
+- `sprint` calls `python /opt/sprint/sprint_from_bam.py` — the absolute path is inside the sprint SIF (verified in D-4); `samtools` is also on PATH inside that container.
+- `jacusa2` log paths are literal (no wildcards) because this is an aggregate rule across all samples — per EC-5 in the architecture plan.
+- The `red_ml` output uses `directory()` because `red_ML.pl --outdir` writes multiple files into that directory.

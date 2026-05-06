@@ -1,3 +1,22 @@
+# Task 05: Containerize downstream.smk (5 rules)
+
+<!-- DEPENDENCIES: 02 -->
+<!-- LABELS: phase-3, stage:3-implement, smk-edit -->
+<!-- VERIFIES: AC-4 (14/14), AC-5 (14/14), AC-6 (14/14), AC-10, FR-4, FR-5, FR-6, FR-13, SEC-1 -->
+
+## Goal
+
+Fully rewrite `pipelines/Morales_et_all/downstream.smk` to add `container:`, `log:`, and `resources:` directives to all 5 rules, replace all bare `python Downstream/...` calls with `python {params.downstream_dir}/...` using the config-sourced `downstream_scripts_dir` key, and route execution through the `morales_downstream` container.
+
+## Files Modified
+
+- `pipelines/Morales_et_all/downstream.smk`
+
+## Full Rewritten File
+
+Replace the entire file content with:
+
+```python
 rule run_downstream_parsers:
     input:
         reditools=expand("results/tools/reditools/{condition}_{sample}.output", condition=config["conditions"], sample=config["samples"]),
@@ -114,3 +133,34 @@ rule multiple_analysis:
         set -euo pipefail
         python {params.downstream_dir}/Multiple-Analysis.py 1> {log.stdout} 2> {log.stderr}
         """
+```
+
+## Acceptance Criteria
+
+- [ ] `grep -c "^rule " pipelines/Morales_et_all/downstream.smk` returns `5`
+- [ ] `grep -c "    container: container_for" pipelines/Morales_et_all/downstream.smk` returns `5`
+- [ ] `grep -c "^    log:" pipelines/Morales_et_all/downstream.smk` returns `5`
+- [ ] `grep -c "^    resources:" pipelines/Morales_et_all/downstream.smk` returns `5`
+- [ ] `grep -c "set -euo pipefail" pipelines/Morales_et_all/downstream.smk` returns `5`
+- [ ] `grep "python Downstream/" pipelines/Morales_et_all/downstream.smk` returns no matches (PASS)
+- [ ] `grep -c "downstream_dir" pipelines/Morales_et_all/downstream.smk` returns `10` (5 params: definitions + 5 shell uses per rule, `run_downstream_parsers` has 5 python calls)
+- [ ] `grep 'container_for("morales_downstream")' pipelines/Morales_et_all/downstream.smk` returns `5` matches
+- [ ] `python -c "import ast; ast.parse(open('pipelines/Morales_et_all/downstream.smk').read())"` exits 0
+- [ ] No other file is modified
+
+## Verification
+
+```bash
+grep -c "^rule \|container: container_for\|^    log:\|^    resources:\|set -euo pipefail" pipelines/Morales_et_all/downstream.smk
+grep "python Downstream/" pipelines/Morales_et_all/downstream.smk || echo "PASS: no bare Downstream/ paths"
+python -c "import ast; ast.parse(open('pipelines/Morales_et_all/downstream.smk').read()); print('syntax OK')"
+```
+
+## Notes
+
+- All 5 rules use `container_for("morales_downstream")` — the new `morales_downstream.sif` built in Task 08.
+- `params.downstream_dir` is local to each rule per D-9. This avoids adding a global var to the Snakefile header.
+- `run_downstream_parsers` uses `1>>` / `2>>` (append mode) because it calls 5 separate python subprocesses in sequence; append collects all output in one log pair.
+- The remaining 4 downstream rules use `1>` / `2>` (overwrite) since each invokes a single script.
+- Log paths use literal rule names (no wildcards) because these are aggregate rules with no sample-level wildcards — per EC-6.
+- After this task, the running count of containerized rules is 3 (preprocessing) + 6 (tools) + 5 (downstream) = **14/14** (AC-4 fully satisfied).

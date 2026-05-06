@@ -2,10 +2,40 @@
   "schema_version": "1.0.0",
   "pipeline_id": "forge-8a8d6b83",
   "created_utc": "2026-05-02T16:05:43Z",
-  "updated_utc": "2026-05-05T21:30:00Z",
-  "current_stage": "1-requirements",
+  "updated_utc": "2026-05-06T03:25:20Z",
+  "current_stage": "4-review",
   "stages": {
-    "0-research": {"status": "COMPLETE", "completed_utc": "2026-05-05T21:30:00Z"}
+    "0-research": {
+      "status": "COMPLETE",
+      "completed_utc": "2026-05-05T21:30:00Z"
+    },
+    "1-requirements": {
+      "status": "COMPLETE",
+      "completed_utc": "2026-05-05T22:15:00Z"
+    },
+    "2-architect": {
+      "status": "COMPLETE",
+      "completed_utc": "2026-05-06T00:00:00Z"
+    },
+    "3-implement": {
+      "task_progress": {
+        "total": 8,
+        "completed": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "current": null,
+        "last_updated": "2026-05-06T03:25:20Z"
+      },
+      "status": "COMPLETE",
+      "completed_utc": "2026-05-06T03:25:20Z"
+    }
   },
   "cost": {
     "total_input_tokens": 0,
@@ -13,5 +43,8 @@
     "total_estimated_usd": 0,
     "per_stage": {}
   },
-  "loop_count": {}
+  "loop_count": {},
+  "git": {
+    "base_commit": "820fad08d72901741201d69e7fdb5ddff21a9776"
+  }
 }

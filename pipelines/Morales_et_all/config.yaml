@@ -32,15 +32,25 @@ references:
   db_path: "/binf-isilon/rennie/gsn480/data/compare_tools/dataset1/dbRNA-Editing"
 
 # ==========================================
-# Tool Executables & Scripts
+# Container Images (Apptainer/Singularity)
 # ==========================================
-tools:
-  picard_jar: "~/bin/picard-tools/MarkDuplicates.jar"
-  reditools_script: "~/bin/reditools2.0-master/src/cineca/reditools.py"
-  sprint_bin: "~/bin/SPRINT/bin/sprint_from_bam"
-  jacusa2_jar: "/binf-isilon/rennie/gsn480/scratch/bin/JACUSA_v2.0.2-RC.jar"
-  red_ml_script: "~/bin/RED-ML/bin/red_ML.pl"
-  samtools_bin: "~/bin/samtools"
+singularity_image_dir: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity"
+containers:
+  fastx: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/fastx.sif"
+  star: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/star.sif"
+  picard: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/picard.sif"
+  reditools: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/reditools.sif"
+  sprint: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/sprint.sif"
+  wgs: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/wgs.sif"
+  red_ml: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/red_ml.sif"
+  jacusa2: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/jacusa2.sif"
+  morales_downstream: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/morales_downstream.sif"
+
+# Path to the Benchmark-of-RNA-Editing-Detection-Tools/Downstream directory.
+# IMPORTANT: This is an empty git submodule by default. Run the following before
+# executing downstream rules:
+#   git submodule update --init Benchmark-of-RNA-Editing-Detection-Tools
+downstream_scripts_dir: "Benchmark-of-RNA-Editing-Detection-Tools/Downstream"
 
 # ==========================================
 # Tool Specific Parameters

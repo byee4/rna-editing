@@ -3,6 +3,21 @@ import os
 # Load the configuration file
 configfile: "config.yaml"
 
+# ==========================================
+# Container Resolution
+# ==========================================
+SIF_DIR = config.get(
+    "singularity_image_dir",
+    "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity",
+)
+CONTAINERS = config.get("containers", {})
+
+
+def container_for(tool):
+    """Return the configured Singularity image path for a workflow tool."""
+    return CONTAINERS.get(tool, f"{SIF_DIR}/{tool}.sif")
+
+
 # Include modular workflows
 include: "preprocessing.smk"
 include: "tools.smk"

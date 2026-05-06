@@ -1,0 +1,51 @@
+{
+  "stage_id": "2-architect",
+  "completed_utc": "2026-05-06T00:00:00Z",
+  "decision": {
+    "gate_result": "PASS",
+    "rationale": "Architecture plan complete: 8 tasks decomposed, 12 decisions documented, all 20 FRs traced, 17 ACs verifiable. Tasks 04-08 completed. Approach A (Direct Retrofit) selected."
+  },
+  "outputs": [
+    {
+      "path": ".forge/stages/2-architect/architecture-plan.md",
+      "description": "Full architecture plan: problem, 3 approaches, Approach A selected, detailed contracts for all modified files, 12 decisions, 8 tasks, requirements coverage matrix, risk register, verification plan"
+    },
+    {
+      "path": ".forge/stages/2-architect/implementer-prompt.md",
+      "description": "Self-contained implementer brief: role, allowlist, createlist, denylist, task execution order, verification plan"
+    },
+    {
+      "path": ".forge/stages/2-architect/tasks/task-01-snakefile-helper.md",
+      "description": "Task 01: Add container_for() helper to Morales Snakefile"
+    },
+    {
+      "path": ".forge/stages/2-architect/tasks/task-02-config-yaml.md",
+      "description": "Task 02: Update config.yaml — containers block, downstream_scripts_dir, remove tools section"
+    },
+    {
+      "path": ".forge/stages/2-architect/tasks/task-03-preprocessing-smk.md",
+      "description": "Task 03: Containerize preprocessing.smk (3 rules)"
+    },
+    {
+      "path": ".forge/stages/2-architect/tasks/task-04-tools-smk.md",
+      "description": "Task 04: Containerize tools.smk (6 rules)"
+    },
+    {
+      "path": ".forge/stages/2-architect/tasks/task-05-downstream-smk.md",
+      "description": "Task 05: Containerize downstream.smk (5 rules)"
+    },
+    {
+      "path": ".forge/stages/2-architect/tasks/task-06-container-star.md",
+      "description": "Task 06: Create containers/star/ Dockerfile + validate.sh"
+    },
+    {
+      "path": ".forge/stages/2-architect/tasks/task-07-container-red_ml.md",
+      "description": "Task 07: Create containers/red_ml/ Dockerfile + validate.sh"
+    },
+    {
+      "path": ".forge/stages/2-architect/tasks/task-08-containers-fastx-and-downstream.md",
+      "description": "Task 08: Create containers/fastx/ + containers/morales_downstream/ Dockerfiles"
+    }
+  ],
+  "next_stage_context": "The implementer reads implementer-prompt.md first, then executes tasks 01-05 sequentially (each depends on the previous), then tasks 06-08 in parallel (no dependencies). AC verification commands are embedded in each task file. End-of-pipeline verification: `snakemake --lint` and dry-run."
+}

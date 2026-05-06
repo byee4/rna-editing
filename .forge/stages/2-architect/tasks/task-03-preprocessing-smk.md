@@ -1,3 +1,20 @@
+# Task 03: Containerize preprocessing.smk (3 rules)
+
+<!-- DEPENDENCIES: 02 -->
+<!-- LABELS: phase-3, stage:3-implement, smk-edit -->
+<!-- VERIFIES: AC-4 (3/14), AC-5 (3/14), AC-6 (3/14), AC-8, FR-4, FR-5, FR-6, FR-8, FR-19, NFR-5 -->
+
+## Goal
+
+Add `container:`, `log:`, `resources:`, and `set -euo pipefail` to all 3 rules in `pipelines/Morales_et_all/preprocessing.smk`. Rewrite `mark_duplicates` to call the `picard` wrapper instead of `java -jar`.
+
+## Files Modified
+
+- `pipelines/Morales_et_all/preprocessing.smk`
+
+## Replace the entire file with
+
+```python
 rule trim_reads:
     input:
         reads="data/fastq/{condition}_{sample}_{read}.fastq"
@@ -76,3 +93,33 @@ rule mark_duplicates:
              METRICS_FILE={output.metrics} REMOVE_DUPLICATES=true \
              1> {log.stdout} 2> {log.stderr}
         """
+```
+
+## Acceptance Criteria
+
+- [ ] `grep -c "^rule " pipelines/Morales_et_all/preprocessing.smk` returns `3`
+- [ ] `grep -c "    container: container_for" pipelines/Morales_et_all/preprocessing.smk` returns `3`
+- [ ] `grep -c "^    log:" pipelines/Morales_et_all/preprocessing.smk` returns `3`
+- [ ] `grep -c "^    resources:" pipelines/Morales_et_all/preprocessing.smk` returns `3`
+- [ ] `grep -c "set -euo pipefail" pipelines/Morales_et_all/preprocessing.smk` returns `3`
+- [ ] `grep "java -jar" pipelines/Morales_et_all/preprocessing.smk` returns no matches (PASS)
+- [ ] `grep "params.picard" pipelines/Morales_et_all/preprocessing.smk` returns no matches
+- [ ] `grep "container_for(\"fastx\")" pipelines/Morales_et_all/preprocessing.smk` returns 1 match
+- [ ] `grep "container_for(\"star\")" pipelines/Morales_et_all/preprocessing.smk` returns 1 match
+- [ ] `grep "container_for(\"picard\")" pipelines/Morales_et_all/preprocessing.smk` returns 1 match
+- [ ] `python -c "import ast; ast.parse(open('pipelines/Morales_et_all/preprocessing.smk').read())"` exits 0
+- [ ] No other file is modified
+
+## Verification
+
+```bash
+grep -c "^rule \|container: container_for\|^    log:\|^    resources:\|set -euo pipefail" pipelines/Morales_et_all/preprocessing.smk
+grep "java -jar\|params.picard" pipelines/Morales_et_all/preprocessing.smk || echo "PASS"
+```
+
+## Notes
+
+- The `picard` shell call uses the wrapper at `/usr/local/bin/picard` inside the picard SIF, which `containers/picard/Dockerfile` line 17 confirms is installed.
+- `mark_duplicates` no longer has a `params:` block (everything moved to direct shell call).
+- `star_mapping` `set -euo pipefail` addresses gap G-2 (closes the silent-rm bug noted in EC-2).
+- Resources values follow context/09 acceptance criteria's resource defaults table.
