@@ -35,6 +35,7 @@ Output JSON files written to --outdir (named by --assembly):
 """
 
 import argparse
+import gzip
 import json
 import os
 import sys
@@ -47,6 +48,8 @@ import sys
 def _open(path, mode="r"):
     if not os.path.exists(path):
         sys.exit(f"ERROR: required input not found: {path}")
+    if path.endswith(".gz"):
+        return gzip.open(path, "rt")
     return open(path, mode)
 
 

@@ -90,10 +90,7 @@ rule build_dbrna_editing:
         stdout="results/logs/build_dbrna_editing.out",
         stderr="results/logs/build_dbrna_editing.err"
     params:
-        script=os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(workflow.snakefile)))),
-            "scripts", "build_downstream_dbs.py"
-        ),
+        script=os.path.normpath(os.path.join(workflow.basedir, "..", "..", "scripts", "build_downstream_dbs.py")),
         outdir=config["references"]["db_path"]
     shell:
         r"""
