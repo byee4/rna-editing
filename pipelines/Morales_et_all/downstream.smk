@@ -91,10 +91,12 @@ rule reanalysis_multiple:
         stdout="results/logs/reanalysis_multiple.out",
         stderr="results/logs/reanalysis_multiple.err"
     params:
-        downstream_dir=config["downstream_scripts_dir"]
+        downstream_dir=config["downstream_scripts_dir"],
+        db_path=config["references"]["db_path"]
     shell:
         r"""
         set -euo pipefail
+        export DB_PATH={params.db_path}
         python {params.downstream_dir}/Re-Analysis-Multiple.py 1> {log.stdout} 2> {log.stderr}
         """
 
