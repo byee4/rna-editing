@@ -1,44 +1,37 @@
 #!/usr/bin/env python3
 """
-Build the six JSON databases required by the Morales et al. downstream analysis
-scripts in Benchmark-of-RNA-Editing-Detection-Tools/Downstream/.
+Build the three JSON databases required by the Morales et al. downstream analysis
+scripts in Benchmark-of-RNA-Editing-Detection-Tools/Downstream/ for one assembly.
 
 Usage
 -----
     python scripts/build_downstream_dbs.py \
-        --hek-bed-hg38  data/HEK293T_hg38.bed \
-        --hek-bed-hg19  data/HEK293T_hg19.bed \
-        --rediportal-hg38 data/REDIportal_db_GRCh38.txt \
-        --rediportal-hg19 data/REDIportal_db_GRCh19.txt \
-        --alu-hg38  data/hg38.alu.bed \
-        --alu-hg19  data/hg19.alu.bed \
+        --hek-bed   data/dbRNA-Editing/HEK293T_hg38.bed \
+        --rediportal data/REDIportal_db_GRCh38.txt \
+        --alu       data/hg38.alu.bed \
+        --assembly  hg38 \
         --outdir    data/dbRNA-Editing
 
 Required source files
 ---------------------
-1. HEK293T_hg38.bed / HEK293T_hg19.bed
+1. HEK293T BED  (from --hek-bed)
    WGS-derived SNP BED for HEK293T cells. Format (0-based half-open):
-       chrom  start  end  ID          (4-column with ID chr|end|refalt, OR)
-   OR plain 3-column BED where ref/alt are inferred from a companion VCF.
-   Simplest source: align SRR1513220 (Lin et al. 2014 WGS, data/HEK293_Variant_Data/
-   WGS_Lin_et_al_2014/) with BWA-MEM → BCFtools variant call → filter for AG/TC →
-   convert to this BED format.
+       chrom  start  end  ref  alt   (5-column, AG/TC only)
+   OR: chrom  start  end  ID  where ID = "chr|pos|refalt"  (4-column)
+   Simplest source: align SRR1513220 (Lin et al. 2014 WGS) with BWA-MEM →
+   BCFtools variant call → filter for A>G / T>C SNPs → convert to BED.
 
-2. REDIportal_db_GRCh38.txt / REDIportal_db_GRCh19.txt
-   Download from http://srv00.recas.ba.infn.it/atlas/  (table download → hg38 / hg19).
+2. REDIportal TSV  (from --rediportal)
+   Download from http://srv00.recas.ba.infn.it/atlas/ (table download).
    Tab-delimited, must have columns: Region, Position, Ref, Ed  (at minimum).
 
-3. data/hg38.alu.bed  (already present in this repo)
-4. data/hg19.alu.bed  (download from UCSC RepeatMasker track, filter for SINE/Alu)
+3. Alu BED  (from --alu)
+   RepeatMasker BED filtered for Alu elements (SINE/Alu family).
 
-Output JSON files (all in --outdir)
-------------------------------------
-HEK293T_hg38_clean.json  — flat dict  {ID: ID}  where ID = "chr|pos|AG"
-HEK293T_hg19_clean.json  — same, hg19 coordinates
-REDIportal.json           — flat dict  {ID: ID}  where ID = "chr|pos|AG"
-REDIportal_hg19.json      — same, hg19 coordinates
-Alu_GRCh38.json           — nested dict  {chr: {pos_str: True, ...}}
-Alu_GRCh37.json           — same, hg19/GRCh37 coordinates
+Output JSON files written to --outdir (named by --assembly):
+-------------------------------------------------------------
+  hg38 → HEK293T_hg38_clean.json, REDIportal.json,     Alu_GRCh38.json
+  hg19 → HEK293T_hg19_clean.json, REDIportal_hg19.json, Alu_GRCh37.json
 """
 
 import argparse
@@ -196,31 +189,45 @@ def build_alu_json(bed_path: str, out_path: str) -> None:
 # CLI
 # ---------------------------------------------------------------------------
 
+_ASSEMBLY_NAMES = {
+    "hg38": {
+        "hek":       "HEK293T_hg38_clean.json",
+        "rediportal": "REDIportal.json",
+        "alu":        "Alu_GRCh38.json",
+    },
+    "hg19": {
+        "hek":       "HEK293T_hg19_clean.json",
+        "rediportal": "REDIportal_hg19.json",
+        "alu":        "Alu_GRCh37.json",
+    },
+}
+
+
 def parse_args():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--hek-bed-hg38",    required=True, metavar="BED")
-    p.add_argument("--hek-bed-hg19",    required=True, metavar="BED")
-    p.add_argument("--rediportal-hg38", required=True, metavar="TSV")
-    p.add_argument("--rediportal-hg19", required=True, metavar="TSV")
-    p.add_argument("--alu-hg38",        required=True, metavar="BED")
-    p.add_argument("--alu-hg19",        required=True, metavar="BED")
-    p.add_argument("--outdir",          default="data/dbRNA-Editing", metavar="DIR")
+    p.add_argument("--hek-bed",    required=True, metavar="BED",
+                   help="WGS-derived AG/TC SNP BED for HEK293T (5-col or 4-col ID format)")
+    p.add_argument("--rediportal", required=True, metavar="TSV",
+                   help="REDIportal tab-separated database (Region/Position/Ref/Ed columns)")
+    p.add_argument("--alu",        required=True, metavar="BED",
+                   help="Alu-element BED file for the target assembly")
+    p.add_argument("--assembly",   required=True, choices=["hg38", "hg19"],
+                   help="Genome assembly; determines output file names")
+    p.add_argument("--outdir",     default="data/dbRNA-Editing", metavar="DIR")
     return p.parse_args()
 
 
 def main():
     args = parse_args()
     os.makedirs(args.outdir, exist_ok=True)
-    print("Building downstream analysis JSON databases...")
+    names = _ASSEMBLY_NAMES[args.assembly]
+    print(f"Building downstream analysis JSON databases for {args.assembly}...")
 
-    build_hek_json(args.hek_bed_hg38,    os.path.join(args.outdir, "HEK293T_hg38_clean.json"))
-    build_hek_json(args.hek_bed_hg19,    os.path.join(args.outdir, "HEK293T_hg19_clean.json"))
-    build_rediportal_json(args.rediportal_hg38, os.path.join(args.outdir, "REDIportal.json"))
-    build_rediportal_json(args.rediportal_hg19, os.path.join(args.outdir, "REDIportal_hg19.json"))
-    build_alu_json(args.alu_hg38,        os.path.join(args.outdir, "Alu_GRCh38.json"))
-    build_alu_json(args.alu_hg19,        os.path.join(args.outdir, "Alu_GRCh37.json"))
+    build_hek_json(args.hek_bed,    os.path.join(args.outdir, names["hek"]))
+    build_rediportal_json(args.rediportal, os.path.join(args.outdir, names["rediportal"]))
+    build_alu_json(args.alu,        os.path.join(args.outdir, names["alu"]))
 
-    print(f"\nAll databases written to: {args.outdir}/")
+    print(f"\nDatabases written to: {args.outdir}/")
     print("Next steps:")
     print("  1. Set references.db_path in pipelines/Morales_et_all/config.yaml to the absolute path of --outdir")
     print("  2. Enable Parts 1+2 in the Downstream parser scripts to create ResultsFiles/ directories")

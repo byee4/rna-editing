@@ -61,12 +61,26 @@ def container_for(tool):
 # Prevent wildcards from crossing file-path boundaries (dots, slashes).
 wildcard_constraints:
     condition="[^/._]+",
-    sample="[^/._]+"
+    sample="[^/._]+",
+    wgs_sample="[^/._]+"
 
 # Include modular workflows
 include: "preprocessing.smk"
 include: "tools.smk"
 include: "downstream.smk"
+include: "rules/references.smk"
+include: "rules/wgs.smk"
+
+# ==========================================
+# Target Outputs
+# ==========================================
+_WGS_DB_FILES = (
+    [
+        os.path.join(config["references"]["db_path"], f)
+        for f in ["HEK293T_hg38_clean.json", "REDIportal.json", "Alu_GRCh38.json"]
+    ]
+    if config.get("wgs_samples") else []
+)
 
 # Define the target outputs for the entire workflow
 rule all:
@@ -77,6 +91,8 @@ rule all:
         expand("results/tools/reditools/{condition}_{sample}.output", condition=config["conditions"], sample=config["samples"]),
         expand("results/tools/bcftools/{condition}_{sample}.bcf", condition=config["conditions"], sample=config["samples"]),
         "results/tools/jacusa2/Jacusa.out",
+        # Reference databases — built from WGS alignment when wgs_samples is configured
+        _WGS_DB_FILES,
         # Downstream analysis — requires JSON databases at config["references"]["db_path"]
         # (HEK293T_hg38_clean.json, REDIportal.json, Alu_GRCh38.json) and pre-populated
         # ResultsFiles subdirectories from the Benchmark parser scripts' Parts 1+2.
