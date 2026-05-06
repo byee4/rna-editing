@@ -77,6 +77,7 @@ rule all:
         expand("results/tools/reditools/{condition}_{sample}.output", condition=config["conditions"], sample=config["samples"]),
         expand("results/tools/bcftools/{condition}_{sample}.bcf", condition=config["conditions"], sample=config["samples"]),
         "results/tools/jacusa2/Jacusa.out",
-        # Downstream analysis is handled separately (see downstream.smk).
-        # Run `snakemake results/downstream/multiple_analysis.done` to execute it
-        # after patching the Benchmark scripts for this environment.
+        # Downstream analysis — requires JSON databases at config["references"]["db_path"]
+        # (HEK293T_hg38_clean.json, REDIportal.json, Alu_GRCh38.json) and pre-populated
+        # ResultsFiles subdirectories from the Benchmark parser scripts' Parts 1+2.
+        "results/downstream/multiple_analysis.done",

@@ -16,7 +16,6 @@ rule reditools:
     shell:
         r"""
         set -euo pipefail
-        pip install --user --quiet sortedcontainers "psutil<6.0" netifaces 2>/dev/null || true
         reditools.py -S -C -bq 20 -q 20 -f {input.bam} -r {params.ref} -o {output} \
             1> {log.stdout} 2> {log.stderr}
         """

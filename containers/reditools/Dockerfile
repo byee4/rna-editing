@@ -30,7 +30,10 @@ RUN python -m pip install --no-cache-dir --upgrade "pip<21" "setuptools<45" whee
     && python -m pip install --no-cache-dir \
         "pysam==0.15.4" \
         "fisher==0.1.4" \
-        "mpi4py==3.0.3"
+        "mpi4py==3.0.3" \
+        "sortedcontainers==2.4.0" \
+        "psutil==5.9.8" \
+        "netifaces==0.11.0"
 
 RUN git clone --depth 1 https://github.com/BioinfoUNIBA/REDItools.git /opt/reditools \
     && git clone --depth 1 https://github.com/BioinfoUNIBA/REDItools2.git /opt/reditools2

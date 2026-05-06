@@ -16,10 +16,12 @@ rule run_downstream_parsers:
         stdout="results/logs/run_downstream_parsers.out",
         stderr="results/logs/run_downstream_parsers.err"
     params:
-        downstream_dir=config["downstream_scripts_dir"]
+        downstream_dir=config["downstream_scripts_dir"],
+        db_path=config["references"]["db_path"]
     shell:
         r"""
         set -euo pipefail
+        export DB_PATH={params.db_path}
         python {params.downstream_dir}/REDItools2.py 1>> {log.stdout} 2>> {log.stderr}
         python {params.downstream_dir}/SPRINT.py    1>> {log.stdout} 2>> {log.stderr}
         python {params.downstream_dir}/REDML.py     1>> {log.stdout} 2>> {log.stderr}
@@ -42,10 +44,13 @@ rule update_alu:
         stdout="results/logs/update_alu.out",
         stderr="results/logs/update_alu.err"
     params:
-        downstream_dir=config["downstream_scripts_dir"]
+        downstream_dir=config["downstream_scripts_dir"],
+        db_path=config["references"]["db_path"]
     shell:
         r"""
         set -euo pipefail
+        export DB_PATH={params.db_path}
+        export DOWNSTREAM_WORKDIR=results/downstream
         python {params.downstream_dir}/Alu.py 1> {log.stdout} 2> {log.stderr}
         """
 

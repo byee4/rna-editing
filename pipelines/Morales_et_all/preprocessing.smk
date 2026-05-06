@@ -109,10 +109,14 @@ rule mark_duplicates:
     log:
         stdout="results/logs/{condition}_{sample}.mark_duplicates.out",
         stderr="results/logs/{condition}_{sample}.mark_duplicates.err"
+    params:
+        # Reserve 75 % of the SLURM-allocated memory for the JVM heap; the
+        # remaining 25 % covers JVM overhead and native Picard allocations.
+        mem_mb_heap=lambda wildcards, resources: int(resources.mem_mb * 0.75)
     shell:
         r"""
         set -euo pipefail
-        _JAVA_OPTIONS="-Xmx6g" picard MarkDuplicates INPUT={input.bam} OUTPUT={output.rmdup_bam} \
+        _JAVA_OPTIONS="-Xmx{params.mem_mb_heap}m" picard MarkDuplicates INPUT={input.bam} OUTPUT={output.rmdup_bam} \
              METRICS_FILE={output.metrics} REMOVE_DUPLICATES=true \
              1> {log.stdout} 2> {log.stderr}
         samtools index {output.rmdup_bam} 2>> {log.stderr}
