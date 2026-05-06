@@ -17,14 +17,14 @@ aligners:
 # References and Annotations
 # ==========================================
 references:
-  fasta: "~/data/genome/Reference.fa"
-  star_index: "~/data/genome/star/"
-  gtf: "~/data/genome/GRCh38.gtf"
-  rmsk: "~/data/genome/hg38_repeat.bed"
-  dbsnp: "~/data/genome/snp138.txt"
-  simple_repeat: "~/data/genome/hg19.simpleRepeat.bed"
-  alu_bed: "~/data/genome/hg19.alu.bed"
-  db_path: "/binf-isilon/rennie/gsn480/data/compare_tools/dataset1/dbRNA-Editing"
+  fasta: "/tscc/projects/ps-yeolab3/bay001/annotations/GRCh38/GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta"
+  star_index: "/tscc/projects/ps-yeolab3/bay001/annotations/GRCh38/star_2_7_gencode40_sjdb/"
+  gtf: "/tscc/projects/ps-yeolab3/bay001/annotations/GRCh38/gencode_v40/gencode.v40.annotation.gtf"
+  rmsk: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/rmsk.txt"
+  dbsnp: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/snp151CodingDbSnp.txt"
+  simple_repeat: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/simpleRepeat.txt"
+  alu_bed: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/hg38.alu.bed"
+  db_path: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/dbRNA-Editing"
 
 # ==========================================
 # Container Images (Apptainer/Singularity)

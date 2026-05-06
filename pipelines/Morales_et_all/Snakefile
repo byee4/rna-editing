@@ -77,5 +77,6 @@ rule all:
         expand("results/tools/reditools/{condition}_{sample}.output", condition=config["conditions"], sample=config["samples"]),
         expand("results/tools/bcftools/{condition}_{sample}.bcf", condition=config["conditions"], sample=config["samples"]),
         "results/tools/jacusa2/Jacusa.out",
-        # Final downstream checkpoint
-        "results/downstream/multiple_analysis.done"
+        # Downstream analysis is handled separately (see downstream.smk).
+        # Run `snakemake results/downstream/multiple_analysis.done` to execute it
+        # after patching the Benchmark scripts for this environment.
