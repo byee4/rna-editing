@@ -16,6 +16,7 @@ rule reditools:
     shell:
         r"""
         set -euo pipefail
+        pip install --user --quiet sortedcontainers "psutil<6.0" netifaces 2>/dev/null || true
         reditools.py -S -C -bq 20 -q 20 -f {input.bam} -r {params.ref} -o {output} \
             1> {log.stdout} 2> {log.stderr}
         """
@@ -108,7 +109,8 @@ rule add_md_tag:
     input:
         bam="results/mapped/{condition}_{sample}.rmdup.bam"
     output:
-        bam="results/mapped/{condition}_{sample}.rmdup_MD.bam"
+        bam="results/mapped/{condition}_{sample}.rmdup_MD.bam",
+        bai="results/mapped/{condition}_{sample}.rmdup_MD.bam.bai"
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: 4000 * (1.5 ** (attempt - 1)),
@@ -122,7 +124,8 @@ rule add_md_tag:
     shell:
         r"""
         set -euo pipefail
-        samtools calmd {input.bam} {params.ref} > {output.bam} 2> {log.stderr}
+        samtools calmd -b {input.bam} {params.ref} > {output.bam} 2> {log.stderr}
+        samtools index {output.bam} 2>> {log.stderr}
         echo "add_md_tag done" > {log.stdout}
         """
 

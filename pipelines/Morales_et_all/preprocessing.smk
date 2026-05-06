@@ -72,6 +72,12 @@ rule star_mapping:
         # -f 0x2 (properly paired) is only valid for PE alignments.
         samflag=lambda wildcards, input: (
             "-F 0x04 -f 0x2" if len(input.r2) > 0 else "-F 0x04"
+        ),
+        # Picard MarkDuplicates requires read group tags in the BAM.
+        rg_line=lambda wildcards: (
+            f"ID:{wildcards.condition}_{wildcards.sample} "
+            f"SM:{wildcards.condition}_{wildcards.sample} "
+            f"PL:ILLUMINA LB:{wildcards.condition}_{wildcards.sample}"
         )
     shell:
         r"""
@@ -79,6 +85,7 @@ rule star_mapping:
         STAR --runThreadN {threads} --genomeDir {params.ref_dir} \
              --readFilesIn {params.reads} --readFilesCommand zcat \
              --outSAMtype BAM SortedByCoordinate --outFileNamePrefix {params.prefix} \
+             --outSAMattrRGline {params.rg_line} \
              1> {log.stdout} 2> {log.stderr}
         samtools view -@ {threads} {params.samflag} -q {params.map_qual} -b {params.prefix}Aligned.sortedByCoord.out.bam | \
             samtools sort -@ {threads} -T {params.prefix}tmp -o {output.bam} 2>> {log.stderr}
@@ -92,6 +99,7 @@ rule mark_duplicates:
         bam="results/mapped/{condition}_{sample}.bam"
     output:
         rmdup_bam="results/mapped/{condition}_{sample}.rmdup.bam",
+        rmdup_bai="results/mapped/{condition}_{sample}.rmdup.bam.bai",
         metrics="results/mapped/{condition}_{sample}.duplication.info"
     threads: 1
     resources:
@@ -104,7 +112,8 @@ rule mark_duplicates:
     shell:
         r"""
         set -euo pipefail
-        picard MarkDuplicates INPUT={input.bam} OUTPUT={output.rmdup_bam} \
+        _JAVA_OPTIONS="-Xmx6g" picard MarkDuplicates INPUT={input.bam} OUTPUT={output.rmdup_bam} \
              METRICS_FILE={output.metrics} REMOVE_DUPLICATES=true \
              1> {log.stdout} 2> {log.stderr}
+        samtools index {output.rmdup_bam} 2>> {log.stderr}
         """
