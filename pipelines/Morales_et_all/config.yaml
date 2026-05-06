@@ -6,13 +6,8 @@ threads: 8
 # ==========================================
 # Experimental Design
 # ==========================================
-conditions:
-  - WT
-  - ADAR1KO
-samples:
-  - clone1
-  - clone2
-  - clone3
+# conditions and samples are derived at runtime from the samplesheet CSV.
+samplesheet: "samplesheet.csv"
 aligners:
   - star
   - bwa

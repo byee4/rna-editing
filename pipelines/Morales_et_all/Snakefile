@@ -1,7 +1,47 @@
+import csv
 import os
 
 # Load the configuration file
 configfile: "config.yaml"
+
+# ==========================================
+# Samplesheet Integration
+# ==========================================
+def _load_samplesheet(path):
+    sheet = {}
+    with open(path) as f:
+        for row in csv.DictReader(f):
+            key = (row["conditions"], row["samples"])
+            sheet[key] = {
+                "fastq_1": row["fastq_1"],
+                "fastq_2": row.get("fastq_2", "").strip(),
+            }
+    return sheet
+
+
+SAMPLESHEET = _load_samplesheet(config.get("samplesheet", "samplesheet.csv"))
+
+# Populate config from samplesheet so tools.smk and downstream.smk work unchanged.
+config["conditions"] = sorted(set(k[0] for k in SAMPLESHEET))
+config["samples"] = sorted(set(k[1] for k in SAMPLESHEET))
+
+
+def is_paired(condition, sample):
+    """Return True if this condition/sample has R2 reads in the samplesheet."""
+    return bool(SAMPLESHEET.get((condition, sample), {}).get("fastq_2", ""))
+
+
+def samplesheet_fastq_path(wildcards):
+    """Return the source FASTQ.GZ path for a given condition/sample/read wildcard."""
+    key = (wildcards.condition, wildcards.sample)
+    info = SAMPLESHEET[key]
+    if wildcards.read == "R1":
+        return info["fastq_1"]
+    fastq_2 = info.get("fastq_2", "")
+    if not fastq_2:
+        raise ValueError(f"No R2 fastq for {wildcards.condition}_{wildcards.sample}")
+    return fastq_2
+
 
 # ==========================================
 # Container Resolution
@@ -17,6 +57,11 @@ def container_for(tool):
     """Return the configured Singularity image path for a workflow tool."""
     return CONTAINERS.get(tool, f"{SIF_DIR}/{tool}.sif")
 
+
+# Prevent wildcards from crossing file-path boundaries (dots, slashes).
+wildcard_constraints:
+    condition="[^/._]+",
+    sample="[^/._]+"
 
 # Include modular workflows
 include: "preprocessing.smk"

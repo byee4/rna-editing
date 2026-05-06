@@ -1,4 +1,20 @@
+localrules: prepare_fastq
+
+
+rule prepare_fastq:
+    """Decompress samplesheet FASTQ.GZ paths to data/fastq/{condition}_{sample}_{read}.fastq."""
+    input:
+        samplesheet_fastq_path
+    output:
+        "data/fastq/{condition}_{sample}_{read}.fastq"
+    shell:
+        "zcat {input} > {output}"
+
+
 rule trim_reads:
+    # Trims each read file independently. fastx_trimmer truncates to a fixed length
+    # without filtering, so R1 and R2 always retain the same read count and order
+    # when trimmed separately — paired-end synchronization is guaranteed.
     input:
         reads="data/fastq/{condition}_{sample}_{read}.fastq"
     output:
@@ -25,7 +41,15 @@ rule trim_reads:
 rule star_mapping:
     input:
         r1="results/trimmed/{condition}_{sample}_R1_trimmed.fastq.gz",
-        r2="results/trimmed/{condition}_{sample}_R2_trimmed.fastq.gz"
+        r2=lambda wildcards: (
+            expand(
+                "results/trimmed/{condition}_{sample}_R2_trimmed.fastq.gz",
+                condition=wildcards.condition,
+                sample=wildcards.sample,
+            )
+            if is_paired(wildcards.condition, wildcards.sample)
+            else []
+        )
     output:
         bam="results/mapped/{condition}_{sample}.bam",
         bai="results/mapped/{condition}_{sample}.bam.bai"
@@ -40,15 +64,23 @@ rule star_mapping:
     params:
         ref_dir=config["references"]["star_index"],
         prefix="results/mapped/{condition}_{sample}_",
-        map_qual=config["params"]["star"]["map_quality"]
+        map_qual=config["params"]["star"]["map_quality"],
+        # Build --readFilesIn argument: R1 only for SE, R1 R2 for PE.
+        reads=lambda wildcards, input: (
+            f"{input.r1} {input.r2[0]}" if len(input.r2) > 0 else input.r1
+        ),
+        # -f 0x2 (properly paired) is only valid for PE alignments.
+        samflag=lambda wildcards, input: (
+            "-F 0x04 -f 0x2" if len(input.r2) > 0 else "-F 0x04"
+        )
     shell:
         r"""
         set -euo pipefail
         STAR --runThreadN {threads} --genomeDir {params.ref_dir} \
-             --readFilesIn {input.r1} {input.r2} --readFilesCommand zcat \
+             --readFilesIn {params.reads} --readFilesCommand zcat \
              --outSAMtype BAM SortedByCoordinate --outFileNamePrefix {params.prefix} \
              1> {log.stdout} 2> {log.stderr}
-        samtools view -@ {threads} -F 0x04 -f 0x2 -q {params.map_qual} -b {params.prefix}Aligned.sortedByCoord.out.bam | \
+        samtools view -@ {threads} {params.samflag} -q {params.map_qual} -b {params.prefix}Aligned.sortedByCoord.out.bam | \
             samtools sort -@ {threads} -T {params.prefix}tmp -o {output.bam} 2>> {log.stderr}
         samtools index -@ {threads} {output.bam} 2>> {log.stderr}
         rm {params.prefix}Aligned.sortedByCoord.out.bam
