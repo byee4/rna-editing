@@ -1,0 +1,27 @@
+{
+  "stage_id": "4-review",
+  "completed_utc": "2026-05-07T14:45:00Z",
+  "artifacts_produced": [
+    {"path": ".forge/stages/4-review/review-report.md", "description": "Full review findings — rounds 1 and 2"},
+    {"path": ".forge/stages/4-review/review-fixup-prompt.md", "description": "Revision instructions consumed by 4.5-revision"},
+    {"path": ".forge/stages/4-review/verified-clean.json", "description": "15+ PASS verdicts cached for reuse"},
+    {"path": ".forge/stages/2-architect/architecture-addendum.md", "description": "Ratifies post-implement scope (D-13/14/15)"},
+    {"path": ".forge/stages/3-implement/spec-deviations.json", "description": "Records RED-ML URL deviation D-RED-ML-URL"}
+  ],
+  "key_decisions": [
+    {"dr_id": "D-13", "summary": "Samplesheet driver pattern adopted for WGS samples (rules/wgs.smk)"},
+    {"dr_id": "D-14", "summary": "build_downstream_dbs.py contracted: 4 DBs + 4 JSONs from REDIportal/ALU BED"},
+    {"dr_id": "D-15", "summary": "Benchmark submodule pinned to fork; /binf-isilon defaults overridable via DB_PATH env"},
+    {"dr_id": "D-RED-ML-URL", "summary": "BGI-shenzhen/RED-ML.git (404) → BGIRED/RED-ML.git (200); recorded in spec-deviations.json"}
+  ],
+  "open_issues": [
+    {"bead_id": null, "summary": "AC-1/AC-2 deferred: snakemake --lint + dry-run must run on TSCC before merge"},
+    {"bead_id": null, "summary": "m-5 deferred: task-07-container-red_ml.md has stale BGI-shenzhen refs (cosmetic only)"}
+  ],
+  "resumption_context": "Review APPROVED. Implementation covers original 8-task containerization plan plus 8 new rules (wgs.smk, references.smk) and build_downstream_dbs.py ratified via architecture-addendum. All 22 non-localrule rules have container+log+resources. RED-ML URL deviation documented. 4 new SIFs built (fastx, morales_downstream, red_ml, star). Two TSCC-only checks remain (snakemake lint + dry-run). Next: 5-qa — generate tests from spec, run unit tests, verify structural ACs.",
+  "next_stage_must_read": [
+    ".forge/stages/4-review/review-report.md",
+    ".forge/stages/2-architect/architecture-addendum.md",
+    ".forge/stages/3-implement/implementation-report.md"
+  ]
+}

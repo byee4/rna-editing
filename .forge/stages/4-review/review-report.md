@@ -1,217 +1,137 @@
-# Forge Review Report: Morales_et_al Pipeline Containerization
+# Forge Review Report: Morales_et_al Pipeline Containerization (Round 2)
 
 <!-- FORGE_STAGE: 4-review -->
-<!-- STATUS: CHANGES_REQUIRED -->
-<!-- REVIEW_ROUND: 1 -->
-<!-- GENERATED_UTC: 2026-05-07T13:30:00Z -->
+<!-- STATUS: APPROVED -->
+<!-- REVIEW_ROUND: 2 -->
+<!-- GENERATED_UTC: 2026-05-07T14:45:00Z -->
+<!-- PRIOR_ROUND: review-report.md (round 1) → CHANGES_REQUIRED with 3 MAJOR + 4 MINOR -->
 
 ## Summary
 
 | Verdict | Critical | Major | Minor | Notes |
 |---------|----------|-------|-------|-------|
-| **CHANGES_REQUIRED** | 0 | 3 | 4 | Original 17 ACs all PASS. Issues are with post-implement scope expansion (5 commits adding 1,200+ lines to wgs.smk, references.smk, build_downstream_dbs.py) that bypassed the architect plan. |
+| **APPROVED** | 0 | 0 | 1 (deferred) | All 7 round-1 fixes applied and verified. Architect-scoped 17 ACs all PASS. Post-implement scope formally ratified via architecture-addendum.md. AC-1, AC-2 (snakemake --lint, dry-run) remain DEFERRED to TSCC. |
 
-## Acceptance Criteria — Original Architect Scope (17 ACs)
+## Round-1 Fixes — Verification
 
-| AC | Description | Verdict | Evidence |
-|----|-------------|---------|----------|
-| AC-1 | snakemake --lint passes | DEFERRED | Cannot run on review host (no snakemake). Implementation report defers to TSCC. WEAK sufficiency. |
-| AC-2 | snakemake -n dry-run < 60s | DEFERRED | Same as AC-1. WEAK sufficiency. |
-| AC-3 | No ~/bin or /binf-isilon in scoped pipeline files | PASS | grep -rn "~/bin\|/binf-isilon" Snakefile config.yaml *.smk rules/*.smk → 0 matches. STRONG. |
-| AC-4 | 14 container: directives in original 3 .smk files | PASS | grep on preprocessing.smk + tools.smk + downstream.smk = 14. STRONG. |
-| AC-5 | 14 log: directives | PASS | Same scope = 14. STRONG. |
-| AC-6 | 14 resources: directives | PASS | Same scope = 14. STRONG. |
-| AC-7 | bcftools rule has set -euo pipefail | PASS | tools.smk line 68. STRONG. |
-| AC-8 | preprocessing.smk has no `java -jar` | PASS | grep returns 0. STRONG. |
-| AC-9 | params.{script,sprint_bin,jacusa_jar,samtools_bin} removed | PASS | grep across pipelines/Morales_et_all/*.smk and rules/*.smk = 0 matches in real param refs (one false-positive match is `params.script` defined as a path resolution helper in references.smk:93, semantically distinct). STRONG. |
-| AC-10 | No bare `python Downstream/` in downstream.smk | PASS | grep returns 0. STRONG. |
-| AC-11 | downstream_scripts_dir present in config.yaml | PASS | grep -c = 1. STRONG. |
-| AC-12 | containers/star/{Dockerfile,validate.sh} | PASS | both files present. STRONG. |
-| AC-13 | containers/red_ml/{Dockerfile,validate.sh} | PASS | both present. STRONG. |
-| AC-14 | containers/fastx/{Dockerfile,validate.sh} | PASS | both present. STRONG. |
-| AC-15 | containers/morales_downstream/{Dockerfile,validate.sh} | PASS | both present. STRONG. |
-| AC-16 | container_for() in Snakefile | PASS | Snakefile:56-58 defines the helper. STRONG. |
-| AC-17 | add_md_tag uses container_for("wgs") | PASS | tools.smk:117 confirmed. STRONG. |
+| ID | Severity | Description | Round-1 Status | Round-2 Verdict | Evidence |
+|----|----------|-------------|----------------|-----------------|----------|
+| M-1 | MAJOR | Resolve post-implement scope expansion | COMPLETE | **PASS** | `.forge/stages/2-architect/architecture-addendum.md` (129 lines) ratifies the 7 commits. New rules covered (A2), D-13/D-14/D-15 added (A6), build_downstream_dbs.py contract specified (A4), submodule strategy documented (A5). |
+| M-2 | MAJOR | Record RED-ML URL deviation, amend ADR-02 | COMPLETE | **PASS** | `.forge/stages/3-implement/spec-deviations.json` records D-RED-ML-URL with verification evidence. `architecture-plan.md` §5.6 lines 677, 698 use `BGIRED/RED-ML` (curl 200). |
+| M-3 | MAJOR | Add `resources:` and `container:` to post-implement rules | COMPLETE | **PASS** | All 4 rules (`generate_simple_repeat`, `generate_alu_bed`, `build_dbrna_editing`, `wgs_vcf_to_ag_tc_bed`) now have `threads:`, `resources:` (mem_mb + runtime lambdas), and `container:` directives. `build_dbrna_editing` uses `container_for("morales_downstream")`. Per-rule directive checker outputs OK across 22 rules. |
+| m-1 | MINOR | Add `import re` to Snakefile | COMPLETE | **PASS** | Snakefile line 3: `import re` (after `import os`). Unused but matches editing_wgs convention per plan §5.1. |
+| m-2 | MINOR | Add `container:` to `build_dbrna_editing` | COMPLETE | **PASS** | references.smk:101: `container: container_for("morales_downstream")`. Covered by M-3. |
+| m-3 | MINOR | Document `prepare_fastq` localrule constraint | COMPLETE | **PASS** | preprocessing.smk lines 1-4: comment warns about head-node execution and large-file footgun. |
+| m-4 | MINOR | Document `wgs_samples` requirement | COMPLETE | **PASS** | config.yaml lines 52-57: `IMPORTANT` block explains that omitting `wgs_samples` causes runtime failure in `multiple_analysis.done`. |
 
-**15/17 ACs verified STRONG. AC-1 and AC-2 deferred to TSCC (the implementer correctly noted this constraint).**
+## Verified Patterns Carried Forward (round-1 STRONG, unchanged)
 
-## Decision Compliance (D-1 .. D-12)
+The following 15 ACs and 12 decisions were verified STRONG in round 1 and remain unchanged in this round (no relevant code touched). See `.forge/stages/4-review/verified-clean.json`.
 
-| DR | Decision | Status | Evidence |
-|----|----------|--------|----------|
-| D-1 | STAR ubuntu:22.04 + apt samtools + static binary | FOLLOWED | containers/star/Dockerfile lines 1, 18-22. |
-| D-2 | RED-ML rocker/r-ver:4.3.2 + apt perl + CRAN packages | FOLLOWED with deviation | rocker/r-ver:4.3.2, perl, R packages all present. **Deviation**: clones from `BGIRED/RED-ML` not `BGI-shenzhen/RED-ML` per plan §5.6 / ADR-02. The implementation is correct (BGI-shenzhen returns 404; BGIRED is the canonical repo). The plan's URL was wrong. See M-2 below. |
-| D-3 | FASTX miniforge3 + bioconda fastx_toolkit | FOLLOWED | containers/fastx/Dockerfile. |
-| D-4 | sprint via `python /opt/sprint/sprint_from_bam.py ... samtools` | FOLLOWED | tools.smk:43. |
-| D-5 | Two-handle log style (stdout, stderr) | FOLLOWED | All 14 rules. |
-| D-6 | Resource lambdas with attempt scaling | FOLLOWED | All scoped rules. |
-| D-7 | add_md_tag uses container_for("wgs") | FOLLOWED | tools.smk:117. |
-| D-8 | bcftools/add_md_tag log handles via sentinel echo | FOLLOWED | tools.smk:71, 128. |
-| D-9 | downstream_dir param scoped per rule | FOLLOWED | Each downstream rule has own params block. |
-| D-10 | Submodule comment in config.yaml | FOLLOWED | config.yaml:57-60. |
-| D-11 | New SIFs named `<key>.sif` | FOLLOWED | config.yaml:36-44 maps key → /singularity/{key}.sif. |
-| D-12 | 8-task decomposition | FOLLOWED | All 8 tasks in implementation report. |
+- **AC-3 .. AC-17**: PASS (15 of 17 originals; structural, file-existence, container_for, ADR follow-through)
+- **AC-1, AC-2**: DEFERRED to TSCC (snakemake --lint and `snakemake -n`); not run on review host. WEAK sufficiency persists.
+- **D-1 .. D-12**: All FOLLOWED. D-2 deviation now formally recorded.
+- **Sprint adapter unit test**: PASS (1 test, OK; ran from `/tscc/nfs/home/bay001/projects/codebase/rna-editing` with `python3 -m unittest discover -s tests -p "test_sprint*" -t .`)
 
-## Adversarial Spec Verification
+## Adversarial Spec Verification — Round 2
 
-| AC | Reviewer Verdict | Evidence | Challenge | Sufficiency |
-|----|------------------|----------|-----------|-------------|
-| AC-1 | DEFERRED | None on review host | snakemake --lint never run; only structural greps performed | **WEAK** |
-| AC-2 | DEFERRED | None on review host | snakemake -n never run; samplesheet integration adds runtime parse risk that lint cannot catch | **WEAK** |
-| AC-3 | PASS | grep evidence on scoped files | Submodule .py/.sh files contain ~/bin and /binf-isilon, but architect §2 explicitly excludes the submodule from scope. Per submodule contract, defaults are env-overridable. | STRONG |
-| AC-4..AC-6 | PASS | per-file grep counts | Counts only the originally-scoped 14 rules. New post-implement files (wgs.smk, references.smk) are not counted in the AC's denominator. The 14/14 result is therefore correct as scoped, but **does not reflect** the actual rule count of the live pipeline (now 23 rules). | STRONG (as scoped) |
-| AC-9 | PASS | grep on smk files | False-positive `params.script` exists in references.smk but is a path to build_downstream_dbs.py (semantically a downstream script wrapper), not a tool executable. Acceptable. | STRONG |
-| AC-12..AC-15 | PASS | file existence | None of the 4 Dockerfiles have been built or run on this host. Validate.sh scripts exist but are unexecuted. SIF files referenced in config.yaml do not yet exist on disk (`scripts/validate_containers.sh` is a post-merge step). | STRONG (existence) / WEAK (functional validation) |
-| AC-16, AC-17 | PASS | direct file inspection | Trivial structural checks. | STRONG |
+Round 2 adds two checks for the remediation work:
 
-**Sufficiency rollup**: 15 STRONG, 2 WEAK (AC-1, AC-2). >50% threshold for downgrade NOT met. However, AC-1/AC-2 are the load-bearing ACs (they verify the workflow actually plans correctly under Snakemake 9 with the new directives). Their deferral is the single largest risk in this implementation and must be cleared on TSCC before merge.
+| Check | Verdict | Evidence | Challenge | Sufficiency |
+|-------|---------|----------|-----------|-------------|
+| Per-rule directive invariant (M-3) | PASS | Python checker iterates every `^rule\s+\w+:` block in 5 smk files (22 non-localrule rules) and asserts `container:`/`log:`/`resources:` present. Output: OK. Only `prepare_fastq` localrule reported missing — explicitly exempt per A2 / m-3. | Could a regex match adjacent text? No — checker scopes body between rule markers. | STRONG |
+| RED-ML URL plan/Dockerfile match (M-2) | PASS | `grep "BGI" architecture-plan.md` shows BGIRED at lines 677 (LABEL) and 698 (RUN); Dockerfile lines 4 and 25 match. `curl -I` returns 200 for BGIRED, 404 for BGI-shenzhen. spec-deviations.json present. | task-07-container-red_ml.md still has stale BGI-shenzhen at line 24, 75, 89. See m-5 below. | STRONG (with note) |
+| Resources values are sensible (M-3) | PASS | `build_dbrna_editing` has `mem_mb=16000` (heavier for REDIportal load); the other 3 use `mem_mb=4000`. Runtime lambdas with attempt scaling. | Hardcoded 4 GB / 30 min could OOM on full REDIportal but matches review's suggested values. | STRONG |
+| `import re` actually present (m-1) | PASS | Snakefile line 3. | Cosmetic — `re` is unused; introduced only for parity. | STRONG (intentional) |
+| Localrule comment present (m-3) | PASS | preprocessing.smk lines 1-4. | Comment-only fix; does not constrain at runtime. Acceptable per the resolution path chosen. | STRONG |
+| config.yaml wgs_samples doc (m-4) | PASS | config.yaml lines 52-57 contain IMPORTANT block. | Doc-only; does not enforce DAG-time check. Acceptable per the resolution path chosen. | STRONG |
+| Architecture addendum covers post-implement scope (M-1) | PASS | 129-line file at `.forge/stages/2-architect/architecture-addendum.md`. Sections A1–A7 cover new files, ACs, D-13/14/15, downstream contract, submodule strategy. | The addendum did not migrate per-task ACs to actual `tasks/task-NN-*.md` files; the 8 new rules are documented in tabular form in A2 only. Acceptable for a remediation addendum. | STRONG |
 
-## Post-Implementation Scope Expansion (HIGH severity finding)
+**Sufficiency rollup**: 7 STRONG / 0 WEAK / 0 MISSING for round-2-specific checks. Combined with carried-forward 15 STRONG and 2 DEFERRED from round 1: **22 STRONG / 2 DEFERRED**. Below downgrade threshold.
 
-After the architect plan was sealed and `a9acbae` was committed (the legitimate stage-3 implementation), **7 additional commits** added 1,200+ lines of code that were never planned, never reviewed against architecture, and never assigned ACs. These are tracked here because the review must judge the *current* state of the codebase, not just the architect-scoped diff.
+## Adversarial Sweep — New Issues Introduced by Revision?
 
-| Commit | Files | Lines | Status vs Architect Plan |
-|--------|-------|-------|--------------------------|
-| 24ce97b | Snakefile, preprocessing.smk, config.yaml, +samplesheet.csv | +152 | **Out of scope**: samplesheet.csv driver, SE/PE branching, prepare_fastq localrule. |
-| 316ab01 | Snakefile, config.yaml | +20 | **Out of scope**: removes downstream from rule all, retargets references to TSCC paths. |
-| 3f7f415 | preprocessing.smk, tools.smk, containers/reditools/Dockerfile | ~80 | **Out of scope**: 5 bug fixes from end-to-end test. |
-| 395dbe4 | preprocessing.smk, downstream.smk, containers/reditools/Dockerfile, submodule | ~200 | **Out of scope**: dynamic Picard heap, env-var DB_PATH wiring. |
-| 290d0d5 | downstream.smk, scripts/build_downstream_dbs.py (NEW), submodule | +250 | **Out of scope**: brand-new script + submodule patches. |
-| 7d79e43 | rules/wgs.smk (NEW), rules/references.smk (NEW), Snakefile, config.yaml, build_downstream_dbs.py | +500 | **Out of scope**: entirely new sub-pipelines (5 + 3 rules). |
-| 5213422 | rules/references.smk, config.yaml, build_downstream_dbs.py | ~30 | **Out of scope**: cleanup of preceding commit. |
+Revision diff: `0e2cb98` (829 insertions, 4 deletions across 16 files). Specific risks checked:
 
-The architect plan §11 explicitly listed "Adding new analysis rules" and "Initializing or populating Benchmark-of-RNA-Editing-Detection-Tools/" as out-of-scope. Both invariants were violated.
+| Concern | Result |
+|---------|--------|
+| Did adding `threads: 1` to existing rules break anything? | NO. `threads: 1` is the default; explicit declaration is a no-op behaviorally. |
+| Did adding `container: container_for("morales_downstream")` to `build_dbrna_editing` introduce a missing-container risk? | LOW. `morales_downstream` is declared in `config.yaml:44` with an explicit path; the SIF must exist on disk before the rule runs. This is the same constraint as all other containers; addressed by `scripts/validate_containers.sh`. |
+| Did the `import re` addition shadow an existing variable? | NO. No `re` symbol is bound elsewhere in Snakefile. |
+| Did the architecture-plan URL patch introduce inconsistency with task-07? | YES (m-5). See finding below. Plan §5.6 corrected; task-07-container-red_ml.md still has stale BGI-shenzhen lines 24, 75, 89. Spec-deviations.json explicitly references task-07 line 24, so the deviation is recorded but the task file itself was not patched. Minor. |
+| Does the comment-only m-3 fix change runtime behavior? | NO. `localrules: prepare_fastq` is unchanged; only a leading comment was added. |
+| Does the m-4 doc-only fix prevent runtime failure when `wgs_samples` is unset? | NO. The fix documents but does not enforce. The reviewer's recommendation (b) was chosen — acceptable, but the runtime risk remains for users who do not read config.yaml comments. |
 
-## Findings
+## New Findings (Round 2)
 
-### M-1 — Post-implement scope expansion lacks architect approval — MAJOR
+### m-5 — Stale `BGI-shenzhen` references in `task-07-container-red_ml.md` — MINOR (informational)
 
-**Severity**: MAJOR (process violation, not a code defect)
-**Files**: `pipelines/Morales_et_all/rules/wgs.smk` (NEW), `pipelines/Morales_et_all/rules/references.smk` (NEW), `pipelines/Morales_et_all/samplesheet.csv` (NEW), `scripts/build_downstream_dbs.py` (NEW), `pipelines/Morales_et_all/Snakefile` (MODIFIED), `pipelines/Morales_et_all/config.yaml` (MODIFIED), submodule pin.
-**Detail**: 7 commits after the architect-approved a9acbae added a new WGS sub-pipeline, reference-generation rules, samplesheet-driven sample resolution, a downstream DB builder script, and submodule patches — all violating §11 ("Adding new analysis rules") and §2 Non-Goals. Each addition appears individually defensible (TSCC retargeting, bug fixes from real-data test, downstream JSON DB scaffolding) but none was approved by an architect re-plan.
-**Suggested fix**: Either (a) re-run the architect stage with these additions as new requirements, producing a second architecture-plan.md addendum that includes ACs for the new files; or (b) revert the 7 commits and re-scope as a separate forge pipeline run. The former is cheaper.
-**Verification**: `git log --oneline 820fad08..HEAD | wc -l` should equal 1 (the architect-approved commit) for proper scope discipline; current value = 8.
+**Severity**: MINOR (deferred — already covered by spec-deviations.json reference)
+**Files**: `.forge/stages/2-architect/tasks/task-07-container-red_ml.md` lines 24, 75, 89
+**Detail**: The architecture-plan.md §5.6 (canonical spec) was updated to BGIRED/RED-ML.git. The task-07 file (a derivative architect artifact) was not updated. Lines 24 (LABEL), 75 (verification grep), 89 (verification grep) still reference `BGI-shenzhen/RED-ML`. The deviation is correctly recorded in spec-deviations.json D-RED-ML-URL, which explicitly cites task-07-container-red_ml.md line 24 as one of the spec sources. Implementation is correct.
+**Suggested fix** (defer): Either (a) patch task-07 to match the corrected plan and Dockerfile, or (b) add a note at the top of task-07 marking it as superseded by spec-deviations.json D-RED-ML-URL. Not a blocker for approval — the canonical artifact (architecture-plan.md) and the implementation (Dockerfile) are consistent, and the deviation record is the single source of truth.
+**Verification**: `grep -c BGI-shenzhen .forge/stages/2-architect/tasks/task-07-container-red_ml.md` returns 3; `grep -c BGI-shenzhen .forge/stages/2-architect/architecture-plan.md` returns 0; `grep -c BGI-shenzhen containers/red_ml/Dockerfile` returns 0.
 
-### M-2 — Architecture plan ADR-02 has wrong GitHub URL; implementation is correct but uncommunicated — MAJOR
-
-**Severity**: MAJOR
-**File**: `containers/red_ml/Dockerfile:25` and `.forge/stages/2-architect/architecture-plan.md:698`
-**Detail**: Plan §5.6 / ADR-02 spec has `git clone https://github.com/BGI-shenzhen/RED-ML.git` (HTTP 404). Implementation correctly uses `https://github.com/BGIRED/RED-ML.git` (HTTP 200) but the LABEL description on Dockerfile:4 says `Reference: BGIRED/RED-ML.` whereas the plan said `BGI-shenzhen/RED-ML`. Even task-07-container-red_ml.md self-contradicts (line 24 says `BGI-shenzhen`, line 45 uses `BGIRED`). This is a silent deviation from the spec — **the deviation is correct**, but per the forge protocol, deviations must be recorded in `spec-deviations.json` (which does not exist for this stage).
-**Suggested fix**: Create `.forge/stages/3-implement/spec-deviations.json` retroactively documenting:
-```json
-{"deviations":[{"id":"D-RED-ML-URL","spec":"BGI-shenzhen/RED-ML","actual":"BGIRED/RED-ML","reason":"BGI-shenzhen org returns HTTP 404; BGIRED is the canonical repo for RED-ML.","approved_by":"reviewer","verified":"curl returns 200 for BGIRED, 404 for BGI-shenzhen"}]}
-```
-Also, propose ADR-02 amendment to update the architect plan URL.
-**Verification**: `curl -I https://github.com/BGIRED/RED-ML` returns `HTTP/2 200`; `curl -I https://github.com/BGI-shenzhen/RED-ML` returns `HTTP/2 404`.
-
-### M-3 — Post-implement rules in references.smk and wgs.smk lack `resources:` directives — MAJOR
-
-**Severity**: MAJOR (functional defect; will OOM on TSCC default 20 GB / 30 min limits)
-**Files**:
-- `pipelines/Morales_et_all/rules/references.smk` — `generate_simple_repeat`, `generate_alu_bed`, `build_dbrna_editing` (3 rules, no `resources:`).
-- `pipelines/Morales_et_all/rules/wgs.smk` — `wgs_vcf_to_ag_tc_bed` (1 rule, no `resources:`).
-**Detail**: The architect plan §1 names "no `resources:` directives" as **invariant violation #3** that the entire pipeline fix was meant to address. The 4 new rules above will inherit TSCC profile defaults of 20 GB / 30 min, which are likely fine for `bcftools view | awk` and `bedtools merge`, but `build_dbrna_editing` reads a multi-GB REDIportal TSV and the Alu BED into Python dicts and may exceed 20 GB. More importantly, this is the exact problem the architect plan was meant to fix — adding new rules without `resources:` reproduces the original sin.
-**Suggested fix**: Add `resources:` block matching the editing_wgs convention (`mem_mb=lambda wildcards, attempt: BASE * (1.5 ** (attempt - 1))`, `runtime=lambda wildcards, attempt: BASE * (2 ** (attempt - 1))`) to all 4 rules. Suggested values:
-- `generate_simple_repeat`, `generate_alu_bed`: `mem_mb=4000`, `runtime=30`
-- `build_dbrna_editing`: `mem_mb=16000`, `runtime=60` (REDIportal load is memory-heavy)
-- `wgs_vcf_to_ag_tc_bed`: `mem_mb=4000`, `runtime=30`
-**Verification**:
-```
-python3 -c "
-import re
-for f in ['pipelines/Morales_et_all/rules/wgs.smk','pipelines/Morales_et_all/rules/references.smk']:
-    text=open(f).read()
-    for m in re.finditer(r'(?m)^rule\s+(\w+):', text):
-        body=text[m.end(): (re.search(r'(?m)^rule\s+\w+:', text[m.end():]) or re.match('.*',text[m.end():])).start()+m.end() if re.search(r'(?m)^rule\s+\w+:', text[m.end():]) else len(text)]
-        assert re.search(r'^[ \t]+resources:', body, re.M), f'{f}::{m.group(1)} missing resources:'
-print('OK')
-"
-```
-
-### m-1 — Snakefile missing `import re` from plan §5.1 — MINOR
-
-**Severity**: MINOR
-**File**: `pipelines/Morales_et_all/Snakefile`
-**Detail**: Plan §5.1 explicitly required `import re` after `import os` "for parity with editing_wgs". Snakefile line 1 imports `csv`, line 2 imports `os`. No `import re`. Cosmetic deviation; does not affect correctness because `re` is unused.
-**Suggested fix**: Add `import re` on line 3 OR document the deviation as intentional in spec-deviations.json.
-
-### m-2 — `build_dbrna_editing` rule missing `container:` directive — MINOR
-
-**Severity**: MINOR
-**File**: `pipelines/Morales_et_all/rules/references.smk:64-105`
-**Detail**: The `build_dbrna_editing` rule calls `python {params.script}` but has no `container:` directive. This means the rule runs the script using the *host* Python — which works on TSCC but defeats the containerization invariant. Note that the script dependencies (numpy/pandas/scipy not used; pure stdlib) are stdlib-only so functional behavior is unaffected, but the consistency invariant is violated.
-**Suggested fix**: Either (a) add `container: container_for("morales_downstream")` to use the existing python:3.11-slim container; or (b) document explicitly that this rule deliberately runs on host Python because it is stdlib-only and the human runs it once.
-**Verification**: `grep -A2 "rule build_dbrna_editing" pipelines/Morales_et_all/rules/references.smk | grep "container:"` should return 1 match.
-
-### m-3 — `prepare_fastq` localrule has no constraints; could trigger on huge files — MINOR
-
-**Severity**: MINOR
-**File**: `pipelines/Morales_et_all/preprocessing.smk:1-11`
-**Detail**: `prepare_fastq` is a `localrule:` that decompresses a FASTQ.GZ to a plain FASTQ on the head node (since localrules run in the snakemake driver process). For large WGS or RNA-seq inputs, this will consume head-node disk and CPU. Acceptable for the small_examples but a footgun for production.
-**Suggested fix**: Either (a) remove the localrule classification and add `container: container_for("wgs")` plus `resources:` so it dispatches to a worker; or (b) add a comment warning about input-size limits.
-
-### m-4 — `_WGS_DB_FILES` is gated on truthy `config.get("wgs_samples")` but rule all unconditionally lists `multiple_analysis.done` which depends on the JSON DBs — MINOR
-
-**Severity**: MINOR
-**File**: `pipelines/Morales_et_all/Snakefile:77-99`
-**Detail**: When `wgs_samples` is unset, `_WGS_DB_FILES = []` and the `rule all:` target list omits the JSON DBs. But `multiple_analysis.done` (still in `rule all`) eventually requires the JSONs through the `run_downstream_parsers` rule chain, which `import`s them at runtime via env var `DB_PATH`. There is no DAG-time check enforcing that wgs_samples must be set if downstream is targeted. Snakemake will plan the DAG to completion but the parser scripts will fail at runtime if the JSONs don't exist.
-**Suggested fix**: Either (a) make `multiple_analysis.done` conditional on `_WGS_DB_FILES` being non-empty, or (b) document the requirement in config.yaml comments.
-
-## Verification Run
+## Verification Run — Round 2
 
 | Check | Result | Notes |
 |-------|--------|-------|
-| Tests | PASS | `python -m unittest discover -s tests -p "test_sprint_to_deepred_vcf.py"` → 1 test, OK. |
-| Lint | DEFERRED | No lint configured for Python or Snakemake on review host. |
-| Typecheck | DEFERRED | No typechecker configured. |
-| Build | DEFERRED | No build step for snakemake pipelines. |
-| `snakemake --lint` | DEFERRED | Snakemake unavailable on review host (per implementation report; must be run on TSCC). |
-| `snakemake -n` (dry-run) | DEFERRED | Same as above. |
-| AC-3 grep (no `~/bin`/`/binf-isilon` in scoped pipeline files) | PASS | Confirmed empty. |
-| AC-4/5/6 directive counts (scoped 3 .smk files) | PASS | 14/14/14. |
-| AC-7..AC-17 structural checks | PASS | All confirmed. |
-| Dockerfile URL works (RED-ML) | PASS | curl returns 200 for BGIRED. |
-| Architecture-plan URL works (RED-ML) | FAIL | curl returns 404 for BGI-shenzhen. See M-2. |
-| Post-implement directive coverage | FAIL | 4 new rules in rules/*.smk lack resources:. See M-3. |
+| Per-rule directive checker (5 smk files, 22 non-localrule rules) | PASS | OK. Only `prepare_fastq` localrule is missing directives (exempt per A2 / m-3). |
+| `import re` in Snakefile | PASS | Line 3, after `import os`. |
+| `container_for("morales_downstream")` on `build_dbrna_editing` | PASS | references.smk:101. |
+| Comment present on `localrules: prepare_fastq` | PASS | preprocessing.smk lines 1-4. |
+| `wgs_samples` IMPORTANT comment | PASS | config.yaml lines 52-57. |
+| RED-ML URL Dockerfile vs plan parity | PASS | Both reference `https://github.com/BGIRED/RED-ML.git`. curl: BGIRED=200, BGI-shenzhen=404. |
+| spec-deviations.json present and valid | PASS | 1 entry: D-RED-ML-URL with verified_via and approved_by. |
+| Architecture addendum present | PASS | 129 lines, covers A1–A7. |
+| Sprint adapter unit test | PASS | 1 test, OK (run from `/tscc/nfs/home/bay001/projects/codebase/rna-editing` with `python3 -m unittest discover -s tests -p "test_sprint*" -t .`). |
+| Snakemake `--lint` | DEFERRED | Snakemake unavailable on review host; must run on TSCC with `conda activate snakemake9`. |
+| Snakemake `-n` (dry-run) | DEFERRED | Same as above. |
+| Container build (`scripts/validate_containers.sh`) | DEFERRED | Container build is a post-merge step; not a review-stage gate. |
 
-## Quality Scores
+## Quality Scores (Round 2)
 
 | Dimension | Score | Notes |
 |-----------|-------|-------|
-| Correctness | PASS_WITH_NOTES | All 17 original ACs technically pass; AC-1/AC-2 deferred to TSCC. RED-ML URL was implementation-correct despite spec mismatch. |
-| Completeness | PASS_WITH_NOTES | Architect-scoped work is fully complete. Post-implement scope adds 4 rules without `resources:` (M-3). |
-| Maintainability | PASS | Code follows editing_wgs convention exactly; lambdas, two-handle log style, container_for() are all consistent. |
-| Security | PASS | No vulnerabilities introduced. SEC-1 (no user paths) verified PASS. SEC-2 (non-root) is informational per architect plan. |
+| Correctness | PASS | All 17 original ACs PASS; M-2 deviation recorded; M-3 functional defect resolved. AC-1/AC-2 deferred — must clear on TSCC before merge. |
+| Completeness | PASS | All 7 round-1 fixes applied. Architecture addendum formally ratifies the 8 post-implement rules. |
+| Maintainability | PASS | Code style consistent with editing_wgs convention. Resource lambdas follow `BASE * (1.5 ** (attempt - 1))` pattern. Two-handle log style preserved. |
+| Security | PASS | No new vulnerabilities. All round-1 SEC findings remain PASS. |
 
-The PASS_WITH_NOTES on Correctness and Completeness, combined with M-1 (process) and M-3 (functional defect on new rules), tips the verdict to **CHANGES_REQUIRED**.
+All four dimensions: PASS. Verdict: **APPROVED**.
 
-## ADR Drift Detection
+## Decision Compliance — Round 2
 
-ADR files exist at `.forge/stages/2-architect/adrs/ADR-01..ADR-04` (referenced in architecture plan §12). Without `affects_files` frontmatter, automated drift detection is best-effort.
+All 12 round-1 decisions remain FOLLOWED. New decisions D-13, D-14, D-15 ratified via architecture-addendum.md §A6:
+- D-13 (Samplesheet driver): FOLLOWED — Snakefile:11-44 implements `_load_samplesheet()`.
+- D-14 (WGS pipeline integration): FOLLOWED — `rules/wgs.smk` with 5 rules.
+- D-15 (Reference DB generation): FOLLOWED — `rules/references.smk` with 3 rules; `build_dbrna_editing` uses `morales_downstream` container.
 
-| ADR | Decision | Drift |
-|-----|----------|-------|
-| ADR-02 | RED-ML base image and source URL | DIVERGENT: implementation uses `BGIRED/RED-ML.git` not `BGI-shenzhen/RED-ML.git`. Implementation is correct (BGI-shenzhen is 404); the ADR is wrong. See M-2. |
-| ADR-01, ADR-03, ADR-04 | STAR base image, FASTX base image, log path style | CONSISTENT |
+## ADR Drift Detection — Round 2
 
-**Note**: ADRs lack `affects_files` frontmatter; manual inspection only.
+| ADR | Status | Notes |
+|-----|--------|-------|
+| ADR-01, ADR-03, ADR-04 | CONSISTENT | (unchanged from round 1) |
+| ADR-02 | CONSISTENT | URL discrepancy resolved via spec-deviations.json D-RED-ML-URL. Plan §5.6 patched to BGIRED. |
 
 ## Decision Gate
 
-**Verdict**: **CHANGES_REQUIRED**
+**Verdict**: **APPROVED**
 
-**Reason**: Three MAJOR findings:
-1. **M-1**: 7 post-implement commits introduced ~1,200 LOC outside the architect plan, violating §11 Out-of-Scope rules. Must either re-architect or revert.
-2. **M-2**: ADR-02 / Plan §5.6 has the wrong GitHub URL for RED-ML; implementation diverged silently to the correct URL. Must record the deviation and amend the ADR.
-3. **M-3**: Four newly-introduced rules (in unplanned post-implement code) re-introduce the exact "no `resources:`" invariant violation the original work was supposed to fix. Must add `resources:` blocks before merge.
+**Reason**: All 3 MAJOR and 4 MINOR findings from round 1 have been resolved with STRONG evidence. The architect-scoped 17 ACs are PASS (15 STRONG, 2 DEFERRED to TSCC). The post-implement scope expansion is formally ratified via architecture-addendum.md. One new MINOR finding (m-5) is informational only — the canonical artifacts are consistent; the stale task-07 references are tracked by spec-deviations.json and do not affect runtime behavior or downstream pipeline stages.
 
-Plus four MINOR findings (m-1..m-4) that should be addressed in revision.
-
-The original architect-scoped 17 ACs are all PASS with STRONG sufficiency for 15/17. AC-1 and AC-2 (snakemake --lint and dry-run) are DEFERRED to TSCC and represent the largest residual risk.
+The two DEFERRED ACs (snakemake --lint, snakemake -n) remain the largest residual risk. They must be cleared on TSCC before merge, but they are explicitly documented as TSCC-only checks in the implementation report and the project CLAUDE.md.
 
 ## Recommended Next Steps
 
-1. Run `/forge revision` to apply M-1, M-2, M-3 fixes plus the four MINOR items.
-2. After revision, run `/forge review` again for re-verification.
-3. Once approved, run `snakemake --lint` and `snakemake -n` on TSCC to clear AC-1/AC-2.
-4. Then run `TOOLS="star red_ml fastx morales_downstream" scripts/validate_containers.sh` to build and validate the four new SIFs.
+1. Proceed to `/forge test` (stage 5-qa) for QA validation, OR
+2. Before merge, run on TSCC:
+   ```
+   module load singularitypro
+   conda activate snakemake9
+   cd pipelines/Morales_et_all
+   snakemake --lint --snakefile Snakefile --configfile config.yaml
+   snakemake -n --snakefile Snakefile --configfile config.yaml --cores 1
+   TOOLS="star red_ml fastx morales_downstream" /tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/scripts/validate_containers.sh
+   ```
+3. Optional follow-up: patch task-07-container-red_ml.md to remove stale BGI-shenzhen references, OR mark it superseded by spec-deviations.json D-RED-ML-URL (m-5, deferred).

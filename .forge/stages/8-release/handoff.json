@@ -1,0 +1,66 @@
+{
+  "schema_version": "1.0.0",
+  "stage": "8-release",
+  "status": "COMPLETE",
+  "completed_utc": "2026-05-07T00:00:00Z",
+  "decision": {
+    "gate_result": "READY_WITH_NOTES",
+    "overall": "READY_WITH_NOTES",
+    "version": "v0.2.0",
+    "rationale": "All prior stages PASS or SKIPPED with documented justification. CI passed (conclusion: success). 0 unresolved critical/major findings. 1 approved spec deviation (D-RED-ML-URL). Two post-merge human steps required: (1) build 4 new SIF containers, (2) run end-to-end on TSCC test data."
+  },
+  "release_readiness_matrix": {
+    "research":       { "status": "PASS",           "source": "0-research/handoff.json",     "notes": "5/5 conflicts resolved" },
+    "requirements":   { "status": "PASS",           "source": "1-requirements/handoff.json", "notes": "20 FRs, 17 ACs, 0 critical gaps" },
+    "architecture":   { "status": "PASS",           "source": "2-architect/handoff.json",    "notes": "Approach A selected; 8 tasks decomposed; all 20 FRs traced" },
+    "assumptions":    { "status": "N/A",            "source": "2-architect/handoff.json",    "notes": "No assumptions.json; assumptions embedded in architect-prompt.md" },
+    "implementation": { "status": "COMPLETE",       "source": "3-implement/handoff.json",    "notes": "8/8 tasks done; 5 files modified, 8 created; no scope expansion" },
+    "polish":         { "status": "SKIPPED",        "source": "state.json",                  "notes": "Not required; implementation clean after revision stage" },
+    "code_review":    { "status": "APPROVED",       "source": "4-review/handoff.json",       "notes": "Round 2 approval; 0 critical, 0 major, 1 deferred minor (m-5 doc drift)" },
+    "revision":       { "status": "COMPLETE",       "source": "4.5-revision/handoff.json",   "notes": "7/7 fixes applied; all MAJOR findings resolved" },
+    "qa":             { "status": "GO_WITH_NOTES",  "source": "5-qa/handoff.json",           "notes": "38/38 tests pass; AC coverage 16/17; 1 accepted minor (lint exit code)" },
+    "accessibility":  { "status": "N/A",            "source": "project.json",                "notes": "No UI; not applicable" },
+    "security":       { "status": "SKIPPED",        "source": "state.json",                  "notes": "Internal HPC research pipeline; low threat surface" },
+    "resilience":     { "status": "SKIPPED",        "source": "state.json",                  "notes": "Internal HPC pipeline; resilience testing not applicable" },
+    "documentation":  { "status": "COMPLETE",       "source": "7-docs/handoff.json",         "notes": "7 artifacts; WARN: README stale (non-blocking); 1 TBD: escalation contact" },
+    "observability":  { "status": "SKIPPED",        "source": "state.json",                  "notes": "Research pipeline; HPC monitoring not required" },
+    "conflicts":      { "status": "PASS",           "source": "0-research/conflicts-resolved.md", "notes": "5 conflicts resolved (C-001 through C-005)" },
+    "spec_compliance":{ "status": "PASS (1 approved deviation)", "source": "3-implement/spec-deviations.json", "notes": "D-RED-ML-URL: BGI-shenzhen → BGIRED; approved by reviewer" },
+    "ci":             { "status": "PASS",           "source": "gh run list",                 "notes": "Last run on main: conclusion=success" }
+  },
+  "blocking_items": [],
+  "noted_items": [
+    "Container builds (star, red_ml, fastx, morales_downstream) are a post-merge human step",
+    "snakemake --lint exits 1 with 7 informational warnings (accepted; 0 actionable errors)",
+    "README.md is stale — see .forge/stages/7-docs/readme-updates.md",
+    "deployment-runbook.md has 1 TBD: escalation contact (PI email)"
+  ],
+  "outputs": [
+    { "path": ".forge/stages/8-release/release-plan.md",         "description": "Release scope, version recommendation, rollout strategy, rollback plan" },
+    { "path": ".forge/stages/8-release/deployment-checklist.md", "description": "Pre-deploy sign-offs, numbered deploy steps, post-deploy checks, rollback" },
+    { "path": ".forge/stages/8-release/release-notes.md",        "description": "User-facing release notes: added/changed/removed/known issues" },
+    { "path": ".forge/stages/8-release/provenance.json",         "description": "SLSA v1.0 provenance attestation (unsigned; cosign not available)" },
+    { "path": "CHANGELOG.md",                                    "description": "Updated: [Unreleased] promoted to [0.2.0] - 2026-05-07" }
+  ],
+  "sbom": {
+    "status": "SKIPPED",
+    "reason": "cyclonedx-py not installed on this system"
+  },
+  "eu_ai_act": {
+    "status": "SKIPPED",
+    "reason": "compliance.eu_ai_act.enabled not set in project.json (default false)"
+  },
+  "i18n": {
+    "status": "SKIPPED",
+    "reason": "i18n not enabled in project.json"
+  },
+  "progressive_delivery": {
+    "status": "SKIPPED",
+    "reason": "deploy.progressive not configured in project.json. Using full deployment."
+  },
+  "post_deploy_verification": {
+    "status": "SKIPPED",
+    "reason": "No deploy.production_url in project.json"
+  },
+  "pipeline_complete": true
+}

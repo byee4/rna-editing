@@ -1,82 +1,54 @@
 {
   "schema_version": "1.0.0",
   "stage": "4-review",
-  "review_round": 1,
-  "completed_utc": "2026-05-07T13:35:00Z",
-  "status": "CHANGES_REQUIRED",
+  "review_round": 2,
+  "completed_utc": "2026-05-07T14:45:00Z",
+  "status": "APPROVED",
   "decision_gate": {
-    "verdict": "CHANGES_REQUIRED",
-    "next_stage": "4.5-revision",
-    "reason": "3 MAJOR findings: M-1 post-implement scope expansion (~1200 LOC unplanned), M-2 RED-ML URL deviation undocumented, M-3 four post-implement rules missing resources: directive (re-introduces the exact invariant violation the work was meant to fix)."
+    "verdict": "APPROVED",
+    "next_stage": "5-qa",
+    "reason": "All 7 round-1 fixes verified RESOLVED with STRONG evidence. 17 ACs PASS (15 STRONG, 2 DEFERRED to TSCC). One new MINOR (m-5: stale BGI-shenzhen refs in task-07-container-red_ml.md) is informational only; canonical artifacts and Dockerfile are correct, deviation tracked in spec-deviations.json."
   },
   "outputs": [
     ".forge/stages/4-review/review-report.md",
-    ".forge/stages/4-review/review-fixup-prompt.md",
     ".forge/stages/4-review/verified-clean.json"
   ],
   "findings_summary": {
     "critical": 0,
-    "major": 3,
-    "minor": 4,
+    "major": 0,
+    "minor": 1,
     "deferred": 2
   },
-  "findings": [
-    {
-      "id": "M-1",
-      "severity": "MAJOR",
-      "category": "PROCESS",
-      "title": "Post-implement scope expansion bypassed architect plan",
-      "files": [
-        "pipelines/Morales_et_all/rules/wgs.smk",
-        "pipelines/Morales_et_all/rules/references.smk",
-        "pipelines/Morales_et_all/samplesheet.csv",
-        "scripts/build_downstream_dbs.py",
-        "pipelines/Morales_et_all/Snakefile",
-        "pipelines/Morales_et_all/config.yaml"
-      ]
-    },
-    {
-      "id": "M-2",
-      "severity": "MAJOR",
-      "category": "DECISION_REQUIRED",
-      "title": "RED-ML GitHub URL deviation from ADR-02 not recorded",
-      "files": [
-        "containers/red_ml/Dockerfile",
-        ".forge/stages/2-architect/architecture-plan.md"
-      ]
-    },
-    {
-      "id": "M-3",
-      "severity": "MAJOR",
-      "category": "FUNCTIONAL_DEFECT",
-      "title": "Four post-implement rules missing resources: (and one missing container:)",
-      "files": [
-        "pipelines/Morales_et_all/rules/references.smk",
-        "pipelines/Morales_et_all/rules/wgs.smk"
-      ]
-    },
-    {"id": "m-1", "severity": "MINOR", "title": "Snakefile missing import re (plan §5.1)"},
-    {"id": "m-2", "severity": "MINOR", "title": "build_dbrna_editing rule lacks container: directive"},
-    {"id": "m-3", "severity": "MINOR", "title": "prepare_fastq localrule input-size footgun"},
-    {"id": "m-4", "severity": "MINOR", "title": "_WGS_DB_FILES gating versus multiple_analysis.done dependency"}
+  "round_1_findings_resolution": [
+    {"id": "M-1", "severity": "MAJOR", "round_1": "OPEN", "round_2": "RESOLVED", "evidence": ".forge/stages/2-architect/architecture-addendum.md ratifies post-implement scope (8 new rules + D-13/D-14/D-15 + downstream contract + submodule strategy)"},
+    {"id": "M-2", "severity": "MAJOR", "round_1": "OPEN", "round_2": "RESOLVED", "evidence": ".forge/stages/3-implement/spec-deviations.json records D-RED-ML-URL; architecture-plan.md §5.6 patched to BGIRED/RED-ML.git"},
+    {"id": "M-3", "severity": "MAJOR", "round_1": "OPEN", "round_2": "RESOLVED", "evidence": "Per-rule directive checker outputs OK across 22 non-localrule rules in 5 smk files"},
+    {"id": "m-1", "severity": "MINOR", "round_1": "OPEN", "round_2": "RESOLVED", "evidence": "Snakefile:3 import re after import os"},
+    {"id": "m-2", "severity": "MINOR", "round_1": "OPEN", "round_2": "RESOLVED", "evidence": "build_dbrna_editing has container: container_for('morales_downstream') at references.smk:101"},
+    {"id": "m-3", "severity": "MINOR", "round_1": "OPEN", "round_2": "RESOLVED", "evidence": "preprocessing.smk:1-4 head-node warning comment on localrules: prepare_fastq"},
+    {"id": "m-4", "severity": "MINOR", "round_1": "OPEN", "round_2": "RESOLVED", "evidence": "config.yaml:52-57 IMPORTANT comment explaining wgs_samples requirement"}
   ],
-  "quality_scores": {
-    "correctness": "PASS_WITH_NOTES",
-    "completeness": "PASS_WITH_NOTES",
-    "maintainability": "PASS",
-    "security": "PASS",
-    "notes": [
-      "correctness: AC-1 and AC-2 (snakemake --lint, dry-run) deferred to TSCC",
-      "completeness: 4 post-implement rules lack resources: directive (M-3)"
-    ]
-  },
+  "round_2_new_findings": [
+    {
+      "id": "m-5",
+      "severity": "MINOR",
+      "category": "DOC_DRIFT",
+      "status": "DEFERRED",
+      "title": "task-07-container-red_ml.md retains stale BGI-shenzhen references",
+      "files": [".forge/stages/2-architect/tasks/task-07-container-red_ml.md"],
+      "detail": "Lines 24, 75, 89 still reference BGI-shenzhen. Canonical spec (architecture-plan.md §5.6) and Dockerfile are correct. Deviation formally recorded in spec-deviations.json D-RED-ML-URL (which cites task-07 line 24). Not a blocker.",
+      "suggested_fix": "Optional: patch task-07 or mark superseded by spec-deviations.json D-RED-ML-URL"
+    }
+  ],
   "verification": {
-    "tests": "PASS",
+    "tests": "PASS (sprint adapter unit test, 1 test, OK)",
+    "per_rule_directive_checker": "PASS (22 non-localrule rules; prepare_fastq exempt)",
+    "red_ml_url_curl": "PASS (BGIRED=200, BGI-shenzhen=404)",
     "lint": "DEFERRED",
     "typecheck": "DEFERRED",
     "build": "DEFERRED",
-    "snakemake_lint": "DEFERRED (TSCC)",
-    "snakemake_dryrun": "DEFERRED (TSCC)"
+    "snakemake_lint": "DEFERRED (TSCC-only)",
+    "snakemake_dryrun": "DEFERRED (TSCC-only)"
   },
   "ac_summary": {
     "total": 17,
@@ -84,9 +56,18 @@
     "pass_weak_or_deferred": 2,
     "fail": 0
   },
+  "quality_scores": {
+    "correctness": "PASS",
+    "completeness": "PASS",
+    "maintainability": "PASS",
+    "security": "PASS",
+    "notes": [
+      "correctness: AC-1/AC-2 (snakemake --lint, dry-run) remain DEFERRED to TSCC; largest residual risk before merge"
+    ]
+  },
   "resumption_context": {
-    "next_stage": "4.5-revision",
-    "next_action": "Run /forge revision; then /forge review for round 2",
+    "next_stage": "5-qa",
+    "next_action": "Run /forge test for QA validation. Before final merge, run snakemake --lint and snakemake -n on TSCC.",
     "blockers": []
   },
   "cost": {

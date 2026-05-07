@@ -1,10 +1,11 @@
 {
-  "review_round": 1,
+  "review_round": 2,
+  "verdict": "APPROVED",
   "verified_patterns": [
     {"ac_id": "AC-3", "verdict": "PASS", "evidence": "grep -rn '~/bin\\|/binf-isilon' on Snakefile config.yaml *.smk rules/*.smk → 0 matches"},
-    {"ac_id": "AC-4", "verdict": "PASS", "evidence": "14 container: directives in originally-scoped preprocessing.smk + tools.smk + downstream.smk"},
-    {"ac_id": "AC-5", "verdict": "PASS", "evidence": "14 log: directives in same scope"},
-    {"ac_id": "AC-6", "verdict": "PASS", "evidence": "14 resources: directives in same scope (NB: 4 new rules in rules/*.smk are missing resources — see M-3)"},
+    {"ac_id": "AC-4", "verdict": "PASS", "evidence": "container: directives present on all 22 non-localrule rules across 5 smk files"},
+    {"ac_id": "AC-5", "verdict": "PASS", "evidence": "log: directives present on all 22 non-localrule rules across 5 smk files"},
+    {"ac_id": "AC-6", "verdict": "PASS", "evidence": "resources: directives present on all 22 non-localrule rules across 5 smk files (round-1 M-3 finding resolved by 0e2cb98)"},
     {"ac_id": "AC-7", "verdict": "PASS", "evidence": "set -euo pipefail present in tools.smk:68 (bcftools rule)"},
     {"ac_id": "AC-8", "verdict": "PASS", "evidence": "no java -jar in preprocessing.smk"},
     {"ac_id": "AC-9", "verdict": "PASS", "evidence": "params.{script,sprint_bin,jacusa_jar,samtools_bin} not present as tool refs in scoped pipeline files"},
@@ -14,13 +15,21 @@
     {"ac_id": "AC-13", "verdict": "PASS", "evidence": "containers/red_ml/Dockerfile and validate.sh both present"},
     {"ac_id": "AC-14", "verdict": "PASS", "evidence": "containers/fastx/Dockerfile and validate.sh both present"},
     {"ac_id": "AC-15", "verdict": "PASS", "evidence": "containers/morales_downstream/Dockerfile and validate.sh both present"},
-    {"ac_id": "AC-16", "verdict": "PASS", "evidence": "container_for() defined in Snakefile:56-58"},
+    {"ac_id": "AC-16", "verdict": "PASS", "evidence": "container_for() defined in Snakefile:57-59"},
     {"ac_id": "AC-17", "verdict": "PASS", "evidence": "add_md_tag uses container_for(\"wgs\") at tools.smk:117"},
-    {"area": "Decision Compliance D-1..D-12", "verdict": "PASS", "evidence": "All 12 architect decisions followed; D-2 has documented but uncommunicated correct deviation (BGIRED vs BGI-shenzhen) tracked as M-2"},
-    {"area": "Sprint adapter unit test", "verdict": "PASS", "evidence": "python -m unittest discover -s tests -p test_sprint_to_deepred_vcf.py → 1 test, OK"}
+    {"area": "Decision Compliance D-1..D-12", "verdict": "PASS", "evidence": "All 12 architect decisions followed; D-2 deviation formally recorded in spec-deviations.json"},
+    {"area": "Decision Compliance D-13..D-15", "verdict": "PASS", "evidence": "Samplesheet driver, WGS sub-pipeline, reference DB generation per architecture-addendum.md A6"},
+    {"area": "Sprint adapter unit test", "verdict": "PASS", "evidence": "python3 -m unittest discover -s tests -p test_sprint* -t . from /tscc/nfs/home/bay001/projects/codebase/rna-editing → 1 test, OK"},
+    {"area": "Round-1 finding M-1 (post-implement scope)", "verdict": "RESOLVED", "evidence": ".forge/stages/2-architect/architecture-addendum.md ratifies 8 new rules + D-13/14/15 + downstream contract + submodule strategy"},
+    {"area": "Round-1 finding M-2 (RED-ML URL deviation)", "verdict": "RESOLVED", "evidence": ".forge/stages/3-implement/spec-deviations.json records D-RED-ML-URL; architecture-plan.md §5.6 patched to BGIRED/RED-ML.git"},
+    {"area": "Round-1 finding M-3 (resources/container on post-implement rules)", "verdict": "RESOLVED", "evidence": "Per-rule directive checker outputs OK across 22 non-localrule rules in 5 smk files"},
+    {"area": "Round-1 findings m-1..m-4", "verdict": "RESOLVED", "evidence": "import re added to Snakefile:3; container: container_for('morales_downstream') on build_dbrna_editing; localrule comment in preprocessing.smk:1-4; wgs_samples IMPORTANT comment in config.yaml:52-57"}
   ],
   "deferred_patterns": [
     {"ac_id": "AC-1", "reason": "snakemake --lint requires snakemake9 conda env on TSCC"},
     {"ac_id": "AC-2", "reason": "snakemake -n dry-run requires snakemake9 conda env on TSCC"}
+  ],
+  "outstanding_minor": [
+    {"id": "m-5", "severity": "MINOR (deferred)", "description": "task-07-container-red_ml.md still references BGI-shenzhen at lines 24, 75, 89; canonical spec (architecture-plan.md §5.6) and Dockerfile are correct, deviation recorded in spec-deviations.json D-RED-ML-URL"}
   ]
 }

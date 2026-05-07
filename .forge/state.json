@@ -2,8 +2,8 @@
   "schema_version": "1.0.0",
   "pipeline_id": "forge-8a8d6b83",
   "created_utc": "2026-05-02T16:05:43Z",
-  "updated_utc": "2026-05-07T21:00:00Z",
-  "current_stage": "6-security",
+  "updated_utc": "2026-05-07T00:00:00Z",
+  "current_stage": "COMPLETE",
   "stages": {
     "0-research": {
       "status": "COMPLETE",
@@ -78,6 +78,33 @@
       "tests_total": 38,
       "tests_passed": 38,
       "ac_coverage": "16/17"
+    },
+    "6-security": {
+      "status": "SKIPPED",
+      "skipped_utc": "2026-05-07T21:10:00Z",
+      "reason": "Internal research HPC pipeline, not user-facing; low threat surface"
+    },
+    "6.5-resilience": {
+      "status": "SKIPPED",
+      "skipped_utc": "2026-05-07T21:10:00Z",
+      "reason": "Internal HPC pipeline; resilience testing not applicable"
+    },
+    "7-docs": {
+      "status": "COMPLETE",
+      "completed_utc": "2026-05-07T22:00:00Z",
+      "artifacts": 7,
+      "sync_status": "WARN (README.md stale — see readme-updates.md)"
+    },
+    "7.5-observability": {
+      "status": "SKIPPED",
+      "skipped_utc": "2026-05-07T22:05:00Z",
+      "reason": "Research pipeline; HPC monitoring not required for this release"
+    },
+    "8-release": {
+      "status": "COMPLETE",
+      "completed_utc": "2026-05-07T00:00:00Z",
+      "verdict": "READY_WITH_NOTES",
+      "version": "v0.2.0"
     }
   },
   "cost": {

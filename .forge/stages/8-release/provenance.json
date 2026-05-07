@@ -1,0 +1,80 @@
+{
+  "_type": "https://in-toto.io/Statement/v1",
+  "subject": [
+    {
+      "name": "rna-editing",
+      "digest": { "sha256": "78a84dbe3f5ca2dd05731ff83249a5ed7835992a" }
+    }
+  ],
+  "predicateType": "https://slsa.dev/provenance/v1",
+  "predicate": {
+    "buildDefinition": {
+      "buildType": "https://forge-pipeline.dev/build/v1",
+      "externalParameters": {
+        "source": {
+          "uri": "https://github.com/byee4/rna-editing",
+          "ref": "78a84dbe3f5ca2dd05731ff83249a5ed7835992a"
+        }
+      },
+      "internalParameters": {
+        "pipeline_stages_completed": [
+          "0-research",
+          "1-requirements",
+          "2-architect",
+          "3-implement",
+          "4-review",
+          "4.5-revision",
+          "5-qa",
+          "6-security (SKIPPED)",
+          "6.5-resilience (SKIPPED)",
+          "7-docs",
+          "7.5-observability (SKIPPED)",
+          "8-release"
+        ]
+      },
+      "resolvedDependencies": [
+        {
+          "uri": ".forge/stages/0-research/handoff.json",
+          "digest": { "sha256": "52d7c69042db5425e150012b0a40df4d7945ac8244dd8dca28a18570e33e0cfa" }
+        },
+        {
+          "uri": ".forge/stages/1-requirements/handoff.json",
+          "digest": { "sha256": "2c875c4de358bf61499b79e7e879d74ca234dfbd5d8f3242b5e6178d3ffe1575" }
+        },
+        {
+          "uri": ".forge/stages/2-architect/handoff.json",
+          "digest": { "sha256": "1d13af169f44cf2766deeeac83c86ac5df1dfeb550afaca0136dc27ea5f55b0c" }
+        },
+        {
+          "uri": ".forge/stages/3-implement/handoff.json",
+          "digest": { "sha256": "e9964b42b84a08b8d27ecc94ebf8817354d5aac908083617b824b4da7bc27d89" }
+        },
+        {
+          "uri": ".forge/stages/4.5-revision/handoff.json",
+          "digest": { "sha256": "236ef467a265a70fec49b00b2b54e133e71dd3a1576c164b4d9d9415e3eeb56c" }
+        },
+        {
+          "uri": ".forge/stages/4-review/handoff.json",
+          "digest": { "sha256": "89badd542a505f0b1cee07137499adfa1d141cafc6f8184b0b431ca2098e029b" }
+        },
+        {
+          "uri": ".forge/stages/5-qa/handoff.json",
+          "digest": { "sha256": "5cd3d1e13aed17c926acf2d317622f9a44ebbca2d17a92b84f068b143acb6eb3" }
+        },
+        {
+          "uri": ".forge/stages/7-docs/handoff.json",
+          "digest": { "sha256": "8faa860f7ce36aec7881cb6a781bcf1862c931f39aab0c1f1f9814e7c42b7ac6" }
+        }
+      ]
+    },
+    "runDetails": {
+      "builder": { "id": "forge-pipeline/1.0.0" },
+      "metadata": {
+        "invocationId": "forge-8a8d6b83",
+        "startedOn": "2026-05-02T16:05:43Z",
+        "finishedOn": "2026-05-07T00:00:00Z"
+      }
+    }
+  },
+  "_note": "Provenance is unsigned. cosign and slsa-provenance were not available on this system. For CI-native signing, see: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0"
+}

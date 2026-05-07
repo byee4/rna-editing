@@ -1,0 +1,79 @@
+{
+  "stage": "7-docs",
+  "status": "COMPLETE",
+  "completed_utc": "2026-05-07T00:00:00Z",
+  "archetype": "data-pipeline",
+  "documents_generated": [
+    {
+      "type": "api-reference",
+      "path": ".forge/stages/7-docs/api-reference.md",
+      "lines": 167,
+      "status": "Generated"
+    },
+    {
+      "type": "deployment-runbook",
+      "path": ".forge/stages/7-docs/deployment-runbook.md",
+      "lines": 120,
+      "status": "Generated"
+    },
+    {
+      "type": "user-guide",
+      "path": ".forge/stages/7-docs/user-guide.md",
+      "lines": 202,
+      "status": "Generated"
+    },
+    {
+      "type": "review-brief",
+      "path": ".forge/stages/7-docs/REVIEW_BRIEF.md",
+      "lines": 82,
+      "status": "Generated"
+    },
+    {
+      "type": "changelog",
+      "path": "CHANGELOG.md",
+      "lines": 46,
+      "status": "Created"
+    },
+    {
+      "type": "docs-sync-report",
+      "path": ".forge/stages/7-docs/docs-sync-report.md",
+      "lines": 49,
+      "status": "Generated"
+    },
+    {
+      "type": "docs-manifest",
+      "path": ".forge/stages/7-docs/docs-manifest.md",
+      "lines": 14,
+      "status": "Generated"
+    },
+    {
+      "type": "readme-updates",
+      "path": ".forge/stages/7-docs/readme-updates.md",
+      "lines": 17,
+      "status": "Generated (diff suggestion only; README.md not modified)"
+    }
+  ],
+  "review_brief": "REVIEW_BRIEF.md",
+  "sync_report_status": {
+    "rules_vs_user_guide": "SYNCED",
+    "config_keys_vs_api_reference": "SYNCED",
+    "env_vars_vs_runbook": "SYNCED",
+    "containers_vs_docs": "SYNCED",
+    "readme_accuracy": "STALE"
+  },
+  "tbd_items": [
+    {
+      "location": "deployment-runbook.md:120",
+      "item": "Escalation contact for incident response",
+      "action_required": "Set to project PI contact before merge"
+    }
+  ],
+  "quality_gate": {
+    "completeness": "PASS — all 5 required document types for data-pipeline archetype present",
+    "placeholder_scan": "PASS — 1 intentional TBD (escalation contact) in runbook; all others filled",
+    "link_check": "PASS — all cross-references point to existing files",
+    "sync_status": "WARN — README.md is stale; see readme-updates.md for suggested addition",
+    "review_brief": "PASS — all 5 required sections present"
+  },
+  "next_stage": "8-release"
+}
