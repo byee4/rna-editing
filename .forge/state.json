@@ -2,8 +2,8 @@
   "schema_version": "1.0.0",
   "pipeline_id": "forge-8a8d6b83",
   "created_utc": "2026-05-02T16:05:43Z",
-  "updated_utc": "2026-05-07T14:30:00Z",
-  "current_stage": "4-review",
+  "updated_utc": "2026-05-07T21:00:00Z",
+  "current_stage": "6-security",
   "stages": {
     "0-research": {
       "status": "COMPLETE",
@@ -37,10 +37,30 @@
       "completed_utc": "2026-05-06T03:25:20Z"
     },
     "4-review": {
-      "status": "REVISION_COMPLETE",
-      "review_round": 1,
-      "completed_utc": "2026-05-07T13:35:00Z",
-      "findings": {"critical": 0, "major": 3, "minor": 4, "deferred": 2},
+      "status": "COMPLETE",
+      "review_round": 2,
+      "verdict": "APPROVED",
+      "completed_utc": "2026-05-07T14:45:00Z",
+      "round_1": {
+        "completed_utc": "2026-05-07T13:35:00Z",
+        "verdict": "CHANGES_REQUIRED",
+        "findings": {
+          "critical": 0,
+          "major": 3,
+          "minor": 4,
+          "deferred": 2
+        }
+      },
+      "round_2": {
+        "completed_utc": "2026-05-07T14:45:00Z",
+        "verdict": "APPROVED",
+        "findings": {
+          "critical": 0,
+          "major": 0,
+          "minor": 1,
+          "deferred": 2
+        }
+      },
       "revision_completed_utc": "2026-05-07T14:30:00Z"
     },
     "4.5-revision": {
@@ -49,6 +69,15 @@
       "completed_utc": "2026-05-07T14:30:00Z",
       "fixes_applied": 7,
       "fixes_total": 7
+    },
+    "5-qa": {
+      "skill_version": "1.1.0",
+      "status": "COMPLETE",
+      "verdict": "GO_WITH_NOTES",
+      "completed_utc": "2026-05-07T21:00:00Z",
+      "tests_total": 38,
+      "tests_passed": 38,
+      "ac_coverage": "16/17"
     }
   },
   "cost": {
