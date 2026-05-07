@@ -16,6 +16,10 @@ rule generate_simple_repeat:
         config["references"]["simple_repeat_src"]
     output:
         config["references"]["simple_repeat"]
+    threads: 1
+    resources:
+        mem_mb=lambda wildcards, attempt: 4000 * (1.5 ** (attempt - 1)),
+        runtime=lambda wildcards, attempt: 30 * (2 ** (attempt - 1))
     container: container_for("wgs")
     log:
         stdout="results/logs/generate_simple_repeat.out",
@@ -44,6 +48,10 @@ rule generate_alu_bed:
         config["references"]["rmsk"]
     output:
         config["references"]["alu_bed"]
+    threads: 1
+    resources:
+        mem_mb=lambda wildcards, attempt: 4000 * (1.5 ** (attempt - 1)),
+        runtime=lambda wildcards, attempt: 30 * (2 ** (attempt - 1))
     container: container_for("wgs")
     log:
         stdout="results/logs/generate_alu_bed.out",
@@ -86,6 +94,11 @@ rule build_dbrna_editing:
         hek_json=os.path.join(config["references"]["db_path"], "HEK293T_hg38_clean.json"),
         rediportal_json=os.path.join(config["references"]["db_path"], "REDIportal.json"),
         alu_json=os.path.join(config["references"]["db_path"], "Alu_GRCh38.json")
+    threads: 1
+    resources:
+        mem_mb=lambda wildcards, attempt: 16000 * (1.5 ** (attempt - 1)),
+        runtime=lambda wildcards, attempt: 60 * (2 ** (attempt - 1))
+    container: container_for("morales_downstream")
     log:
         stdout="results/logs/build_dbrna_editing.out",
         stderr="results/logs/build_dbrna_editing.err"

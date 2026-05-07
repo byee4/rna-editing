@@ -49,6 +49,12 @@ containers:
 # Used by rules/wgs.smk to generate data/dbRNA-Editing/HEK293T_hg38.bed.
 # Each entry maps sample name → list of FASTQ paths (R1 [R2 optional]).
 # The sample name becomes the prefix of the output BED file.
+#
+# IMPORTANT: Without this key, _WGS_DB_FILES will be empty and build_dbrna_editing
+# will not run. The downstream rule multiple_analysis.done requires the three JSON
+# databases (HEK293T_hg38_clean.json, REDIportal.json, Alu_GRCh38.json) to exist
+# at references.db_path — so omitting wgs_samples will cause a runtime failure when
+# downstream scripts try to load those files.
 wgs_samples:
   HEK293T:
     - "/tscc/nfs/home/bay001/projects/codebase/rna-editing/data/small_examples/gene_APP_GAPDH/HEK293_WGS_SRR10129632_R1.fastq.gz"

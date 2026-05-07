@@ -1,0 +1,13 @@
+{
+  "deviations": [
+    {
+      "id": "D-RED-ML-URL",
+      "task": "task-07-container-red_ml",
+      "spec": "git clone https://github.com/BGI-shenzhen/RED-ML.git (per architecture-plan.md §5.6 / ADR-02 / task-07-container-red_ml.md line 24)",
+      "actual": "git clone https://github.com/BGIRED/RED-ML.git (per containers/red_ml/Dockerfile:25)",
+      "reason": "BGI-shenzhen org returns HTTP 404; BGIRED is the canonical/working repo. Implementation is correct; spec was wrong.",
+      "verified_via": "curl -I https://github.com/BGIRED/RED-ML returns 200; curl -I https://github.com/BGI-shenzhen/RED-ML returns 404",
+      "approved_by": "reviewer (forge stage 4-review round 1)"
+    }
+  ]
+}

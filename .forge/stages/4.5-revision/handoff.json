@@ -1,0 +1,76 @@
+{
+  "schema_version": "1.0.0",
+  "stage": "4.5-revision",
+  "completed_utc": "2026-05-07T14:30:00Z",
+  "review_round": 1,
+  "fixes_applied": 7,
+  "fixes_total": 7,
+  "verification": {
+    "per_rule_directive_checker": "PASS",
+    "unit_test_sprint": "PASS",
+    "unit_test_dryrun": "SKIP (pre-existing macOS /private/tmp issue, unrelated to fixes)"
+  },
+  "fixes": [
+    {
+      "id": "M-1",
+      "severity": "MAJOR",
+      "description": "Resolve post-implement scope expansion",
+      "resolution": "Architecture addendum created at .forge/stages/2-architect/architecture-addendum.md covering ACs for 8 new rules, D-13 samplesheet pattern, build_downstream_dbs.py contract, and submodule strategy",
+      "status": "COMPLETE"
+    },
+    {
+      "id": "M-2",
+      "severity": "MAJOR",
+      "description": "Record RED-ML URL deviation, amend ADR-02",
+      "resolution": "Created .forge/stages/3-implement/spec-deviations.json; patched architecture-plan.md §5.6 to use BGIRED/RED-ML.git URL in both LABEL and RUN git clone",
+      "status": "COMPLETE"
+    },
+    {
+      "id": "M-3",
+      "severity": "MAJOR",
+      "description": "Add resources: and container: to post-implement rules",
+      "resolution": "Added threads/resources to generate_simple_repeat, generate_alu_bed, wgs_vcf_to_ag_tc_bed; added threads/container/resources to build_dbrna_editing. Per-rule directive checker outputs OK.",
+      "status": "COMPLETE"
+    },
+    {
+      "id": "m-1",
+      "severity": "MINOR",
+      "description": "Add import re to Snakefile",
+      "resolution": "Added import re after import os in pipelines/Morales_et_all/Snakefile",
+      "status": "COMPLETE"
+    },
+    {
+      "id": "m-2",
+      "severity": "MINOR",
+      "description": "Add container: to build_dbrna_editing",
+      "resolution": "Covered by M-3 — container: container_for(morales_downstream) added",
+      "status": "COMPLETE"
+    },
+    {
+      "id": "m-3",
+      "severity": "MINOR",
+      "description": "Document prepare_fastq localrule head-node constraint",
+      "resolution": "Added comment before localrules: prepare_fastq in preprocessing.smk warning about head-node execution and large file consideration",
+      "status": "COMPLETE"
+    },
+    {
+      "id": "m-4",
+      "severity": "MINOR",
+      "description": "Document wgs_samples requirement for downstream",
+      "resolution": "Added IMPORTANT comment in config.yaml near wgs_samples: explaining that omitting this key causes runtime failure in multiple_analysis.done",
+      "status": "COMPLETE"
+    }
+  ],
+  "files_changed": [
+    "pipelines/Morales_et_all/rules/references.smk",
+    "pipelines/Morales_et_all/rules/wgs.smk",
+    "pipelines/Morales_et_all/Snakefile",
+    "pipelines/Morales_et_all/preprocessing.smk",
+    "pipelines/Morales_et_all/config.yaml",
+    ".forge/stages/3-implement/spec-deviations.json",
+    ".forge/stages/2-architect/architecture-plan.md",
+    ".forge/stages/2-architect/architecture-addendum.md"
+  ],
+  "next_stage": "4-review",
+  "next_step": "Run /forge review for round-2 verdict"
+}

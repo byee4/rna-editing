@@ -1,0 +1,26 @@
+{
+  "review_round": 1,
+  "verified_patterns": [
+    {"ac_id": "AC-3", "verdict": "PASS", "evidence": "grep -rn '~/bin\\|/binf-isilon' on Snakefile config.yaml *.smk rules/*.smk → 0 matches"},
+    {"ac_id": "AC-4", "verdict": "PASS", "evidence": "14 container: directives in originally-scoped preprocessing.smk + tools.smk + downstream.smk"},
+    {"ac_id": "AC-5", "verdict": "PASS", "evidence": "14 log: directives in same scope"},
+    {"ac_id": "AC-6", "verdict": "PASS", "evidence": "14 resources: directives in same scope (NB: 4 new rules in rules/*.smk are missing resources — see M-3)"},
+    {"ac_id": "AC-7", "verdict": "PASS", "evidence": "set -euo pipefail present in tools.smk:68 (bcftools rule)"},
+    {"ac_id": "AC-8", "verdict": "PASS", "evidence": "no java -jar in preprocessing.smk"},
+    {"ac_id": "AC-9", "verdict": "PASS", "evidence": "params.{script,sprint_bin,jacusa_jar,samtools_bin} not present as tool refs in scoped pipeline files"},
+    {"ac_id": "AC-10", "verdict": "PASS", "evidence": "no bare 'python Downstream/' in downstream.smk"},
+    {"ac_id": "AC-11", "verdict": "PASS", "evidence": "downstream_scripts_dir present in config.yaml"},
+    {"ac_id": "AC-12", "verdict": "PASS", "evidence": "containers/star/Dockerfile and validate.sh both present"},
+    {"ac_id": "AC-13", "verdict": "PASS", "evidence": "containers/red_ml/Dockerfile and validate.sh both present"},
+    {"ac_id": "AC-14", "verdict": "PASS", "evidence": "containers/fastx/Dockerfile and validate.sh both present"},
+    {"ac_id": "AC-15", "verdict": "PASS", "evidence": "containers/morales_downstream/Dockerfile and validate.sh both present"},
+    {"ac_id": "AC-16", "verdict": "PASS", "evidence": "container_for() defined in Snakefile:56-58"},
+    {"ac_id": "AC-17", "verdict": "PASS", "evidence": "add_md_tag uses container_for(\"wgs\") at tools.smk:117"},
+    {"area": "Decision Compliance D-1..D-12", "verdict": "PASS", "evidence": "All 12 architect decisions followed; D-2 has documented but uncommunicated correct deviation (BGIRED vs BGI-shenzhen) tracked as M-2"},
+    {"area": "Sprint adapter unit test", "verdict": "PASS", "evidence": "python -m unittest discover -s tests -p test_sprint_to_deepred_vcf.py → 1 test, OK"}
+  ],
+  "deferred_patterns": [
+    {"ac_id": "AC-1", "reason": "snakemake --lint requires snakemake9 conda env on TSCC"},
+    {"ac_id": "AC-2", "reason": "snakemake -n dry-run requires snakemake9 conda env on TSCC"}
+  ]
+}

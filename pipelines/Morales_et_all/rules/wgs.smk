@@ -134,6 +134,10 @@ rule wgs_vcf_to_ag_tc_bed:
         vcf="results/wgs/{wgs_sample}_germline.vcf.gz"
     output:
         bed=os.path.join(_DB_PATH, "{wgs_sample}_hg38.bed")
+    threads: 1
+    resources:
+        mem_mb=lambda wildcards, attempt: 4000 * (1.5 ** (attempt - 1)),
+        runtime=lambda wildcards, attempt: 30 * (2 ** (attempt - 1))
     container: container_for("wgs")
     log:
         stdout="results/logs/wgs_{wgs_sample}.ag_tc_bed.out",

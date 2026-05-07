@@ -674,7 +674,7 @@ echo "STAR validation passed"
 FROM rocker/r-ver:4.3.2
 
 LABEL org.opencontainers.image.title="RED-ML"
-LABEL org.opencontainers.image.description="Perl + R + RED-ML (red_ML.pl) for RNA editing detection by machine learning. Reference: BGI-shenzhen/RED-ML."
+LABEL org.opencontainers.image.description="Perl + R + RED-ML (red_ML.pl) for RNA editing detection by machine learning. Reference: BGIRED/RED-ML."
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PATH="/opt/red_ml/bin:${PATH}"
@@ -695,7 +695,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN Rscript -e 'install.packages(c("caret","data.table","ROCR","randomForest","e1071"), repos="https://cloud.r-project.org/", Ncpus=2)'
 
 # Clone RED-ML and place red_ML.pl on PATH
-RUN git clone --depth 1 https://github.com/BGI-shenzhen/RED-ML.git /opt/red_ml \
+RUN git clone --depth 1 https://github.com/BGIRED/RED-ML.git /opt/red_ml \
     && test -f /opt/red_ml/bin/red_ML.pl \
     && chmod +x /opt/red_ml/bin/red_ML.pl
 

@@ -2,7 +2,7 @@
   "schema_version": "1.0.0",
   "pipeline_id": "forge-8a8d6b83",
   "created_utc": "2026-05-02T16:05:43Z",
-  "updated_utc": "2026-05-06T03:25:20Z",
+  "updated_utc": "2026-05-07T14:30:00Z",
   "current_stage": "4-review",
   "stages": {
     "0-research": {
@@ -35,6 +35,20 @@
       },
       "status": "COMPLETE",
       "completed_utc": "2026-05-06T03:25:20Z"
+    },
+    "4-review": {
+      "status": "REVISION_COMPLETE",
+      "review_round": 1,
+      "completed_utc": "2026-05-07T13:35:00Z",
+      "findings": {"critical": 0, "major": 3, "minor": 4, "deferred": 2},
+      "revision_completed_utc": "2026-05-07T14:30:00Z"
+    },
+    "4.5-revision": {
+      "status": "COMPLETE",
+      "revision_round": 1,
+      "completed_utc": "2026-05-07T14:30:00Z",
+      "fixes_applied": 7,
+      "fixes_total": 7
     }
   },
   "cost": {
@@ -43,7 +57,9 @@
     "total_estimated_usd": 0,
     "per_stage": {}
   },
-  "loop_count": {},
+  "loop_count": {
+    "4-review->4.5-revision->4-review": 1
+  },
   "git": {
     "base_commit": "820fad08d72901741201d69e7fdb5ddff21a9776"
   }

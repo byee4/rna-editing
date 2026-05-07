@@ -1,0 +1,97 @@
+{
+  "schema_version": "1.0.0",
+  "stage": "4-review",
+  "review_round": 1,
+  "completed_utc": "2026-05-07T13:35:00Z",
+  "status": "CHANGES_REQUIRED",
+  "decision_gate": {
+    "verdict": "CHANGES_REQUIRED",
+    "next_stage": "4.5-revision",
+    "reason": "3 MAJOR findings: M-1 post-implement scope expansion (~1200 LOC unplanned), M-2 RED-ML URL deviation undocumented, M-3 four post-implement rules missing resources: directive (re-introduces the exact invariant violation the work was meant to fix)."
+  },
+  "outputs": [
+    ".forge/stages/4-review/review-report.md",
+    ".forge/stages/4-review/review-fixup-prompt.md",
+    ".forge/stages/4-review/verified-clean.json"
+  ],
+  "findings_summary": {
+    "critical": 0,
+    "major": 3,
+    "minor": 4,
+    "deferred": 2
+  },
+  "findings": [
+    {
+      "id": "M-1",
+      "severity": "MAJOR",
+      "category": "PROCESS",
+      "title": "Post-implement scope expansion bypassed architect plan",
+      "files": [
+        "pipelines/Morales_et_all/rules/wgs.smk",
+        "pipelines/Morales_et_all/rules/references.smk",
+        "pipelines/Morales_et_all/samplesheet.csv",
+        "scripts/build_downstream_dbs.py",
+        "pipelines/Morales_et_all/Snakefile",
+        "pipelines/Morales_et_all/config.yaml"
+      ]
+    },
+    {
+      "id": "M-2",
+      "severity": "MAJOR",
+      "category": "DECISION_REQUIRED",
+      "title": "RED-ML GitHub URL deviation from ADR-02 not recorded",
+      "files": [
+        "containers/red_ml/Dockerfile",
+        ".forge/stages/2-architect/architecture-plan.md"
+      ]
+    },
+    {
+      "id": "M-3",
+      "severity": "MAJOR",
+      "category": "FUNCTIONAL_DEFECT",
+      "title": "Four post-implement rules missing resources: (and one missing container:)",
+      "files": [
+        "pipelines/Morales_et_all/rules/references.smk",
+        "pipelines/Morales_et_all/rules/wgs.smk"
+      ]
+    },
+    {"id": "m-1", "severity": "MINOR", "title": "Snakefile missing import re (plan §5.1)"},
+    {"id": "m-2", "severity": "MINOR", "title": "build_dbrna_editing rule lacks container: directive"},
+    {"id": "m-3", "severity": "MINOR", "title": "prepare_fastq localrule input-size footgun"},
+    {"id": "m-4", "severity": "MINOR", "title": "_WGS_DB_FILES gating versus multiple_analysis.done dependency"}
+  ],
+  "quality_scores": {
+    "correctness": "PASS_WITH_NOTES",
+    "completeness": "PASS_WITH_NOTES",
+    "maintainability": "PASS",
+    "security": "PASS",
+    "notes": [
+      "correctness: AC-1 and AC-2 (snakemake --lint, dry-run) deferred to TSCC",
+      "completeness: 4 post-implement rules lack resources: directive (M-3)"
+    ]
+  },
+  "verification": {
+    "tests": "PASS",
+    "lint": "DEFERRED",
+    "typecheck": "DEFERRED",
+    "build": "DEFERRED",
+    "snakemake_lint": "DEFERRED (TSCC)",
+    "snakemake_dryrun": "DEFERRED (TSCC)"
+  },
+  "ac_summary": {
+    "total": 17,
+    "pass_strong": 15,
+    "pass_weak_or_deferred": 2,
+    "fail": 0
+  },
+  "resumption_context": {
+    "next_stage": "4.5-revision",
+    "next_action": "Run /forge revision; then /forge review for round 2",
+    "blockers": []
+  },
+  "cost": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "estimated_usd": 0
+  }
+}

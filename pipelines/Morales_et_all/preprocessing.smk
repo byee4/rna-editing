@@ -1,3 +1,7 @@
+# NOTE: prepare_fastq runs on the SLURM head node (localrule). This is fine for
+# small_examples where each FASTQ is a few MB. For large production FASTQs (>1 GB),
+# consider removing the localrule classification and dispatching to a worker node
+# with container: container_for("wgs") and a small resources: block.
 localrules: prepare_fastq
 
 
