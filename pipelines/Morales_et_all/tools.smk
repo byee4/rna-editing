@@ -42,8 +42,10 @@ rule sprint:
     shell:
         r"""
         set -euo pipefail
+        # sprint_from_bam.py exits 1 even on success; suppress and verify output
         python /opt/sprint/sprint_from_bam.py -rp {params.rmsk} {input.bam} {params.ref} {output} samtools \
-            1> {log.stdout} 2> {log.stderr}
+            1> {log.stdout} 2> {log.stderr} || true
+        test -f {output}/SPRINT_identified_regular.res
         """
 
 
