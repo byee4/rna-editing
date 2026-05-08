@@ -44,7 +44,7 @@ rule run_downstream_parsers:
             ln -sf "$WORKDIR/$d" "$BENCH_DIR/SPRINT/star/${{base%_output}}_filt_sortrmdup_output"
         done
 
-        # REDML: symlink output dirs with identical naming (REDML.py expects {condition}_{clone}_output)
+        # REDML: symlink output dirs with identical naming (REDML.py expects CONDITION_CLONE_output)
         for d in results/tools/red_ml/*_output; do
             ln -sf "$WORKDIR/$d" "$BENCH_DIR/REDML/star/$(basename $d)"
         done
