@@ -9,8 +9,8 @@ rule run_downstream_parsers:
         touch("results/downstream/parsers.done")
     threads: 1
     resources:
-        mem_mb=lambda wildcards, attempt: 4000 * (1.5 ** (attempt - 1)),
-        runtime=lambda wildcards, attempt: 60 * (2 ** (attempt - 1))
+        mem_mb=lambda wildcards, attempt: 16000 * (1.5 ** (attempt - 1)),
+        runtime=lambda wildcards, attempt: 120 * (2 ** (attempt - 1))
     container: container_for("morales_downstream")
     log:
         stdout="results/logs/run_downstream_parsers.out",
@@ -126,8 +126,8 @@ rule reanalysis_multiple:
         touch("results/downstream/reanalysis_multiple.done")
     threads: 1
     resources:
-        mem_mb=lambda wildcards, attempt: 4000 * (1.5 ** (attempt - 1)),
-        runtime=lambda wildcards, attempt: 60 * (2 ** (attempt - 1))
+        mem_mb=lambda wildcards, attempt: 16000 * (1.5 ** (attempt - 1)),
+        runtime=lambda wildcards, attempt: 120 * (2 ** (attempt - 1))
     container: container_for("morales_downstream")
     log:
         stdout="results/logs/reanalysis_multiple.out",
