@@ -27,7 +27,7 @@ rule sprint:
         bam="results/mapped/{condition}_{sample}.rmdup.bam",
         bai="results/mapped/{condition}_{sample}.rmdup.bam.bai"
     output:
-        "results/tools/sprint/{condition}_{sample}_output"
+        directory("results/tools/sprint/{condition}_{sample}_output")
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: 12000 * (1.5 ** (attempt - 1)),
