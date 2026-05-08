@@ -91,8 +91,8 @@ rule update_alu:
         r"""
         set -euo pipefail
         export DB_PATH={params.db_path}
-        export DOWNSTREAM_WORKDIR=results/downstream
-        python {params.downstream_dir}/Alu.py 1> {log.stdout} 2> {log.stderr}
+        cd {params.downstream_dir}
+        python Alu.py 1> {log.stdout} 2> {log.stderr}
         """
 
 
@@ -114,7 +114,8 @@ rule individual_analysis:
     shell:
         r"""
         set -euo pipefail
-        python {params.downstream_dir}/Individual-Analysis.py 1> {log.stdout} 2> {log.stderr}
+        cd {params.downstream_dir}
+        python Individual-Analysis.py 1> {log.stdout} 2> {log.stderr}
         """
 
 
@@ -138,7 +139,8 @@ rule reanalysis_multiple:
         r"""
         set -euo pipefail
         export DB_PATH={params.db_path}
-        python {params.downstream_dir}/Re-Analysis-Multiple.py 1> {log.stdout} 2> {log.stderr}
+        cd {params.downstream_dir}
+        python Re-Analysis-Multiple.py 1> {log.stdout} 2> {log.stderr}
         """
 
 
@@ -160,5 +162,6 @@ rule multiple_analysis:
     shell:
         r"""
         set -euo pipefail
-        python {params.downstream_dir}/Multiple-Analysis.py 1> {log.stdout} 2> {log.stderr}
+        cd {params.downstream_dir}
+        python Multiple-Analysis.py 1> {log.stdout} 2> {log.stderr}
         """
