@@ -1,6 +1,7 @@
 rule reditools:
     input:
-        bam="results/mapped/{condition}_{sample}.rmdup.bam"
+        bam="results/mapped/{condition}_{sample}.rmdup.bam",
+        bai="results/mapped/{condition}_{sample}.rmdup.bam.bai"
     output:
         "results/tools/reditools/{condition}_{sample}.output"
     threads: 1
@@ -23,7 +24,8 @@ rule reditools:
 
 rule sprint:
     input:
-        bam="results/mapped/{condition}_{sample}.rmdup.bam"
+        bam="results/mapped/{condition}_{sample}.rmdup.bam",
+        bai="results/mapped/{condition}_{sample}.rmdup.bam.bai"
     output:
         "results/tools/sprint/{condition}_{sample}_output"
     threads: 1
@@ -47,7 +49,8 @@ rule sprint:
 
 rule bcftools:
     input:
-        bam="results/mapped/{condition}_{sample}.rmdup.bam"
+        bam="results/mapped/{condition}_{sample}.rmdup.bam",
+        bai="results/mapped/{condition}_{sample}.rmdup.bam.bai"
     output:
         "results/tools/bcftools/{condition}_{sample}.bcf"
     threads: 1
@@ -74,7 +77,8 @@ rule bcftools:
 
 rule red_ml:
     input:
-        bam="results/mapped/{condition}_{sample}.rmdup.bam"
+        bam="results/mapped/{condition}_{sample}.rmdup.bam",
+        bai="results/mapped/{condition}_{sample}.rmdup.bam.bai"
     output:
         directory("results/tools/red_ml/{condition}_{sample}_output")
     threads: 1
@@ -106,7 +110,8 @@ rule red_ml:
 # ---------------------------------------------------------
 rule add_md_tag:
     input:
-        bam="results/mapped/{condition}_{sample}.rmdup.bam"
+        bam="results/mapped/{condition}_{sample}.rmdup.bam",
+        bai="results/mapped/{condition}_{sample}.rmdup.bam.bai"
     output:
         bam="results/mapped/{condition}_{sample}.rmdup_MD.bam",
         bai="results/mapped/{condition}_{sample}.rmdup_MD.bam.bai"

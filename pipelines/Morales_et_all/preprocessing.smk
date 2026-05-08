@@ -103,7 +103,6 @@ rule mark_duplicates:
         bam="results/mapped/{condition}_{sample}.bam"
     output:
         rmdup_bam="results/mapped/{condition}_{sample}.rmdup.bam",
-        rmdup_bai="results/mapped/{condition}_{sample}.rmdup.bam.bai",
         metrics="results/mapped/{condition}_{sample}.duplication.info"
     threads: 1
     resources:
@@ -123,5 +122,25 @@ rule mark_duplicates:
         _JAVA_OPTIONS="-Xmx{params.mem_mb_heap}m" picard MarkDuplicates INPUT={input.bam} OUTPUT={output.rmdup_bam} \
              METRICS_FILE={output.metrics} REMOVE_DUPLICATES=true \
              1> {log.stdout} 2> {log.stderr}
-        samtools index {output.rmdup_bam} 2>> {log.stderr}
+        """
+
+
+rule index_rmdup_bam:
+    input:
+        bam="results/mapped/{condition}_{sample}.rmdup.bam"
+    output:
+        bai="results/mapped/{condition}_{sample}.rmdup.bam.bai"
+    threads: 1
+    resources:
+        mem_mb=lambda wildcards, attempt: 2000 * (1.5 ** (attempt - 1)),
+        runtime=lambda wildcards, attempt: 10 * (2 ** (attempt - 1))
+    container: container_for("wgs")
+    log:
+        stdout="results/logs/{condition}_{sample}.index_rmdup_bam.out",
+        stderr="results/logs/{condition}_{sample}.index_rmdup_bam.err"
+    shell:
+        r"""
+        set -euo pipefail
+        samtools index {input.bam} {output.bai} 2> {log.stderr}
+        echo "done" > {log.stdout}
         """
