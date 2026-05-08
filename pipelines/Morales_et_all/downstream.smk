@@ -21,12 +21,53 @@ rule run_downstream_parsers:
     shell:
         r"""
         set -euo pipefail
+        WORKDIR=$(pwd)
         export DB_PATH={params.db_path}
-        python {params.downstream_dir}/REDItools2.py 1>> {log.stdout} 2>> {log.stderr}
-        python {params.downstream_dir}/SPRINT.py    1>> {log.stdout} 2>> {log.stderr}
-        python {params.downstream_dir}/REDML.py     1>> {log.stdout} 2>> {log.stderr}
-        python {params.downstream_dir}/BCFtools.py  1>> {log.stdout} 2>> {log.stderr}
-        python {params.downstream_dir}/JACUSA2.py   1>> {log.stdout} 2>> {log.stderr}
+
+        # Build staging directories expected by Downstream scripts:
+        # each script uses path = "../TOOL" relative to Downstream/
+        BENCH_DIR="{params.downstream_dir}/.."
+        rm -rf "$BENCH_DIR/REDItools2" "$BENCH_DIR/SPRINT" "$BENCH_DIR/REDML" \
+               "$BENCH_DIR/BCFTools" "$BENCH_DIR/JACUSA2"
+        mkdir -p "$BENCH_DIR/REDItools2/star" "$BENCH_DIR/SPRINT/star" \
+                 "$BENCH_DIR/REDML/star" "$BENCH_DIR/BCFTools/star" "$BENCH_DIR/JACUSA2/star"
+
+        # REDItools2: symlink outputs with the _filt_sortrmdup suffix REDItools2.py expects
+        for f in results/tools/reditools/*.output; do
+            base=$(basename "$f" .output)
+            ln -sf "$WORKDIR/$f" "$BENCH_DIR/REDItools2/star/${{base}}_filt_sortrmdup.output"
+        done
+
+        # SPRINT: symlink output dirs with the _filt_sortrmdup_output suffix SPRINT.py expects
+        for d in results/tools/sprint/*_output; do
+            base=$(basename "$d")
+            ln -sf "$WORKDIR/$d" "$BENCH_DIR/SPRINT/star/${{base%_output}}_filt_sortrmdup_output"
+        done
+
+        # REDML: symlink output dirs with identical naming (REDML.py expects {condition}_{clone}_output)
+        for d in results/tools/red_ml/*_output; do
+            ln -sf "$WORKDIR/$d" "$BENCH_DIR/REDML/star/$(basename $d)"
+        done
+
+        # BCFtools: convert BCF to VCF; vcf2bed conversion is done in Python by BCFtools.py
+        for f in results/tools/bcftools/*.bcf; do
+            base=$(basename "$f" .bcf)
+            bcftools view "$f" > "$BENCH_DIR/BCFTools/star/${{base}}.vcf"
+        done
+
+        # JACUSA2: link raw output; per-score-threshold preprocessing is done by JACUSA2.py
+        ln -sf "$WORKDIR/results/tools/jacusa2/Jacusa.out" "$BENCH_DIR/JACUSA2/star/Jacusa.out"
+
+        # Scripts write JSON output to ../ relative to Downstream/, so use absolute log paths
+        LOG_OUT="$WORKDIR/{log.stdout}"
+        LOG_ERR="$WORKDIR/{log.stderr}"
+
+        cd {params.downstream_dir}
+        python REDItools2.py 1>> "$LOG_OUT" 2>> "$LOG_ERR"
+        python SPRINT.py    1>> "$LOG_OUT" 2>> "$LOG_ERR"
+        python REDML.py     1>> "$LOG_OUT" 2>> "$LOG_ERR"
+        python BCFtools.py  1>> "$LOG_OUT" 2>> "$LOG_ERR"
+        python JACUSA2.py   1>> "$LOG_OUT" 2>> "$LOG_ERR"
         """
 
 

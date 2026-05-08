@@ -8,11 +8,16 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates \
+        bcftools \
     && rm -rf /var/lib/apt/lists/* \
     && python -m pip install --no-cache-dir \
         "numpy>=1.24,<2.0" \
         "pandas>=2.0,<3.0" \
-        "scipy>=1.10,<2.0"
+        "scipy>=1.10,<2.0" \
+        "ujson>=5.0" \
+        "matplotlib>=3.5,<4.0" \
+        "more-itertools>=9.0" \
+        "ipython>=8.0"
 
 COPY validate.sh /usr/local/bin/validate-morales_downstream
 RUN chmod +x /usr/local/bin/validate-morales_downstream
