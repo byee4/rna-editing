@@ -90,9 +90,10 @@ rule update_alu:
     shell:
         r"""
         set -euo pipefail
+        WORKDIR=$(pwd)
         export DB_PATH={params.db_path}
         cd {params.downstream_dir}
-        python Alu.py 1> {log.stdout} 2> {log.stderr}
+        python Alu.py 1> "$WORKDIR/{log.stdout}" 2> "$WORKDIR/{log.stderr}"
         """
 
 
@@ -114,8 +115,9 @@ rule individual_analysis:
     shell:
         r"""
         set -euo pipefail
+        WORKDIR=$(pwd)
         cd {params.downstream_dir}
-        python Individual-Analysis.py 1> {log.stdout} 2> {log.stderr}
+        python Individual-Analysis.py 1> "$WORKDIR/{log.stdout}" 2> "$WORKDIR/{log.stderr}"
         """
 
 
@@ -138,9 +140,10 @@ rule reanalysis_multiple:
     shell:
         r"""
         set -euo pipefail
+        WORKDIR=$(pwd)
         export DB_PATH={params.db_path}
         cd {params.downstream_dir}
-        python Re-Analysis-Multiple.py 1> {log.stdout} 2> {log.stderr}
+        python Re-Analysis-Multiple.py 1> "$WORKDIR/{log.stdout}" 2> "$WORKDIR/{log.stderr}"
         """
 
 
@@ -162,6 +165,7 @@ rule multiple_analysis:
     shell:
         r"""
         set -euo pipefail
+        WORKDIR=$(pwd)
         cd {params.downstream_dir}
-        python Multiple-Analysis.py 1> {log.stdout} 2> {log.stderr}
+        python Multiple-Analysis.py 1> "$WORKDIR/{log.stdout}" 2> "$WORKDIR/{log.stderr}"
         """
