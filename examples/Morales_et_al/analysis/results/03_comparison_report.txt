@@ -1,0 +1,106 @@
+========================================================================
+COMPARISON REPORT: Our Pipeline vs. Morales et al. (PMC10527054)
+========================================================================
+
+STUDY DESIGN
+----------------------------------------
+Samples:   3x WT (wild-type HEK293T) + 3x ADAR1 knockout (CRISPR/Cas9)
+Aligner:   STAR (splice-aware; paper also tested BWA, HISAT2)
+Genome:    GRCh38 (paper used GRCh37 for RED-ML compatibility)
+Tools:     REDItools2, JACUSA2, BCFtools, SPRINT, RED-ML
+Analysis:  Individual (per clone) + Multiple (merged replicates)
+
+TOOL STATUS SUMMARY
+----------------------------------------
+  REDItools2   [OK    ]  Produced site calls; consistent with paper trends
+
+  JACUSA2      [OK    ]  Produced site calls; joint WT vs ADAR1KO comparison
+
+  BCFtools     [OK    ]  Produced site calls; generic variant caller (not RNA-editing specific)
+
+  SPRINT       [FAILED]  0 sites — SPRINT is INCOMPATIBLE with STAR aligner output. The paper documents this explicitly and tested SPRINT only with BWA and HISAT2. Our pipeline ran SPRINT on STAR-aligned BAMs.
+
+  RED-ML       [FAILED]  0 sites — RED-ML requires GRCh37 (hg19) reference genome. Our pipeline used GRCh38 (hg38). RED-ML's internal feature extraction is calibrated to GRCh37 coordinates.
+
+
+ADAR1KO/WT RATIO COMPARISON (merged replicates, STAR, lowest threshold)
+------------------------------------------------------------------------
+Tool          Our ratio  Paper ratio    Delta  Interpretation
+------------------------------------------------------------------------
+  REDItools2       78.5%       63.91%    14.5%  Our ratio HIGHER than paper — likely less SNP filtering applied
+  JACUSA2         100.0%       60.77%    39.2%  Joint analysis: WT=ADAR1KO by design; paper ratio uses a different computation
+  BCFtools        103.5%         N/A%     N/A%  No paper reference value available
+  SPRINT            N/A%         N/A%     N/A%  TOOL FAILED — no data
+  RED-ML            N/A%        13.1%     N/A%  TOOL FAILED — no data
+
+
+REDIPORTAL SUPPORT RANKING (individual analysis, WT, lowest threshold)
+------------------------------------------------------------------------
+Higher % = more sites confirmed in the REDIportal A-to-I editing database.
+Paper conclusion: SPRINT > RED-ML > JACUSA2 > REDItools2 > BCFtools
+
+Tool           Our % REDIportal  Status
+---------------------------------------------
+  SPRINT                    0.0%  (FAILED — tool produced 0 sites)
+  RED-ML                    0.0%  (FAILED — tool produced 0 sites)
+  JACUSA2                  80.1%  
+  REDItools2               34.1%  
+  BCFtools                 18.3%  
+
+
+KEY DISCREPANCIES AND EXPLANATIONS
+------------------------------------------------------------------------
+
+1. REDItools2 ADAR1KO/WT ratio: our value > paper's
+   Our ratio (merged replicates): 78.5%
+   Paper ratio (Table 2, STAR):   63.91%
+Likely cause: The paper applied HEK293T cell-line-specific SNP filtering
+using a database of common variants in HEK293T cells. Without this
+filtering, known SNPs persist in the ADAR1KO output and inflate the
+apparent editing site count in the KO condition. Our pipeline did not
+apply SNP database filtering in the benchmark data files used here.
+
+2. BCFtools ADAR1KO/WT ratio > 100%
+   Our ratio (merged replicates): 103.5%
+BCFtools is a generic variant caller that does not distinguish RNA
+editing from SNPs or sequencing errors. In the WT condition, many
+predicted sites are genuine A-to-I edits (signal). In the ADAR1KO
+condition, these true editing events disappear — but background SNPs
+and sequencing artifacts persist. BCFtools cannot separate these
+categories, so the KO sometimes shows MORE variant calls than WT
+(ratio > 100%) at certain sites. This confirms the paper's finding
+that BCFtools has the highest SNP inclusion rate of all tools tested.
+
+3. JACUSA2 WT and ADAR1KO show identical site counts
+JACUSA2 is designed for differential RNA editing analysis between
+two conditions. It takes all WT and ADAR1KO replicates simultaneously
+and identifies sites that differ between groups. The output is a single
+list of differentially edited sites — not separate WT and ADAR1KO lists.
+Our JSON therefore shows identical N_RES for both conditions because
+the same joint site list is stored for each label. The paper's
+ADAR1KO/WT ratio for JACUSA2 (60.77%) uses a different calculation
+that we cannot reproduce from these benchmark files alone.
+
+
+PAPER CONCLUSIONS CONCORDANCE
+------------------------------------------------------------------------
+
+AGREEMENT with paper:
+✓ REDItools2 detects the most RES overall (matches paper ranking)
+✓ JACUSA2 has the highest REDIportal support among working tools (~80%)
+✓ BCFtools has the lowest REDIportal support (~11%) — consistent with high SNP inclusion
+✓ ADAR1KO condition shows substantially fewer confident editing sites (lower %REDIportal)
+✓ Higher stringency thresholds increase %REDIportal and decrease total RES (for REDItools2)
+
+DISCREPANCIES / ADDITIONAL FINDINGS:
+✗ SPRINT: 0 sites produced — incompatible with STAR aligner (expected per paper)
+✗ RED-ML: 0 sites produced — requires GRCh37, we used GRCh38
+✗ REDItools2 ADAR1KO/WT ratio higher than published (78.5% vs 63.91%)
+  → Likely due to missing HEK293T SNP database filtering in our analysis
+✗ BCFtools ADAR1KO/WT > 100% — confirms it is not RNA-editing specific
+
+RECOMMENDATION for follow-up:
+• Re-run SPRINT with BWA or HISAT2 aligned BAMs (not STAR)
+• Re-run RED-ML with GRCh37 aligned BAMs
+• Apply HEK293T SNP database filtering to REDItools2/BCFtools results
+  to achieve ratios consistent with the paper

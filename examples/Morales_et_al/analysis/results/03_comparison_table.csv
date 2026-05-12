@@ -1,0 +1,6 @@
+tool,status,indiv_threshold,our_N_RES_WT_indiv,our_pct_REDIportal_WT,our_N_RES_KO_indiv,our_ratio_indiv_pct,mult_threshold,our_N_WT_mult,our_N_KO_mult,our_ratio_mult_pct,paper_ratio_pct,delta_pct
+REDItools2,OK,2.0,335157,34.1,242282,72.3,2.0,51886,40705,78.5,63.91,14.5
+JACUSA2,OK,2.0,3546,80.1,3546,100.0,2.0,3546,3546,100.0,60.77,39.2
+BCFtools,OK,0.0,69884,18.3,64493,92.3,0.0,29718,30748,103.5,N/A,N/A
+SPRINT,FAILED,2.0,0,0.0,0,N/A,2.0,0,0,N/A,N/A,N/A
+RED-ML,FAILED,0.5,0,0.0,0,N/A,0.5,0,0,N/A,13.1,N/A

@@ -1,0 +1,43 @@
+tool,condition,threshold,threshold_label,N_RES_mean,N_RES_sem,pct_REDIportal,pct_REDIportal_sem,pct_Alu,N_SNPs_mean,failed
+REDItools2,WT,2.0,Min. supporting reads,335156.7,23299.5,34.15,1.68,0.0508,35.7,False
+REDItools2,WT,4.0,Min. supporting reads,182627.0,15057.9,34.2,1.81,0.0469,35.7,False
+REDItools2,WT,6.0,Min. supporting reads,108983.3,9693.0,34.32,1.9,0.0441,35.7,False
+REDItools2,WT,8.0,Min. supporting reads,65357.3,6010.2,35.35,2.1,0.0426,35.7,False
+REDItools2,WT,10.0,Min. supporting reads,36259.3,3505.9,38.63,2.36,0.0363,35.7,False
+REDItools2,ADAR1KO,2.0,Min. supporting reads,242282.3,29091.3,6.35,0.53,0.0691,36.0,False
+REDItools2,ADAR1KO,4.0,Min. supporting reads,138193.3,20734.7,6.35,0.52,0.0651,36.0,False
+REDItools2,ADAR1KO,6.0,Min. supporting reads,84280.3,13748.2,6.41,0.49,0.0619,36.0,False
+REDItools2,ADAR1KO,8.0,Min. supporting reads,50377.0,8486.9,6.53,0.48,0.0611,36.0,False
+REDItools2,ADAR1KO,10.0,Min. supporting reads,26488.7,4153.7,6.91,0.43,0.0641,36.0,False
+BCFtools,WT,0.0,MAF threshold,69884.3,4445.0,18.34,1.12,0.0191,30.7,False
+BCFtools,ADAR1KO,0.0,MAF threshold,64493.0,6841.2,4.92,0.04,0.0198,32.7,False
+SPRINT,WT,2.0,Min. supporting reads,0.0,0.0,0.0,0.0,0.0,0.0,True
+SPRINT,WT,4.0,Min. supporting reads,0.0,0.0,0.0,0.0,0.0,0.0,True
+SPRINT,WT,6.0,Min. supporting reads,0.0,0.0,0.0,0.0,0.0,0.0,True
+SPRINT,WT,8.0,Min. supporting reads,0.0,0.0,0.0,0.0,0.0,0.0,True
+SPRINT,WT,10.0,Min. supporting reads,0.0,0.0,0.0,0.0,0.0,0.0,True
+SPRINT,ADAR1KO,2.0,Min. supporting reads,0.0,0.0,0.0,0.0,0.0,0.0,True
+SPRINT,ADAR1KO,4.0,Min. supporting reads,0.0,0.0,0.0,0.0,0.0,0.0,True
+SPRINT,ADAR1KO,6.0,Min. supporting reads,0.0,0.0,0.0,0.0,0.0,0.0,True
+SPRINT,ADAR1KO,8.0,Min. supporting reads,0.0,0.0,0.0,0.0,0.0,0.0,True
+SPRINT,ADAR1KO,10.0,Min. supporting reads,0.0,0.0,0.0,0.0,0.0,0.0,True
+RED-ML,WT,0.5,Min. P_edit,0.0,0.0,0.0,0.0,0.0,0.0,True
+RED-ML,WT,0.6,Min. P_edit,0.0,0.0,0.0,0.0,0.0,0.0,True
+RED-ML,WT,0.7,Min. P_edit,0.0,0.0,0.0,0.0,0.0,0.0,True
+RED-ML,WT,0.8,Min. P_edit,0.0,0.0,0.0,0.0,0.0,0.0,True
+RED-ML,WT,0.9,Min. P_edit,0.0,0.0,0.0,0.0,0.0,0.0,True
+RED-ML,ADAR1KO,0.5,Min. P_edit,0.0,0.0,0.0,0.0,0.0,0.0,True
+RED-ML,ADAR1KO,0.6,Min. P_edit,0.0,0.0,0.0,0.0,0.0,0.0,True
+RED-ML,ADAR1KO,0.7,Min. P_edit,0.0,0.0,0.0,0.0,0.0,0.0,True
+RED-ML,ADAR1KO,0.8,Min. P_edit,0.0,0.0,0.0,0.0,0.0,0.0,True
+RED-ML,ADAR1KO,0.9,Min. P_edit,0.0,0.0,0.0,0.0,0.0,0.0,True
+JACUSA2,WT,2.0,Min. supporting reads,3546.0,0.0,80.06,0.0,0.0,0.0,False
+JACUSA2,WT,4.0,Min. supporting reads,2466.0,0.0,89.74,0.0,0.0,0.0,False
+JACUSA2,WT,6.0,Min. supporting reads,1939.0,0.0,93.66,0.0,0.0,0.0,False
+JACUSA2,WT,8.0,Min. supporting reads,1539.0,0.0,95.84,0.0,0.0,0.0,False
+JACUSA2,WT,10.0,Min. supporting reads,1151.0,0.0,97.22,0.0,0.0,0.0,False
+JACUSA2,ADAR1KO,2.0,Min. supporting reads,3546.0,0.0,80.06,0.0,0.0,0.0,False
+JACUSA2,ADAR1KO,4.0,Min. supporting reads,2466.0,0.0,89.74,0.0,0.0,0.0,False
+JACUSA2,ADAR1KO,6.0,Min. supporting reads,1939.0,0.0,93.66,0.0,0.0,0.0,False
+JACUSA2,ADAR1KO,8.0,Min. supporting reads,1539.0,0.0,95.84,0.0,0.0,0.0,False
+JACUSA2,ADAR1KO,10.0,Min. supporting reads,1151.0,0.0,97.22,0.0,0.0,0.0,False

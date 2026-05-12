@@ -1,0 +1,22 @@
+tool,threshold,N_WT,N_ADAR1KO,ratio_pct,failed,note
+REDItools2,2.0,51886,40705,78.45,False,
+REDItools2,4.0,30524,22635,74.15,False,
+REDItools2,6.0,20939,15759,75.26,False,
+REDItools2,8.0,15816,11938,75.48,False,
+REDItools2,10.0,12674,9825,77.52,False,
+BCFtools,0.0,29718,30748,103.47,False,
+SPRINT,2.0,0,0,,True,
+SPRINT,4.0,0,0,,True,
+SPRINT,6.0,0,0,,True,
+SPRINT,8.0,0,0,,True,
+SPRINT,10.0,0,0,,True,
+RED-ML,0.5,0,0,,True,
+RED-ML,0.6,0,0,,True,
+RED-ML,0.7,0,0,,True,
+RED-ML,0.8,0,0,,True,
+RED-ML,0.9,0,0,,True,
+JACUSA2,2.0,3546,3546,100.0,False,Joint analysis — ratio not meaningful
+JACUSA2,4.0,2466,2466,100.0,False,Joint analysis — ratio not meaningful
+JACUSA2,6.0,1939,1939,100.0,False,Joint analysis — ratio not meaningful
+JACUSA2,8.0,1539,1539,100.0,False,Joint analysis — ratio not meaningful
+JACUSA2,10.0,1151,1151,100.0,False,Joint analysis — ratio not meaningful
