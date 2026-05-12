@@ -10,7 +10,12 @@ rule run_downstream_parsers:
                         aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),
         jacusa=expand("results/tools/{aligner}/jacusa2/Jacusa.out", aligner=_ALIGNERS)
     output:
-        touch("results/downstream/parsers.done")
+        touch("results/downstream/parsers.done"),
+        "results/downstream/Data_REDItool2.json",
+        "results/downstream/Data_SPRINT.json",
+        "results/downstream/Data_REDML.json",
+        "results/downstream/Data_BCFTools.json",
+        "results/downstream/Data_JACUSA2.json",
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: 32000 * (1.5 ** (attempt - 1)),
@@ -28,7 +33,8 @@ rule run_downstream_parsers:
         set -euo pipefail
         WORKDIR=$(pwd)
         export DB_PATH={params.db_path}
-        BENCH_DIR="{params.downstream_dir}/.."
+        BENCH_DIR="$WORKDIR/results/downstream"
+        export BENCH_DIR
         PATCHDIR=$(mktemp -d)
 
         IFS=',' read -ra ALIGNERS <<< "{params.aligners}"
@@ -124,6 +130,7 @@ rule update_alu:
         set -euo pipefail
         WORKDIR=$(pwd)
         export DB_PATH={params.db_path}
+        export DOWNSTREAM_WORKDIR="$WORKDIR/results/downstream/"
         PATCHDIR=$(mktemp -d)
         export _ALIGNERS="{params.aligners}"
 
@@ -152,7 +159,12 @@ rule individual_analysis:
     input:
         "results/downstream/alu_updated.done"
     output:
-        touch("results/downstream/individual_analysis.done")
+        touch("results/downstream/individual_analysis.done"),
+        "results/downstream/Downstream/IndividualCompare.png",
+        "results/downstream/Downstream/REDItools2_Table.csv",
+        "results/downstream/Downstream/SPRINT_Table.csv",
+        "results/downstream/Downstream/REDML_Table.csv",
+        "results/downstream/Downstream/BCFTools_Table.csv",
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: 16000 * (1.5 ** (attempt - 1)),
@@ -168,6 +180,9 @@ rule individual_analysis:
         r"""
         set -euo pipefail
         WORKDIR=$(pwd)
+        export DOWNSTREAM_WORKDIR="$WORKDIR/results/downstream/"
+        export DOWNSTREAM_OUTDIR="$WORKDIR/results/downstream/Downstream/"
+        mkdir -p "$DOWNSTREAM_OUTDIR"
         PATCHDIR=$(mktemp -d)
         export _ALIGNERS="{params.aligners}"
 
@@ -197,7 +212,11 @@ rule reanalysis_multiple:
     input:
         "results/downstream/individual_analysis.done"
     output:
-        touch("results/downstream/reanalysis_multiple.done")
+        touch("results/downstream/reanalysis_multiple.done"),
+        "results/downstream/Data_REDItools2-Multiple.json",
+        "results/downstream/Data_SPRINT-Multiple.json",
+        "results/downstream/Data_BCFTools-Multiple.json",
+        "results/downstream/Data_REDML-Multiple.json",
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: 32000 * (1.5 ** (attempt - 1)),
@@ -215,6 +234,7 @@ rule reanalysis_multiple:
         set -euo pipefail
         WORKDIR=$(pwd)
         export DB_PATH={params.db_path}
+        export DOWNSTREAM_WORKDIR="$WORKDIR/results/downstream/"
         PATCHDIR=$(mktemp -d)
         export _ALIGNERS="{params.aligners}"
 
@@ -244,7 +264,13 @@ rule multiple_analysis:
     input:
         "results/downstream/reanalysis_multiple.done"
     output:
-        touch("results/downstream/multiple_analysis.done")
+        touch("results/downstream/multiple_analysis.done"),
+        "results/downstream/Downstream/MultipleCompare.png",
+        "results/downstream/Downstream/REDItools2-Multiple_Table.csv",
+        "results/downstream/Downstream/SPRINT-Multiple_Table.csv",
+        "results/downstream/Downstream/REDML-Multiple_Table.csv",
+        "results/downstream/Downstream/BCFTools-Multiple_Table.csv",
+        "results/downstream/Downstream/JACUSA2_Table.csv",
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: 16000 * (1.5 ** (attempt - 1)),
@@ -260,6 +286,9 @@ rule multiple_analysis:
         r"""
         set -euo pipefail
         WORKDIR=$(pwd)
+        export DOWNSTREAM_WORKDIR="$WORKDIR/results/downstream/"
+        export DOWNSTREAM_OUTDIR="$WORKDIR/results/downstream/Downstream/"
+        mkdir -p "$DOWNSTREAM_OUTDIR"
         PATCHDIR=$(mktemp -d)
         export _ALIGNERS="{params.aligners}"
 

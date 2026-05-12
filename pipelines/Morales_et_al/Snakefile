@@ -130,3 +130,21 @@ rule all:
         _WGS_DB_FILES,
         # Downstream analysis — single run that processes all aligners together
         "results/downstream/multiple_analysis.done",
+        # Downstream JSON outputs (per-tool site summaries)
+        "results/downstream/Data_REDItool2.json",
+        "results/downstream/Data_SPRINT.json",
+        "results/downstream/Data_REDML.json",
+        "results/downstream/Data_BCFTools.json",
+        "results/downstream/Data_JACUSA2.json",
+        "results/downstream/Data_REDItools2-Multiple.json",
+        "results/downstream/Data_SPRINT-Multiple.json",
+        "results/downstream/Data_BCFTools-Multiple.json",
+        "results/downstream/Data_REDML-Multiple.json",
+        # Downstream comparison figures and tables
+        "results/downstream/Downstream/IndividualCompare.png",
+        "results/downstream/Downstream/MultipleCompare.png",
+        "results/downstream/Downstream/REDItools2_Table.csv",
+        "results/downstream/Downstream/BCFTools_Table.csv",
+        "results/downstream/Downstream/REDItools2-Multiple_Table.csv",
+        "results/downstream/Downstream/BCFTools-Multiple_Table.csv",
+        "results/downstream/Downstream/JACUSA2_Table.csv",
