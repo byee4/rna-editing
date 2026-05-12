@@ -1,0 +1,3 @@
+[submodule "pipelines/Morales_et_al/Benchmark-of-RNA-Editing-Detection-Tools"]
+	path = pipelines/Morales_et_al/Benchmark-of-RNA-Editing-Detection-Tools
+	url = https://github.com/davidrm-bio/Benchmark-of-RNA-Editing-Detection-Tools.git

@@ -38,8 +38,8 @@ rule generate_simple_repeat:
 
 rule generate_alu_bed:
     """
-    Extract Alu-family elements from RepeatMasker rmsk.txt and merge overlaps.
-    rmsk.txt columns: bin, swScore, milliDiv, milliDel, milliIns,
+    Extract Alu-family elements from RepeatMasker rmsk.txt.gz and merge overlaps.
+    rmsk.txt.gz columns: bin, swScore, milliDiv, milliDel, milliIns,
                       genoName, genoStart, genoEnd, genoLeft, strand,
                       repName, repClass, repFamily, ...
     genoName=col6, genoStart=col7, genoEnd=col8 (0-based half-open).
@@ -59,7 +59,7 @@ rule generate_alu_bed:
     shell:
         r"""
         set -euo pipefail
-        grep Alu {input} \
+        zcat {input} | grep Alu \
             | awk '{{print $6"\t"$7"\t"$8}}' \
             | sort -k1,1 -k2,2n \
             | bedtools merge \
@@ -67,6 +67,78 @@ rule generate_alu_bed:
             2> {log.stderr}
         echo "done" > {log.stdout}
         """
+
+
+if config.get("references", {}).get("hisat2_index"):
+    _HISAT2_IDX = config["references"]["hisat2_index"]
+
+    rule hisat2_extract_splice_sites:
+        input:
+            config["references"]["gtf"]
+        output:
+            _HISAT2_IDX + ".ss"
+        threads: 1
+        resources:
+            mem_mb=lambda wildcards, attempt: 4000 * (1.5 ** (attempt - 1)),
+            runtime=lambda wildcards, attempt: 30 * (2 ** (attempt - 1))
+        container: container_for("hisat2")
+        log:
+            stdout="results/logs/hisat2_extract_splice_sites.out",
+            stderr="results/logs/hisat2_extract_splice_sites.err"
+        shell:
+            r"""
+            set -euo pipefail
+            hisat2_extract_splice_sites.py {input} > {output} 2> {log.stderr}
+            echo "done" > {log.stdout}
+            """
+
+    rule hisat2_extract_exons:
+        input:
+            config["references"]["gtf"]
+        output:
+            _HISAT2_IDX + ".exon"
+        threads: 1
+        resources:
+            mem_mb=lambda wildcards, attempt: 4000 * (1.5 ** (attempt - 1)),
+            runtime=lambda wildcards, attempt: 30 * (2 ** (attempt - 1))
+        container: container_for("hisat2")
+        log:
+            stdout="results/logs/hisat2_extract_exons.out",
+            stderr="results/logs/hisat2_extract_exons.err"
+        shell:
+            r"""
+            set -euo pipefail
+            hisat2_extract_exons.py {input} > {output} 2> {log.stderr}
+            echo "done" > {log.stdout}
+            """
+
+    rule hisat2_genome_generate:
+        input:
+            fasta=config["references"]["fasta"],
+            ss=_HISAT2_IDX + ".ss",
+            exon=_HISAT2_IDX + ".exon"
+        output:
+            multiext(_HISAT2_IDX,
+                     ".1.ht2", ".2.ht2", ".3.ht2", ".4.ht2",
+                     ".5.ht2", ".6.ht2", ".7.ht2", ".8.ht2")
+        threads: config["threads"]
+        resources:
+            mem_mb=lambda wildcards, attempt: 48000 * (1.5 ** (attempt - 1)),
+            runtime=lambda wildcards, attempt: 120 * (2 ** (attempt - 1))
+        container: container_for("hisat2")
+        log:
+            stdout="results/logs/hisat2_genome_generate.out",
+            stderr="results/logs/hisat2_genome_generate.err"
+        params:
+            idx_prefix=_HISAT2_IDX
+        shell:
+            r"""
+            set -euo pipefail
+            mkdir -p "$(dirname {params.idx_prefix})"
+            hisat2-build --ss {input.ss} --exon {input.exon} \
+                -p {threads} {input.fasta} {params.idx_prefix} \
+                1> {log.stdout} 2> {log.stderr}
+            """
 
 
 rule build_dbrna_editing:

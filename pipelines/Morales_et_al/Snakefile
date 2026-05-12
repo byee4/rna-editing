@@ -3,7 +3,32 @@ import os
 import re
 
 # Load the configuration file
-configfile: "config.yaml"
+locals().update(config)
+
+# ==========================================
+# Config Path Resolution
+# ==========================================
+# Resolve relative paths in config relative to the configfile's directory so that
+# snakemake can be invoked from any working directory:
+#   snakemake -s /path/to/Snakefile --configfile /path/to/config.yaml
+_CONFIG_DIR = (
+    os.path.dirname(os.path.abspath(workflow.configfiles[0]))
+    if getattr(workflow, "configfiles", None)
+    else os.getcwd()
+)
+
+
+def _resolve_config_path(p):
+    """Return p as an absolute path resolved relative to the config file's directory."""
+    if not p or os.path.isabs(p):
+        return p
+    return os.path.normpath(os.path.join(_CONFIG_DIR, p))
+
+
+# Normalize relative paths in config before included modules consume them.
+config["downstream_scripts_dir"] = _resolve_config_path(
+    config.get("downstream_scripts_dir", "")
+)
 
 # ==========================================
 # Samplesheet Integration
@@ -20,11 +45,16 @@ def _load_samplesheet(path):
     return sheet
 
 
-SAMPLESHEET = _load_samplesheet(config.get("samplesheet", "samplesheet.csv"))
+SAMPLESHEET = _load_samplesheet(
+    _resolve_config_path(config.get("samplesheet", "samplesheet.csv"))
+)
 
 # Populate config from samplesheet so tools.smk and downstream.smk work unchanged.
 config["conditions"] = sorted(set(k[0] for k in SAMPLESHEET))
 config["samples"] = sorted(set(k[1] for k in SAMPLESHEET))
+
+# Aligners to run — consumed by rule all and downstream rules.
+_ALIGNERS = config.get("aligners", ["star"])
 
 
 def is_paired(condition, sample):
@@ -63,7 +93,8 @@ def container_for(tool):
 wildcard_constraints:
     condition="[^/._]+",
     sample="[^/._]+",
-    wgs_sample="[^/._]+"
+    wgs_sample="[^/._]+",
+    aligner="[^/._]+"
 
 # Include modular workflows
 include: "preprocessing.smk"
@@ -86,15 +117,16 @@ _WGS_DB_FILES = (
 # Define the target outputs for the entire workflow
 rule all:
     input:
-        # Preprocessing outputs
-        expand("results/mapped/{condition}_{sample}.rmdup.bam", condition=config["conditions"], sample=config["samples"]),
-        # Tool outputs
-        expand("results/tools/reditools/{condition}_{sample}.output", condition=config["conditions"], sample=config["samples"]),
-        expand("results/tools/bcftools/{condition}_{sample}.bcf", condition=config["conditions"], sample=config["samples"]),
-        "results/tools/jacusa2/Jacusa.out",
+        # Preprocessing outputs (one BAM per aligner per sample)
+        expand("results/mapped/{aligner}/{condition}_{sample}.rmdup.bam",
+               aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),
+        # Tool outputs (one result per aligner per sample / per aligner for JACUSA2)
+        expand("results/tools/{aligner}/reditools/{condition}_{sample}.output",
+               aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),
+        expand("results/tools/{aligner}/bcftools/{condition}_{sample}.bcf",
+               aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),
+        expand("results/tools/{aligner}/jacusa2/Jacusa.out", aligner=_ALIGNERS),
         # Reference databases — built from WGS alignment when wgs_samples is configured
         _WGS_DB_FILES,
-        # Downstream analysis — requires JSON databases at config["references"]["db_path"]
-        # (HEK293T_hg38_clean.json, REDIportal.json, Alu_GRCh38.json) and pre-populated
-        # ResultsFiles subdirectories from the Benchmark parser scripts' Parts 1+2.
+        # Downstream analysis — single run that processes all aligners together
         "results/downstream/multiple_analysis.done",
