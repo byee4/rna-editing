@@ -73,7 +73,7 @@ rule sprint_mapq_bam:
     shell:
         r"""
         set -euo pipefail
-        python /opt/sprint/changesammapq.py {input.bam} {output.bam} 30 2> {log.stderr}
+        python /opt/sprint/utilities/changesammapq.py {input.bam} {output.bam} 30 2> {log.stderr}
         samtools index {output.bam} {output.bai} 2>> {log.stderr}
         echo "done" > {log.stdout}
         """

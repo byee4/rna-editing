@@ -129,12 +129,13 @@ rule bwa_mapping:
         samflag=lambda wildcards, input: (
             "-F 0x04 -f 0x2" if len(input.r2) > 0 else "-F 0x04"
         ),
-        # BWA -R uses \t-separated fields; Python \t becomes a real tab in the shell.
+        # BWA -R field separator: newer BWA requires the literal two-character
+        # escape \t (not a real tab). Python \\t → string \t → BWA parses as tab.
         rg=lambda wildcards: (
-            f"@RG\tID:{wildcards.condition}_{wildcards.sample}"
-            f"\tSM:{wildcards.condition}_{wildcards.sample}"
-            f"\tPL:ILLUMINA"
-            f"\tLB:{wildcards.condition}_{wildcards.sample}"
+            f"@RG\\tID:{wildcards.condition}_{wildcards.sample}"
+            f"\\tSM:{wildcards.condition}_{wildcards.sample}"
+            f"\\tPL:ILLUMINA"
+            f"\\tLB:{wildcards.condition}_{wildcards.sample}"
         ),
     shell:
         r"""
@@ -189,7 +190,7 @@ rule hisat2_mapping:
         rg_id=lambda wildcards: f"{wildcards.condition}_{wildcards.sample}",
     shell:
         r"""
-        set -euo pipefail
+        set -eu
         hisat2 -p {threads} -x {params.idx_prefix} {params.reads} \
             --rg-id "{params.rg_id}" \
             --rg "SM:{params.rg_id}" --rg "PL:ILLUMINA" --rg "LB:{params.rg_id}" \
@@ -198,6 +199,12 @@ rule hisat2_mapping:
             2>> {log.stderr} \
             | samtools sort -@ {threads} -T {params.prefix}tmp -o {output.bam} \
             2>> {log.stderr}
+        sts=("${{PIPESTATUS[@]}}")
+        # HISAT2 exits 141 (SIGPIPE) when the pipe closes after samtools finishes;
+        # this is expected behaviour, not a real alignment error.
+        [[ ${{sts[0]}} -eq 0 || ${{sts[0]}} -eq 141 ]] || exit ${{sts[0]}}
+        [[ ${{sts[1]}} -eq 0 ]] || exit ${{sts[1]}}
+        [[ ${{sts[2]}} -eq 0 ]] || exit ${{sts[2]}}
         samtools index -@ {threads} {output.bam} 2>> {log.stderr}
         echo "done" > {log.stdout}
         """
