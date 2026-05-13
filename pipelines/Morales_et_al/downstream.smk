@@ -27,12 +27,14 @@ rule run_downstream_parsers:
     params:
         downstream_dir=config["downstream_scripts_dir"],
         db_path=config["references"]["db_path"],
-        aligners=",".join(_ALIGNERS)
+        aligners=",".join(_ALIGNERS),
+        tmpdir=config.get("tmpdir", "/tmp")
     shell:
         r"""
         set -euo pipefail
         WORKDIR=$(pwd)
         export DB_PATH={params.db_path}
+        export TMPDIR={params.tmpdir}
         BENCH_DIR="$WORKDIR/results/downstream"
         export BENCH_DIR
         PATCHDIR=$(mktemp -d)
@@ -124,12 +126,14 @@ rule update_alu:
     params:
         downstream_dir=config["downstream_scripts_dir"],
         db_path=config["references"]["db_path"],
-        aligners=",".join(_ALIGNERS)
+        aligners=",".join(_ALIGNERS),
+        tmpdir=config.get("tmpdir", "/tmp")
     shell:
         r"""
         set -euo pipefail
         WORKDIR=$(pwd)
         export DB_PATH={params.db_path}
+        export TMPDIR={params.tmpdir}
         export DOWNSTREAM_WORKDIR="$WORKDIR/results/downstream/"
         PATCHDIR=$(mktemp -d)
         export _ALIGNERS="{params.aligners}"
@@ -175,11 +179,13 @@ rule individual_analysis:
         stderr="results/logs/individual_analysis.err"
     params:
         downstream_dir=config["downstream_scripts_dir"],
-        aligners=",".join(_ALIGNERS)
+        aligners=",".join(_ALIGNERS),
+        tmpdir=config.get("tmpdir", "/tmp")
     shell:
         r"""
         set -euo pipefail
         WORKDIR=$(pwd)
+        export TMPDIR={params.tmpdir}
         export DOWNSTREAM_WORKDIR="$WORKDIR/results/downstream/"
         export DOWNSTREAM_OUTDIR="$WORKDIR/results/downstream/Downstream/"
         mkdir -p "$DOWNSTREAM_OUTDIR"
@@ -228,12 +234,14 @@ rule reanalysis_multiple:
     params:
         downstream_dir=config["downstream_scripts_dir"],
         db_path=config["references"]["db_path"],
-        aligners=",".join(_ALIGNERS)
+        aligners=",".join(_ALIGNERS),
+        tmpdir=config.get("tmpdir", "/tmp")
     shell:
         r"""
         set -euo pipefail
         WORKDIR=$(pwd)
         export DB_PATH={params.db_path}
+        export TMPDIR={params.tmpdir}
         export DOWNSTREAM_WORKDIR="$WORKDIR/results/downstream/"
         PATCHDIR=$(mktemp -d)
         export _ALIGNERS="{params.aligners}"
@@ -281,11 +289,13 @@ rule multiple_analysis:
         stderr="results/logs/multiple_analysis.err"
     params:
         downstream_dir=config["downstream_scripts_dir"],
-        aligners=",".join(_ALIGNERS)
+        aligners=",".join(_ALIGNERS),
+        tmpdir=config.get("tmpdir", "/tmp")
     shell:
         r"""
         set -euo pipefail
         WORKDIR=$(pwd)
+        export TMPDIR={params.tmpdir}
         export DOWNSTREAM_WORKDIR="$WORKDIR/results/downstream/"
         export DOWNSTREAM_OUTDIR="$WORKDIR/results/downstream/Downstream/"
         mkdir -p "$DOWNSTREAM_OUTDIR"
