@@ -19,7 +19,7 @@ rule reditools:
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: 36000 * (1.5 ** (attempt - 1)),
-        runtime=lambda wildcards, attempt: 600 * (2 ** (attempt - 1))
+        runtime=lambda wildcards, attempt: 1200 * (1.5 ** (attempt - 1))
     container: container_for("reditools")
     log:
         stdout="results/logs/{aligner}_{condition}_{sample}.reditools.out",

@@ -3,7 +3,7 @@ printshellcmds: true
 notemp: true
 latency: 60
 skip-script-cleanup: true
-retries: 0
+retries: 2
 nolock: true
 default-storage-provider: none
 rerun-triggers: mtime

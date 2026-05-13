@@ -27,8 +27,8 @@ module load singularitypro;
 conda activate snakemake9;
 cd examples;
 unset SLURM_JOB_ID # required if running on an interactive node, which is reccomended
-snakemake -kps ../pipelines/editing_wgs/Snakefile \
---configfile ../pipelines/editing_wgs/config.data.gene.yaml \
+snakemake -kps /tscc/nfs/home/bay001/projects/codebase/rna-editing/pipelines/Morales_et_al/Snakefile \
+--configfile /tscc/nfs/home/bay001/projects/codebase/rna-editing/examples/Morales_et_al/config_small.yaml \
 --profile /tscc/nfs/home/bay001/projects/codebase/rna-editing/profiles/tscc2 \
 --use-singularity
 ```
