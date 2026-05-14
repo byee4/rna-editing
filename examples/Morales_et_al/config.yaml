@@ -102,3 +102,20 @@ params:
   marine:
     strandedness: 0
     paired_end: true
+# ==========================================
+# Visualization / Trackhub Parameters
+# ==========================================
+visualization:
+  # Tools to include in BigBed and comparison matrices (jacusa2 excluded: per-aligner, not per-sample)
+  tools:
+    - reditools
+    - reditools3
+    - sprint
+    - red_ml
+    - bcftools
+    - redinet
+    - marine
+  bigwig_binsize: 10          # bp bin size for bamCoverage (CPM-normalised)
+  ucsc_assembly: hg38
+  hub_name: "Morales_et_al RNA Editing"
+  hub_email: "user@example.com"

@@ -56,6 +56,13 @@ config["samples"] = sorted(set(k[1] for k in SAMPLESHEET))
 # Aligners to run — consumed by rule all and downstream rules.
 _ALIGNERS = config.get("aligners", ["star"])
 
+# Per-sample tools included in BigBed and comparison matrices (JACUSA2 excluded
+# because it produces one comparison file per aligner, not per sample).
+_BED_TOOLS = [t for t in config.get("visualization", {}).get("tools", [
+    "reditools", "reditools3", "sprint", "red_ml",
+    "bcftools", "redinet", "marine",
+]) if t != "jacusa2"]
+
 
 def is_paired(condition, sample):
     """Return True if this condition/sample has R2 reads in the samplesheet."""
@@ -94,7 +101,8 @@ wildcard_constraints:
     condition="[^/._]+",
     sample="[^/._]+",
     wgs_sample="[^/._]+",
-    aligner="[^/._]+"
+    aligner="[^/._]+",
+    tool="[a-z0-9_]+"
 
 # ==========================================
 # Target Outputs
@@ -156,6 +164,23 @@ rule all:
         # MARINE outputs (one result per aligner per sample)
         expand("results/tools/{aligner}/marine/{condition}_{sample}/final_filtered_site_info.tsv",
                aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),
+        # Cross-tool comparison matrices
+        "results/compare_all_tools/edit_coverage_matrix.tsv",
+        "results/compare_all_tools/edit_fraction_matrix.tsv",
+        "results/compare_all_tools/tool_score_matrix.tsv",
+        # Tool and aligner correlation
+        expand("results/correlation/tool_correlation_{aligner}.tsv", aligner=_ALIGNERS),
+        expand("results/correlation/aligner_correlation_{tool}.tsv", tool=_BED_TOOLS),
+        # Coverage BigWig (one per BAM)
+        expand("results/bigwig/{aligner}/{condition}_{sample}.bw",
+               aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),
+        # Edit-site BigBed (one per tool per aligner per sample)
+        expand("results/bigbed/{tool}/{aligner}/{condition}_{sample}.bb",
+               tool=_BED_TOOLS, aligner=_ALIGNERS,
+               condition=config["conditions"], sample=config["samples"]),
+        # UCSC trackhub hub descriptor
+        "results/trackhub/hub.txt",
 
 
 include: "rules/morales_main.smk"
+include: "rules/visualization.smk"
