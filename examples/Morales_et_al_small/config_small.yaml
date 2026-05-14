@@ -7,7 +7,7 @@ threads: 8
 # Experimental Design
 # ==========================================
 # conditions and samples are derived at runtime from the samplesheet CSV.
-samplesheet: "samplesheet.csv"
+samplesheet: "samplesheet_small.csv"
 aligners:
   - star
   - bwa
@@ -88,17 +88,17 @@ params:
   jacusa2:
     pileup_filter: "D"
   reditools3:
-    strand: 0
+    strand: 0       # 0=unstranded, 1=stranded, 2=reverse-stranded
     map_quality: 20
     base_quality: 30
   redinet:
-    reditools_strand: 0
+    reditools_strand: 0    # REDItoolDnaRna.py -s: 0=no strand inference, 1=infer
     map_quality: 20
     base_quality: 20
-    min_cov: 10
-    cov_threshold: 50
+    min_cov: 5             # lowered for small test (default 10)
+    cov_threshold: 5       # REDInet_Inference.py --C: min coverage (default 50)
     agfreq_threshold: 0.01
-    min_ag_subs: 3
+    min_ag_subs: 1         # min AG substitutions (default 3; lowered for small test)
   marine:
-    strandedness: 0
+    strandedness: 0      # 0=unstranded, 1=stranded, 2=reverse-stranded
     paired_end: true

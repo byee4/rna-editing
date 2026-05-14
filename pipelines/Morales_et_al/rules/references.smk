@@ -141,6 +141,36 @@ if config.get("references", {}).get("hisat2_index"):
             """
 
 
+rule generate_marine_annotation:
+    """
+    Convert GENCODE GTF to a gene-level BED6 file for MARINE annotation.
+    Format: chrom  start(0-based)  end  gene_name  gene_type  strand
+    """
+    input:
+        config["references"]["gtf"]
+    output:
+        config["references"]["marine_annotation_bed"]
+    threads: 1
+    resources:
+        mem_mb=lambda wildcards, attempt: 4000 * (1.5 ** (attempt - 1)),
+        runtime=lambda wildcards, attempt: 30 * (2 ** (attempt - 1))
+    log:
+        stdout="results/logs/generate_marine_annotation.out",
+        stderr="results/logs/generate_marine_annotation.err"
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p "$(dirname {output})"
+        grep -v "^#" {input} | awk '$3 == "gene"' | \
+        gawk 'BEGIN{{OFS="\t"}} {{
+            match($0, /gene_name "([^"]+)"/, gn)
+            match($0, /gene_type "([^"]+)"/, gt)
+            print $1, $4-1, $5, gn[1], gt[1], $7
+        }}' | sort -k1,1 -k2,2n > {output} 2> {log.stderr}
+        echo "done" > {log.stdout}
+        """
+
+
 rule build_dbrna_editing:
     """
     Build the three JSON databases consumed by the Morales et al. downstream
