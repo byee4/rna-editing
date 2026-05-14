@@ -96,16 +96,13 @@ wildcard_constraints:
     wgs_sample="[^/._]+",
     aligner="[^/._]+"
 
-# Include modular workflows
-include: "preprocessing.smk"
-include: "tools.smk"
-include: "downstream.smk"
-include: "rules/references.smk"
-include: "rules/wgs.smk"
-
 # ==========================================
 # Target Outputs
 # ==========================================
+# rule all is defined here (top-level Snakefile) so Snakemake 9 picks it up
+# as the default target. Defining it in an included file causes Snakemake 9
+# to use the first rule from the first included file instead.
+
 _WGS_DB_FILES = (
     [
         os.path.join(config["references"]["db_path"], f)
@@ -114,7 +111,6 @@ _WGS_DB_FILES = (
     if config.get("wgs_samples") else []
 )
 
-# Define the target outputs for the entire workflow
 rule all:
     input:
         # Preprocessing outputs (one BAM per aligner per sample)
@@ -148,3 +144,18 @@ rule all:
         "results/downstream/Downstream/REDItools2-Multiple_Table.csv",
         "results/downstream/Downstream/BCFTools-Multiple_Table.csv",
         "results/downstream/Downstream/JACUSA2_Table.csv",
+        # REDItools3 outputs (one per aligner per sample)
+        expand("results/tools/{aligner}/reditools3/{condition}_{sample}.txt",
+               aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),
+        # REDInet step 2: bgzip+tabix indexed REDItoolDnaRna.py output
+        expand("results/tools/{aligner}/reditools_redinet/{condition}_{sample}/{condition}_{sample}.output.gz",
+               aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),
+        # REDInet step 3: predictions per aligner per sample
+        expand("results/tools/{aligner}/redinet/{condition}_{sample}.predictions.tsv",
+               aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),
+        # MARINE outputs (one result per aligner per sample)
+        expand("results/tools/{aligner}/marine/{condition}_{sample}/final_filtered_site_info.tsv",
+               aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),
+
+
+include: "rules/morales_main.smk"
