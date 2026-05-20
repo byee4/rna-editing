@@ -27,11 +27,35 @@ import pandas as pd
 from scipy.stats import spearmanr
 
 
-def load_matrix(matrix_dir, filename):
+def load_tool_chunks(matrix_dir, filename, tools, chunksize=100_000):
+    """
+    Read the fraction matrix in chunks, returning per-tool filtered DataFrames.
+
+    Each tool's DataFrame contains only its columns and only rows where at
+    least one value is > 0.  A single file pass avoids loading the full
+    ~17 GB matrix into memory.
+    """
     path = os.path.join(matrix_dir, filename)
     if not os.path.exists(path):
         sys.exit(f"Matrix not found: {path}")
-    return pd.read_csv(path, sep="\t", index_col=0)
+    tool_chunks = {t: [] for t in tools}
+    tool_cols_map = {}
+    for chunk in pd.read_csv(path, sep="\t", index_col=0, chunksize=chunksize):
+        if not tool_cols_map:
+            for t in tools:
+                tool_cols_map[t] = [c for c in chunk.columns if c.startswith(f"{t}.")]
+        for t in tools:
+            tcols = tool_cols_map[t]
+            if not tcols:
+                continue
+            sub = chunk[tcols]
+            mask = (sub > 0).any(axis=1)
+            if mask.any():
+                tool_chunks[t].append(sub.loc[mask])
+    return {
+        t: (pd.concat(chunks) if chunks else pd.DataFrame())
+        for t, chunks in tool_chunks.items()
+    }
 
 
 def tool_aligner_matrix(df, tool):
@@ -116,10 +140,11 @@ def main():
     args = ap.parse_args()
 
     os.makedirs(args.outdir, exist_ok=True)
-    df = load_matrix(args.matrix_dir, "edit_fraction_matrix.tsv")
+    tool_subsets = load_tool_chunks(args.matrix_dir, "edit_fraction_matrix.tsv", args.tools)
 
     for tool in args.tools:
-        aligner_df = tool_aligner_matrix(df, tool)
+        subset = tool_subsets.get(tool, pd.DataFrame())
+        aligner_df = tool_aligner_matrix(subset, tool)
         if aligner_df is None:
             print(f"  [skip] {tool}: fewer than 2 aligners found", file=sys.stderr)
             continue

@@ -27,11 +27,35 @@ import pandas as pd
 from scipy.stats import spearmanr
 
 
-def load_matrix(matrix_dir, filename):
+def load_aligner_chunks(matrix_dir, filename, aligners, chunksize=100_000):
+    """
+    Read the fraction matrix in chunks, returning per-aligner filtered DataFrames.
+
+    Each aligner's DataFrame contains only its columns and only rows where at
+    least one value is > 0.  A single file pass avoids loading the full
+    ~17 GB matrix into memory.
+    """
     path = os.path.join(matrix_dir, filename)
     if not os.path.exists(path):
         sys.exit(f"Matrix not found: {path}")
-    return pd.read_csv(path, sep="\t", index_col=0)
+    aligner_chunks = {a: [] for a in aligners}
+    aligner_cols_map = {}
+    for chunk in pd.read_csv(path, sep="\t", index_col=0, chunksize=chunksize):
+        if not aligner_cols_map:
+            for a in aligners:
+                aligner_cols_map[a] = [c for c in chunk.columns if f".{a}." in c]
+        for a in aligners:
+            acols = aligner_cols_map[a]
+            if not acols:
+                continue
+            sub = chunk[acols]
+            mask = (sub > 0).any(axis=1)
+            if mask.any():
+                aligner_chunks[a].append(sub.loc[mask])
+    return {
+        a: (pd.concat(chunks) if chunks else pd.DataFrame())
+        for a, chunks in aligner_chunks.items()
+    }
 
 
 def aligner_tool_matrix(df, aligner):
@@ -114,10 +138,12 @@ def main():
     args = ap.parse_args()
 
     os.makedirs(args.outdir, exist_ok=True)
-    df = load_matrix(args.matrix_dir, "edit_fraction_matrix.tsv")
+    aligner_subsets = load_aligner_chunks(args.matrix_dir, "edit_fraction_matrix.tsv",
+                                          args.aligners)
 
     for aligner in args.aligners:
-        tool_df = aligner_tool_matrix(df, aligner)
+        subset = aligner_subsets.get(aligner, pd.DataFrame())
+        tool_df = aligner_tool_matrix(subset, aligner)
         if tool_df is None or tool_df.shape[1] < 2:
             print(f"  [skip] {aligner}: fewer than 2 tools found", file=sys.stderr)
             continue
