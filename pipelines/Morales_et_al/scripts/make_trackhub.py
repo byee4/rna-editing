@@ -64,6 +64,7 @@ def colour(name, palette):
 def build_hub(args):
     try:
         import trackhub
+        import shutil
     except ImportError:
         sys.exit(
             "trackhub not installed. Run: pip install --user trackhub\n"
@@ -78,6 +79,7 @@ def build_hub(args):
         email=args.email,
     )
 
+    n_tracks = 0
     for condition in args.conditions:
         for sample in args.samples:
             sample_id = f"{condition}_{sample}"
@@ -106,6 +108,7 @@ def build_hub(args):
                         windowingFunction="mean",
                     )
                     super_track.add_tracks(bw_track)
+                    n_tracks += 1
 
                 # --- BigBed edit-site tracks (one per tool) ---
                 for tool in args.tools:
@@ -117,17 +120,46 @@ def build_hub(args):
                             name=f"bb_{sample_id}_{aligner}_{tool}",
                             short_label=f"{tool}/{aligner}",
                             long_label=f"{sample_id} {tool} ({aligner}) edit sites",
-                            tracktype="bigBed 6",
+                            tracktype="bigBed 3+3",
                             source=os.path.abspath(bb_path),
                             visibility="pack",
                             color=colour(tool, _TOOL_COLOURS),
                         )
                         super_track.add_tracks(bb_track)
+                        n_tracks += 1
 
     os.makedirs(args.outdir, exist_ok=True)
-    trackhub.upload.stage_hub(hub, staging=args.outdir)
+
+    if n_tracks == 0:
+        print("Warning: no BigWig or BigBed files found; writing empty hub",
+              file=sys.stderr)
+        # trackhub raises ValueError on empty trackdb; write stub files manually
+        hub_txt = os.path.join(args.outdir, "hub.txt")
+        genomes_txt = os.path.join(args.outdir, "genomes.txt")
+        with open(hub_txt, "w") as f:
+            f.write(f"hub {args.hub_name}\n"
+                    f"shortLabel {args.hub_name}\n"
+                    f"longLabel {args.hub_name}\n"
+                    f"genomesFile genomes.txt\n"
+                    f"email {args.email}\n")
+        with open(genomes_txt, "w") as f:
+            f.write(f"genome {args.assembly}\n"
+                    f"trackDb {args.assembly}/trackDb.txt\n")
+    else:
+        trackhub.upload.stage_hub(hub, staging=args.outdir)
+        # default_hub names files "{hub_name}.hub.txt" — rename to hub.txt / genomes.txt
+        # so Snakemake's declared outputs are satisfied.
+        for src_suffix, dst_name in [
+            (f"{args.hub_name}.hub.txt", "hub.txt"),
+            (f"{args.hub_name}.genomes.txt", "genomes.txt"),
+        ]:
+            src = os.path.join(args.outdir, src_suffix)
+            dst = os.path.join(args.outdir, dst_name)
+            if os.path.exists(src) and src != dst:
+                shutil.copy2(src, dst)
+
     hub_txt = os.path.join(args.outdir, "hub.txt")
-    print(f"Hub written to {hub_txt}", file=sys.stderr)
+    print(f"Hub written to {hub_txt} ({n_tracks} tracks)", file=sys.stderr)
     print(f"Load in UCSC: https://genome.ucsc.edu/cgi-bin/hgTracks?hubUrl=<URL>/hub.txt",
           file=sys.stderr)
 

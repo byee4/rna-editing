@@ -60,8 +60,8 @@ _ALIGNERS = config.get("aligners", ["star"])
 # because it produces one comparison file per aligner, not per sample).
 _BED_TOOLS = [t for t in config.get("visualization", {}).get("tools", [
     "reditools", "reditools3", "sprint", "red_ml",
-    "bcftools", "redinet", "marine",
-]) if t != "jacusa2"]
+    "bcftools", "redinet",
+]) if t not in ("jacusa2", "marine")]
 
 
 def is_paired(condition, sample):
@@ -102,7 +102,8 @@ wildcard_constraints:
     sample="[^/._]+",
     wgs_sample="[^/._]+",
     aligner="[^/._]+",
-    tool="[a-z0-9_]+"
+    tool="[a-z0-9_]+",
+    chrom="[^/]+"
 
 # ==========================================
 # Target Outputs
@@ -160,9 +161,6 @@ rule all:
                aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),
         # REDInet step 3: predictions per aligner per sample
         expand("results/tools/{aligner}/redinet/{condition}_{sample}.predictions.tsv",
-               aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),
-        # MARINE outputs (one result per aligner per sample)
-        expand("results/tools/{aligner}/marine/{condition}_{sample}/final_filtered_site_info.tsv",
                aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),
         # Cross-tool comparison matrices
         "results/compare_all_tools/edit_coverage_matrix.tsv",

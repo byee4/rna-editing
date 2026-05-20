@@ -10,27 +10,114 @@ def _sprint_bai(wildcards):
     return f"results/mapped/{wildcards.aligner}/{wildcards.condition}_{wildcards.sample}.rmdup_mapq30.bam.bai"
 
 
-rule reditools:
+# ─────────────────────────────────────────────────────────────────────────────
+# REDItools — per-chromosome parallel execution
+# ─────────────────────────────────────────────────────────────────────────────
+
+checkpoint get_chrom_list:
+    """Write the list of chromosomes with mapped reads to a text file."""
     input:
         bam="results/mapped/{aligner}/{condition}_{sample}.rmdup.bam",
         bai="results/mapped/{aligner}/{condition}_{sample}.rmdup.bam.bai"
     output:
-        "results/tools/{aligner}/reditools/{condition}_{sample}.output"
+        "results/mapped/{aligner}/{condition}_{sample}.chroms.txt"
+    resources:
+        mem_mb=2000,
+        runtime=10
+    container: container_for("wgs")
+    shell:
+        "samtools idxstats {input.bam} | awk '$3>0 {{print $1}}' > {output}"
+
+
+rule split_bam_by_chrom:
+    """Extract one chromosome from the BAM for parallel REDItools processing."""
+    input:
+        bam="results/mapped/{aligner}/{condition}_{sample}.rmdup.bam",
+        bai="results/mapped/{aligner}/{condition}_{sample}.rmdup.bam.bai"
+    output:
+        bam=temp("results/mapped/{aligner}/{condition}_{sample}.split/{chrom}.bam"),
+        bai=temp("results/mapped/{aligner}/{condition}_{sample}.split/{chrom}.bam.bai")
+    wildcard_constraints:
+        chrom="[^/]+"
+    resources:
+        mem_mb=lambda wildcards, attempt: 2000 * (1.5 ** (attempt - 1)),
+        runtime=lambda wildcards, attempt: 20 * (2 ** (attempt - 1))
+    container: container_for("wgs")
+    log:
+        stderr="results/logs/{aligner}_{condition}_{sample}_{chrom}.split_bam.err"
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p "$(dirname {output.bam})"
+        samtools view -b {input.bam} {wildcards.chrom} > {output.bam} 2> {log.stderr}
+        samtools index {output.bam} 2>> {log.stderr}
+        """
+
+
+rule reditools_by_chrom:
+    """Run REDItools on a single-chromosome BAM using the -g region flag."""
+    input:
+        bam="results/mapped/{aligner}/{condition}_{sample}.split/{chrom}.bam",
+        bai="results/mapped/{aligner}/{condition}_{sample}.split/{chrom}.bam.bai"
+    output:
+        temp("results/tools/{aligner}/reditools_split/{condition}_{sample}/{chrom}.output")
+    wildcard_constraints:
+        chrom="[^/]+"
     threads: 1
     resources:
-        mem_mb=lambda wildcards, attempt: 36000 * (1.5 ** (attempt - 1)),
-        runtime=lambda wildcards, attempt: 1200 * (1.5 ** (attempt - 1))
+        mem_mb=lambda wildcards, attempt: 8000 * (1.5 ** (attempt - 1)),
+        runtime=lambda wildcards, attempt: 120 * (1.5 ** (attempt - 1))
     container: container_for("reditools")
     log:
-        stdout="results/logs/{aligner}_{condition}_{sample}.reditools.out",
-        stderr="results/logs/{aligner}_{condition}_{sample}.reditools.err"
+        stdout="results/logs/{aligner}_{condition}_{sample}_{chrom}.reditools.out",
+        stderr="results/logs/{aligner}_{condition}_{sample}_{chrom}.reditools.err"
     params:
         ref=config["references"]["fasta"]
     shell:
         r"""
         set -euo pipefail
-        reditools.py -S -C -bq 20 -q 20 -f {input.bam} -r {params.ref} -o {output} \
+        mkdir -p "$(dirname {output})"
+        reditools.py -S -C -bq 20 -q 20 \
+            -f {input.bam} -r {params.ref} \
+            -g {wildcards.chrom} -o {output} \
             1> {log.stdout} 2> {log.stderr}
+        """
+
+
+def _reditools_chrom_outputs(wildcards):
+    chrom_file = checkpoints.get_chrom_list.get(
+        aligner=wildcards.aligner,
+        condition=wildcards.condition,
+        sample=wildcards.sample,
+    ).output[0]
+    chroms = [c for c in open(chrom_file).read().strip().split("\n") if c]
+    return [
+        f"results/tools/{wildcards.aligner}/reditools_split/"
+        f"{wildcards.condition}_{wildcards.sample}/{chrom}.output"
+        for chrom in chroms
+    ]
+
+
+rule join_reditools_output:
+    """Merge per-chromosome REDItools outputs; keep header from first file only."""
+    input:
+        _reditools_chrom_outputs
+    output:
+        "results/tools/{aligner}/reditools/{condition}_{sample}.output"
+    localrule: True
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p "$(dirname {output})"
+        first=1
+        for f in {input}; do
+            if [ "$first" -eq 1 ]; then
+                cat "$f" > {output}
+                first=0
+            else
+                tail -n +2 "$f" >> {output}
+            fi
+        done
         """
 
 
@@ -233,7 +320,9 @@ rule jacusa2:
 rule reditools3:
     input:
         bam="results/mapped/{aligner}/{condition}_{sample}.rmdup.bam",
-        bai="results/mapped/{aligner}/{condition}_{sample}.rmdup.bam.bai"
+        bai="results/mapped/{aligner}/{condition}_{sample}.rmdup.bam.bai",
+        ref="results/references/ref_iupac_masked.fasta",
+        ref_fai="results/references/ref_iupac_masked.fasta.fai"
     output:
         "results/tools/{aligner}/reditools3/{condition}_{sample}.txt"
     threads: 1
@@ -245,7 +334,6 @@ rule reditools3:
         stdout="results/logs/{aligner}_{condition}_{sample}.reditools3.out",
         stderr="results/logs/{aligner}_{condition}_{sample}.reditools3.err"
     params:
-        ref=config["references"]["fasta"],
         strand=config["params"]["reditools3"]["strand"],
         map_quality=config["params"]["reditools3"]["map_quality"],
         base_quality=config["params"]["reditools3"]["base_quality"]
@@ -255,7 +343,7 @@ rule reditools3:
         mkdir -p "$(dirname {output})"
         /opt/conda/envs/REDInet/bin/python3.10 -m reditools analyze \
             {input.bam} \
-            -r {params.ref} \
+            -r {input.ref} \
             -o {output} \
             -s {params.strand} \
             -q {params.map_quality} \
@@ -377,41 +465,41 @@ rule redinet:
 
 
 # ---------------------------------------------------------
-# MARINE Rule
+# MARINE Rule (disabled — outputs too large for compare_all_tools matrix)
 # ---------------------------------------------------------
-rule marine:
-    # Uses env-modules (no container yet; Dockerfile is in containers/marine/).
-    # Requires MD-tagged BAM produced by add_md_tag, and a gene annotation BED6
-    # generated by generate_marine_annotation in references.smk.
-    input:
-        bam="results/mapped/{aligner}/{condition}_{sample}.rmdup_MD.bam",
-        bai="results/mapped/{aligner}/{condition}_{sample}.rmdup_MD.bam.bai",
-        annotation=config["references"]["marine_annotation_bed"]
-    output:
-        "results/tools/{aligner}/marine/{condition}_{sample}/final_filtered_site_info.tsv"
-    threads: 4
-    resources:
-        mem_mb=lambda wildcards, attempt: 16000 * (1.5 ** (attempt - 1)),
-        runtime=lambda wildcards, attempt: 120 * (2 ** (attempt - 1))
-    envmodules:
-        "marine"
-    log:
-        stdout="results/logs/{aligner}_{condition}_{sample}.marine.out",
-        stderr="results/logs/{aligner}_{condition}_{sample}.marine.err"
-    params:
-        outdir=lambda wildcards: f"results/tools/{wildcards.aligner}/marine/{wildcards.condition}_{wildcards.sample}",
-        strandedness=config["params"]["marine"]["strandedness"],
-        paired_end_flag="--paired_end" if config["params"]["marine"].get("paired_end", True) else ""
-    shell:
-        r"""
-        set -euo pipefail
-        rm -rf {params.outdir}
-        marine.py \
-            --bam_filepath {input.bam} \
-            --output_folder {params.outdir} \
-            --strandedness {params.strandedness} \
-            --annotation_bedfile_path {input.annotation} \
-            {params.paired_end_flag} \
-            --cores {threads} \
-            1> {log.stdout} 2> {log.stderr}
-        """
+# rule marine:
+#     # Uses env-modules (no container yet; Dockerfile is in containers/marine/).
+#     # Requires MD-tagged BAM produced by add_md_tag, and a gene annotation BED6
+#     # generated by generate_marine_annotation in references.smk.
+#     input:
+#         bam="results/mapped/{aligner}/{condition}_{sample}.rmdup_MD.bam",
+#         bai="results/mapped/{aligner}/{condition}_{sample}.rmdup_MD.bam.bai",
+#         annotation=config["references"]["marine_annotation_bed"]
+#     output:
+#         "results/tools/{aligner}/marine/{condition}_{sample}/final_filtered_site_info.tsv"
+#     threads: 4
+#     resources:
+#         mem_mb=lambda wildcards, attempt: 64000 * (1.5 ** (attempt - 1)),
+#         runtime=lambda wildcards, attempt: 120 * (2 ** (attempt - 1))
+#     envmodules:
+#         "marine"
+#     log:
+#         stdout="results/logs/{aligner}_{condition}_{sample}.marine.out",
+#         stderr="results/logs/{aligner}_{condition}_{sample}.marine.err"
+#     params:
+#         outdir=lambda wildcards: f"results/tools/{wildcards.aligner}/marine/{wildcards.condition}_{wildcards.sample}",
+#         strandedness=config["params"]["marine"]["strandedness"],
+#         paired_end_flag="--paired_end" if config["params"]["marine"].get("paired_end", True) else ""
+#     shell:
+#         r"""
+#         set -euo pipefail
+#         rm -rf {params.outdir}
+#         marine.py \
+#             --bam_filepath {input.bam} \
+#             --output_folder {params.outdir} \
+#             --strandedness {params.strandedness} \
+#             --annotation_bedfile_path {input.annotation} \
+#             {params.paired_end_flag} \
+#             --cores {threads} \
+#             1> {log.stdout} 2> {log.stderr}
+#         """

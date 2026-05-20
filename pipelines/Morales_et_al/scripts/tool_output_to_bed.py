@@ -16,6 +16,10 @@ import os
 import subprocess
 import sys
 
+# Filtering thresholds — overridden by CLI --min-cov / --min-score
+MIN_COV = 0
+MIN_SCORE = 0
+
 
 def _score1000(frac):
     """Map editing fraction [0,1] to UCSC BED score [0,1000]."""
@@ -39,9 +43,14 @@ def to_bed_reditools2(path, out_fh):
                 continue
             try:
                 chrom, pos = c[0], int(c[1])
+                cov = int(c[4])
                 score = _score1000(c[8])
-                strand = c[3] if c[3] in ("+", "-") else "."
+                # REDItools strand encoding: 0=+, 1=-, 2=unknown
+                s = c[3]
+                strand = "+" if s == "0" else ("-" if s == "1" else ".")
             except (ValueError, IndexError):
+                continue
+            if cov < MIN_COV or score < MIN_SCORE:
                 continue
             out_fh.write(f"{chrom}\t{pos-1}\t{pos}\t{c[7]}\t{score}\t{strand}\n")
 
@@ -68,6 +77,9 @@ def to_bed_reditools3(path, out_fh):
                     pos = int(row.get("position", c[1]))
                     score = _score1000(row.get("frequency", 0))
                     strand = row.get("strand", ".")
+                    if strand not in ("+", "-"):
+                        strand = "."
+                    cov = int(row.get("coverage", row.get("coverage-q30", 0)))
                 except (ValueError, KeyError):
                     continue
             else:
@@ -75,11 +87,14 @@ def to_bed_reditools3(path, out_fh):
                     continue
                 try:
                     chrom, pos = c[0], int(c[1])
+                    cov = int(c[4])
                     score = _score1000(c[8])
                     strand = c[3] if c[3] in ("+", "-") else "."
                     edit_type = c[7]
                 except (ValueError, IndexError):
                     continue
+            if cov < MIN_COV or score < MIN_SCORE:
+                continue
             out_fh.write(f"{chrom}\t{pos-1}\t{pos}\t{edit_type}\t{score}\t{strand}\n")
 
 
@@ -100,6 +115,8 @@ def to_bed_sprint(dirpath, out_fh):
                 score = _score1000(frac)
                 strand = c[5] if len(c) > 5 and c[5] in ("+", "-") else "."
             except (ValueError, IndexError):
+                continue
+            if score < MIN_SCORE:
                 continue
             out_fh.write(f"{chrom}\t{pos-1}\t{pos}\t{c[3]}\t{score}\t{strand}\n")
 
@@ -123,6 +140,8 @@ def to_bed_red_ml(dirpath, out_fh):
                 score = _score1000(c[7])
                 strand = c[2] if c[2] in ("+", "-") else "."
             except (ValueError, IndexError):
+                continue
+            if score < MIN_SCORE:
                 continue
             out_fh.write(f"{chrom}\t{pos-1}\t{pos}\t{edit_type}\t{score}\t{strand}\n")
 
@@ -151,6 +170,8 @@ def to_bed_bcftools(bcf_path, out_fh):
             score = _score1000(float(c[5]) / 100.0 if c[5] != "." else 0)
         except (ValueError, IndexError):
             continue
+        if score < MIN_SCORE:
+            continue
         out_fh.write(f"{chrom}\t{pos-1}\t{pos}\t{edit_type}\t{score}\t.\n")
 
 
@@ -170,14 +191,17 @@ def to_bed_redinet(path, out_fh):
             chrom = row.get("chrom", row.get("chromosome", c[0] if c else ""))
             pos_str = row.get("position", row.get("pos", c[1] if len(c) > 1 else ""))
             prob = row.get("redinet_probability", row.get("probability", row.get("score", 0)))
-            frac = row.get("agfreq", row.get("frequency", prob))
-            strand = row.get("strand", ".")
+            s = row.get("strand", ".")
+            strand = "+" if s == "0" else ("-" if s == "1" else (s if s in ("+", "-") else "."))
             if not chrom or not pos_str:
                 continue
             try:
                 pos = int(pos_str)
                 score = _score1000(prob)
+                cov = int(row.get("coverage", row.get("cov", 0)))
             except (ValueError, TypeError):
+                continue
+            if cov < MIN_COV or score < MIN_SCORE:
                 continue
             out_fh.write(f"{chrom}\t{pos-1}\t{pos}\tAG\t{score}\t{strand}\n")
 
@@ -208,7 +232,10 @@ def to_bed_marine(path, out_fh):
             try:
                 pos = int(pos_str)
                 score = _score1000(frac)
+                cov = int(row.get("coverage", row.get("dp", row.get("depth", 0))))
             except (ValueError, TypeError):
+                continue
+            if cov < MIN_COV or score < MIN_SCORE:
                 continue
             out_fh.write(f"{chrom}\t{pos-1}\t{pos}\t{edit_type}\t{score}\t{strand}\n")
 
@@ -227,11 +254,19 @@ CONVERTERS = {
 
 
 def main():
+    global MIN_COV, MIN_SCORE
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--tool", required=True, choices=list(CONVERTERS))
     ap.add_argument("--input", required=True, help="Tool output file or directory")
     ap.add_argument("--output", required=True, help="Output BED file path")
+    ap.add_argument("--min-cov", type=int, default=0,
+                    help="Minimum coverage (depth) to include a site")
+    ap.add_argument("--min-score", type=int, default=0,
+                    help="Minimum BED score (0-1000) to include a site")
     args = ap.parse_args()
+
+    MIN_COV = args.min_cov
+    MIN_SCORE = args.min_score
 
     fn = CONVERTERS[args.tool]
     os.makedirs(os.path.dirname(os.path.abspath(args.output)), exist_ok=True)

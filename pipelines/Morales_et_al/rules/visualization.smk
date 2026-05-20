@@ -38,7 +38,6 @@ _TOOL_DIR = {
     "redml":      "red_ml",
     "bcftools":   "bcftools",
     "redinet":    "redinet",
-    "marine":     "marine",
 }
 
 # Tool-output filename/dir relative to results/tools/{aligner}/{tool_dir}/
@@ -51,7 +50,6 @@ _TOOL_OUTPUT = {
     "redml":      "{condition}_{sample}_output",
     "bcftools":   "{condition}_{sample}.bcf",
     "redinet":    "{condition}_{sample}.predictions.tsv",
-    "marine":     "{condition}_{sample}/final_filtered_site_info.tsv",
 }
 
 
@@ -127,7 +125,9 @@ rule tool_output_to_bed:
     log:
         stderr="results/logs/{tool}_{aligner}_{condition}_{sample}.to_bed.err"
     params:
-        script=os.path.join(_VIZ_SCRIPTS, "tool_output_to_bed.py")
+        script=os.path.join(_VIZ_SCRIPTS, "tool_output_to_bed.py"),
+        min_cov=config.get("visualization", {}).get("bigbed_min_cov", 0),
+        min_score=config.get("visualization", {}).get("bigbed_min_score", 0)
     shell:
         r"""
         set -euo pipefail
@@ -137,6 +137,8 @@ rule tool_output_to_bed:
             --tool {wildcards.tool} \
             --input {input} \
             --output {output} \
+            --min-cov {params.min_cov} \
+            --min-score {params.min_score} \
             2> {log.stderr}
         """
 
@@ -165,17 +167,18 @@ rule sort_and_bigbed:
         mem_mb=lambda wildcards, attempt: 4000 * (1.5 ** (attempt - 1)),
         runtime=lambda wildcards, attempt: 30 * (2 ** (attempt - 1))
     envmodules:
-        "ucsc-tools"
+        "ucsctools"
     log:
         stderr="results/logs/{tool}_{aligner}_{condition}_{sample}.bigbed.err"
     shell:
         r"""
         set -euo pipefail
+        module load ucsctools
         if [ ! -s {input.bed} ]; then
             # bedToBigBed requires at least one record; write a dummy if empty
-            echo "chr1\t0\t1\t.\t0\t." > {input.bed}
+            printf "chr1\t0\t1\t.\t0\t.\n" > {input.bed}
         fi
-        bedToBigBed -type=bed6 {input.bed} {input.sizes} {output} 2> {log.stderr}
+        bedToBigBed -type=bed3+3 {input.bed} {input.sizes} {output} 2> {log.stderr}
         """
 
 
