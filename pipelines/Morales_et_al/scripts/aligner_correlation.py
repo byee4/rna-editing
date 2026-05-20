@@ -146,7 +146,10 @@ def main():
         subset = tool_subsets.get(tool, pd.DataFrame())
         aligner_df = tool_aligner_matrix(subset, tool)
         if aligner_df is None:
-            print(f"  [skip] {tool}: fewer than 2 aligners found", file=sys.stderr)
+            print(f"  [skip] {tool}: fewer than 2 aligners found — writing empty output",
+                  file=sys.stderr)
+            tsv_out = os.path.join(args.outdir, f"aligner_correlation_{tool}.tsv")
+            pd.DataFrame().to_csv(tsv_out, sep="\t")
             continue
         print(f"  {tool}: {aligner_df.shape[1]} aligners, {aligner_df.shape[0]} positions",
               file=sys.stderr)
