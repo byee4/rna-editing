@@ -23,7 +23,6 @@ import subprocess
 import sys
 
 import numpy as np
-import pandas as pd
 
 
 # ---------------------------------------------------------------------------
@@ -429,23 +428,64 @@ def build_matrices(results_dir, tools, aligners, conditions, samples):
     return cov_data, frac_data, score_data
 
 
-def data_to_df(data_dict):
+def write_matrices_streaming(cov_data, frac_data, score_data, outdir, chunk=50_000):
     """
-    Convert {col -> {(chrom,pos) -> val}} to a DataFrame with 0-imputed missing values.
-    Row index: 'chrom:pos' strings sorted by (chrom, int(pos)).
+    Write three position matrices to TSV files in a chunked streaming fashion.
+
+    Avoids allocating a full N×M dense array in memory (which OOMs when reditools
+    outputs have millions of positions × ~100 columns).  Instead, processes
+    chunk rows at a time across all three output files simultaneously.
     """
+    import gc
+
+    cols = list(cov_data.keys())
+
+    # Union of all positions across the three data dicts
+    pos_set = set()
+    for d in (cov_data, frac_data, score_data):
+        for cd in d.values():
+            pos_set.update(cd.keys())
     all_positions = sorted(
-        {pos for col_data in data_dict.values() for pos in col_data},
+        pos_set,
         key=lambda t: (t[0], int(t[1]) if t[1].isdigit() else 0),
     )
-    index = [f"{chrom}:{pos}" for chrom, pos in all_positions]
-    cols = list(data_dict.keys())
-    arr = np.zeros((len(all_positions), len(cols)), dtype=float)
-    for j, col in enumerate(cols):
-        col_data = data_dict[col]
-        for i, pos_key in enumerate(all_positions):
-            arr[i, j] = col_data.get(pos_key, 0.0)
-    return pd.DataFrame(arr, index=index, columns=cols)
+    del pos_set
+    gc.collect()
+
+    n_pos, n_cols = len(all_positions), len(cols)
+    header = "\t" + "\t".join(cols) + "\n"
+
+    paths = [
+        os.path.join(outdir, "edit_coverage_matrix.tsv"),
+        os.path.join(outdir, "edit_fraction_matrix.tsv"),
+        os.path.join(outdir, "tool_score_matrix.tsv"),
+    ]
+    data_dicts = [cov_data, frac_data, score_data]
+
+    with open(paths[0], "w") as f0, open(paths[1], "w") as f1, open(paths[2], "w") as f2:
+        handles = [f0, f1, f2]
+        for fh in handles:
+            fh.write(header)
+
+        for start in range(0, n_pos, chunk):
+            chunk_pos = all_positions[start : start + chunk]
+            labels = [f"{t[0]}:{t[1]}" for t in chunk_pos]
+            for fh, data in zip(handles, data_dicts):
+                # Build chunk array (chunk_rows × n_cols) — small and transient
+                arr = np.zeros((len(chunk_pos), n_cols), dtype=np.float32)
+                for j, col in enumerate(cols):
+                    cd = data[col]
+                    for i, k in enumerate(chunk_pos):
+                        arr[i, j] = cd.get(k, 0.0)
+                lines = [
+                    labels[i] + "\t" + "\t".join(f"{v:.6g}" for v in arr[i])
+                    for i in range(len(chunk_pos))
+                ]
+                fh.write("\n".join(lines) + "\n")
+                del arr
+
+    for path in paths:
+        print(f"  Wrote {path}  ({n_pos} positions × {n_cols} columns)", file=sys.stderr)
 
 
 # ---------------------------------------------------------------------------
@@ -476,16 +516,7 @@ def main():
         args.conditions, args.samples
     )
 
-    for label, data in [
-        ("edit_coverage_matrix", cov_data),
-        ("edit_fraction_matrix", frac_data),
-        ("tool_score_matrix",    score_data),
-    ]:
-        df = data_to_df(data)
-        out = os.path.join(args.outdir, f"{label}.tsv")
-        df.to_csv(out, sep="\t")
-        print(f"  Wrote {out}  ({len(df)} positions × {len(df.columns)} columns)",
-              file=sys.stderr)
+    write_matrices_streaming(cov_data, frac_data, score_data, args.outdir)
 
 
 if __name__ == "__main__":
