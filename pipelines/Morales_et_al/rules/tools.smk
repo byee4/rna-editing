@@ -352,23 +352,25 @@ rule reditools3:
         """
 
 
-rule reditools_redinet:
-    # Step 1 of the REDInet workflow: run REDItoolDnaRna.py (REDItools v1) to
-    # produce the tabular output format that REDInet_Inference.py expects.
-    # Output is a directory because the outTable filename includes the PID.
+rule reditools_redinet_by_chrom:
+    # Step 1a of the REDInet workflow: run REDItoolDnaRna.py on a single-chromosome
+    # BAM. The split BAM naturally restricts output to that chromosome. Output is a
+    # per-chromosome temp directory because the tool names its outTable file using the PID.
     input:
-        bam="results/mapped/{aligner}/{condition}_{sample}.rmdup.bam",
-        bai="results/mapped/{aligner}/{condition}_{sample}.rmdup.bam.bai"
+        bam="results/mapped/{aligner}/{condition}_{sample}.split/{chrom}.bam",
+        bai="results/mapped/{aligner}/{condition}_{sample}.split/{chrom}.bam.bai"
     output:
-        directory("results/tools/{aligner}/reditools_redinet/{condition}_{sample}_raw/")
+        temp(directory("results/tools/{aligner}/reditools_redinet/{condition}_{sample}_split/{chrom}/"))
+    wildcard_constraints:
+        chrom="[^/]+"
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: 36000 * (1.5 ** (attempt - 1)),
-        runtime=lambda wildcards, attempt: 1200 * (1.5 ** (attempt - 1))
+        runtime=lambda wildcards, attempt: 120 * (1.5 ** (attempt - 1))
     container: container_for("reditools")
     log:
-        stdout="results/logs/{aligner}_{condition}_{sample}.reditools_redinet.out",
-        stderr="results/logs/{aligner}_{condition}_{sample}.reditools_redinet.err"
+        stdout="results/logs/{aligner}_{condition}_{sample}_{chrom}.reditools_redinet.out",
+        stderr="results/logs/{aligner}_{condition}_{sample}_{chrom}.reditools_redinet.err"
     params:
         ref=config["references"]["fasta"],
         strand=config["params"]["redinet"]["reditools_strand"],
@@ -390,6 +392,47 @@ rule reditools_redinet:
             -c 0,{params.min_cov} \
             -t {threads} \
             1> {log.stdout} 2> {log.stderr}
+        """
+
+
+def _reditools_redinet_chrom_dirs(wildcards):
+    chrom_file = checkpoints.get_chrom_list.get(
+        aligner=wildcards.aligner,
+        condition=wildcards.condition,
+        sample=wildcards.sample,
+    ).output[0]
+    chroms = [c for c in open(chrom_file).read().strip().split("\n") if c]
+    return [
+        f"results/tools/{wildcards.aligner}/reditools_redinet/"
+        f"{wildcards.condition}_{wildcards.sample}_split/{chrom}/"
+        for chrom in chroms
+    ]
+
+
+rule join_reditools_redinet_output:
+    # Step 1b: merge all per-chromosome outTable files into a single directory.
+    # Header is taken from the first chromosome; subsequent files skip their header.
+    # The merged outTable_merged file is what reditools_redinet_bgzip consumes.
+    input:
+        _reditools_redinet_chrom_dirs
+    output:
+        directory("results/tools/{aligner}/reditools_redinet/{condition}_{sample}_raw/")
+    localrule: True
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p {output}
+        first=1
+        for chrom_dir in {input}; do
+            OUTTABLE=$(find "$chrom_dir" -name "outTable_*" | head -1)
+            test -n "$OUTTABLE" || {{ echo "No outTable_* in $chrom_dir" >&2; exit 1; }}
+            if [ "$first" -eq 1 ]; then
+                cat "$OUTTABLE" > {output}/outTable_merged
+                first=0
+            else
+                tail -n +2 "$OUTTABLE" >> {output}/outTable_merged
+            fi
+        done
         """
 
 
