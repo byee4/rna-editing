@@ -247,8 +247,8 @@ def parse_jacusa2(filepath):
 def parse_redinet(filepath):
     """
     REDInet predictions TSV.
-    Expected cols (from REDInet_Inference_light_ver.py output):
-      chrom  position  strand  coverage  agfreq  REDInet_class  REDInet_probability
+    Actual cols from REDInet_Inference_light_ver.py output:
+      region  position  Strand  FreqAGrna  [A,C,G,T]  start  stop  int_len  TabixLen  snp_proba  ed_proba  y_hat
     """
     sites = {}
     if not os.path.exists(filepath) or os.path.getsize(filepath) == 0:
@@ -268,8 +268,8 @@ def parse_redinet(filepath):
             pos = row.get("position", row.get("pos", c[1] if len(c) > 1 else ""))
             try:
                 cov = float(row.get("coverage", row.get("cov", 0)))
-                frac = float(row.get("agfreq", row.get("frequency", row.get("freq", 0))))
-                score = float(row.get("redinet_probability", row.get("probability", row.get("score", frac))))
+                frac = float(row.get("agfreq", row.get("freqagrna", row.get("frequency", row.get("freq", 0)))))
+                score = float(row.get("redinet_probability", row.get("ed_proba", row.get("probability", row.get("score", frac)))))
             except (ValueError, KeyError):
                 continue
             if chrom and pos:
