@@ -24,7 +24,7 @@ RUN Rscript -e 'install.packages(c("caret","data.table","ROCR","randomForest","e
 # Clone RED-ML and place red_ML.pl on PATH
 RUN git clone --depth 1 https://github.com/BGIRED/RED-ML.git /opt/red_ml \
     && test -f /opt/red_ml/bin/red_ML.pl \
-    && chmod +x /opt/red_ml/bin/red_ML.pl
+    && chmod +x /opt/red_ml/bin/*
 
 COPY validate.sh /usr/local/bin/validate-red_ml
 RUN chmod +x /usr/local/bin/validate-red_ml

@@ -64,6 +64,8 @@ wgs_samples:
     - "/tscc/nfs/home/bay001/projects/codebase/rna-editing/data/small_examples/gene_APP_GAPDH/HEK293_WGS_SRR10129632_R2.fastq.gz"
 
 # Path to the Benchmark-of-RNA-Editing-Detection-Tools/Downstream directory.
+# Requires git submodule init && git submodule update to populate:
+#   pipelines/Morales_et_al/Benchmark-of-RNA-Editing-Detection-Tools/
 downstream_scripts_dir: "/tscc/nfs/home/bay001/projects/codebase/rna-editing/pipelines/Morales_et_al/Benchmark-of-RNA-Editing-Detection-Tools/Downstream"
 
 # Scratch directory for mktemp -d inside containers (must be writable lustre path)
@@ -88,17 +90,32 @@ params:
   jacusa2:
     pileup_filter: "D"
   reditools3:
-    strand: 0
+    strand: 0       # 0=unstranded, 1=stranded, 2=reverse-stranded
     map_quality: 20
     base_quality: 30
   redinet:
-    reditools_strand: 0
+    reditools_strand: 0    # REDItoolDnaRna.py -s: 0=no strand inference, 1=infer
     map_quality: 20
     base_quality: 20
-    min_cov: 10
-    cov_threshold: 50
+    min_cov: 5             # lowered for small test (default 10)
+    cov_threshold: 5       # REDInet_Inference.py --C: min coverage (default 50)
     agfreq_threshold: 0.01
-    min_ag_subs: 3
+    min_ag_subs: 1         # min AG substitutions (default 3; lowered for small test)
   marine:
-    strandedness: 0
+    strandedness: 0      # 0=unstranded, 1=stranded, 2=reverse-stranded
     paired_end: true
+
+visualization:
+  tools:
+    - reditools
+    - reditools3
+    - sprint
+    - red_ml
+    - bcftools
+    - redinet
+  bigwig_binsize: 10
+  bigbed_min_cov: 0
+  bigbed_min_score: 0
+  ucsc_assembly: hg38
+  hub_name: "Morales_et_al_small RNA Editing"
+  hub_email: "user@example.com"

@@ -15,14 +15,15 @@ import unittest
 import yaml
 
 PIPELINE_DIR = os.path.join(
-    os.path.dirname(__file__), "..", "pipelines", "Morales_et_all"
+    os.path.dirname(__file__), "..", "pipelines", "Morales_et_al"
 )
 REPO_ROOT = os.path.join(os.path.dirname(__file__), "..")
+EXAMPLE_DIR = os.path.join(os.path.dirname(__file__), "..", "examples", "Morales_et_al")
 
 SMK_FILES = [
-    os.path.join(PIPELINE_DIR, "preprocessing.smk"),
-    os.path.join(PIPELINE_DIR, "tools.smk"),
-    os.path.join(PIPELINE_DIR, "downstream.smk"),
+    os.path.join(PIPELINE_DIR, "rules", "preprocessing.smk"),
+    os.path.join(PIPELINE_DIR, "rules", "tools.smk"),
+    os.path.join(PIPELINE_DIR, "rules", "morales_downstream.smk"),
     os.path.join(PIPELINE_DIR, "rules", "references.smk"),
     os.path.join(PIPELINE_DIR, "rules", "wgs.smk"),
 ]
@@ -42,7 +43,7 @@ def _parse_rules(smk_file):
     """Return dict of {rule_name: body_text} for non-localrule rules."""
     with open(smk_file) as fh:
         content = fh.read()
-    # Collect localrule names
+    # Collect localrule names from module-level 'localrules:' statements
     local_names = set()
     for m in re.finditer(r"^localrules:\s*(.*)", content, re.MULTILINE):
         for name in m.group(1).split(","):
@@ -52,8 +53,11 @@ def _parse_rules(smk_file):
     pattern = re.compile(r"^rule (\w+):\n((?:(?!^rule ).*\n?)*)", re.MULTILINE)
     for m in pattern.finditer(content):
         name = m.group(1)
-        if name not in local_names:
-            rules[name] = m.group(2)
+        body = m.group(2)
+        # Also exclude rules with inline 'localrule: True'
+        if name in local_names or re.search(r"^\s+localrule:\s*True", body, re.MULTILINE):
+            continue
+        rules[name] = body
     return rules
 
 
@@ -71,7 +75,7 @@ class TestAC3_NoUserSpecificPaths(unittest.TestCase):
     def test_no_user_paths_in_snakefiles_or_config(self):
         target_files = SMK_FILES + [
             os.path.join(PIPELINE_DIR, "Snakefile"),
-            os.path.join(PIPELINE_DIR, "config.yaml"),
+            os.path.join(EXAMPLE_DIR, "config.yaml"),
         ]
         for f in target_files:
             with open(f) as fh:
@@ -214,7 +218,7 @@ class TestAC8_MarkDuplicatesPicardWrapper(unittest.TestCase):
     """AC-8: mark_duplicates uses 'picard MarkDuplicates' wrapper, not java -jar."""
 
     def test_no_java_jar_in_preprocessing(self):
-        with open(os.path.join(PIPELINE_DIR, "preprocessing.smk")) as fh:
+        with open(os.path.join(PIPELINE_DIR, "rules", "preprocessing.smk")) as fh:
             content = fh.read()
         self.assertNotIn(
             "java -jar",
@@ -223,7 +227,7 @@ class TestAC8_MarkDuplicatesPicardWrapper(unittest.TestCase):
         )
 
     def test_mark_duplicates_uses_picard_wrapper(self):
-        rules = _parse_rules(os.path.join(PIPELINE_DIR, "preprocessing.smk"))
+        rules = _parse_rules(os.path.join(PIPELINE_DIR, "rules", "preprocessing.smk"))
         body = rules.get("mark_duplicates", "")
         self.assertIn(
             "picard MarkDuplicates",
@@ -246,7 +250,7 @@ class TestAC9_NoUserPathParams(unittest.TestCase):
 
     def test_sprint_uses_opt_path(self):
         """sprint rule must call python /opt/sprint/sprint_from_bam.py (FR-10)."""
-        rules = _parse_rules(os.path.join(PIPELINE_DIR, "tools.smk"))
+        rules = _parse_rules(os.path.join(PIPELINE_DIR, "rules", "tools.smk"))
         body = rules.get("sprint", "")
         self.assertIn(
             "/opt/sprint/",
@@ -256,7 +260,7 @@ class TestAC9_NoUserPathParams(unittest.TestCase):
 
     def test_jacusa2_uses_opt_path(self):
         """jacusa2 rule must call java -jar /opt/jacusa2/jacusa2.jar (FR-11)."""
-        rules = _parse_rules(os.path.join(PIPELINE_DIR, "tools.smk"))
+        rules = _parse_rules(os.path.join(PIPELINE_DIR, "rules", "tools.smk"))
         body = rules.get("jacusa2", "")
         self.assertIn(
             "/opt/jacusa2/",
@@ -269,16 +273,16 @@ class TestAC10_DownstreamParamDir(unittest.TestCase):
     """AC-10: No bare 'python Downstream/' references in downstream.smk."""
 
     def test_no_bare_downstream_references(self):
-        with open(os.path.join(PIPELINE_DIR, "downstream.smk")) as fh:
+        with open(os.path.join(PIPELINE_DIR, "rules", "morales_downstream.smk")) as fh:
             content = fh.read()
         self.assertNotIn(
             "python Downstream/",
             content,
-            msg="downstream.smk must not use bare 'python Downstream/' path",
+            msg="morales_downstream.smk must not use bare 'python Downstream/' path",
         )
 
     def test_downstream_rules_use_params_downstream_dir(self):
-        rules = _parse_rules(os.path.join(PIPELINE_DIR, "downstream.smk"))
+        rules = _parse_rules(os.path.join(PIPELINE_DIR, "rules", "morales_downstream.smk"))
         for name in ("run_downstream_parsers", "update_alu", "individual_analysis",
                      "reanalysis_multiple", "multiple_analysis"):
             body = rules.get(name, "")
@@ -293,7 +297,7 @@ class TestAC11_ConfigDownstreamScriptsDir(unittest.TestCase):
     """AC-11: config.yaml has downstream_scripts_dir key."""
 
     def test_downstream_scripts_dir_in_config(self):
-        with open(os.path.join(PIPELINE_DIR, "config.yaml")) as fh:
+        with open(os.path.join(EXAMPLE_DIR, "config.yaml")) as fh:
             cfg = yaml.safe_load(fh)
         self.assertIn(
             "downstream_scripts_dir",
@@ -302,7 +306,7 @@ class TestAC11_ConfigDownstreamScriptsDir(unittest.TestCase):
         )
 
     def test_no_tools_section_in_config(self):
-        with open(os.path.join(PIPELINE_DIR, "config.yaml")) as fh:
+        with open(os.path.join(EXAMPLE_DIR, "config.yaml")) as fh:
             cfg = yaml.safe_load(fh)
         self.assertNotIn(
             "tools",
@@ -311,7 +315,7 @@ class TestAC11_ConfigDownstreamScriptsDir(unittest.TestCase):
         )
 
     def test_containers_section_in_config(self):
-        with open(os.path.join(PIPELINE_DIR, "config.yaml")) as fh:
+        with open(os.path.join(EXAMPLE_DIR, "config.yaml")) as fh:
             cfg = yaml.safe_load(fh)
         self.assertIn("containers", cfg)
         # All 9 required container keys must be present
@@ -397,7 +401,7 @@ class TestAC17_AddMdTagUsesWgsContainer(unittest.TestCase):
     """AC-17: add_md_tag rule uses container_for('wgs') per D-7."""
 
     def test_add_md_tag_uses_wgs_container(self):
-        rules = _parse_rules(os.path.join(PIPELINE_DIR, "tools.smk"))
+        rules = _parse_rules(os.path.join(PIPELINE_DIR, "rules", "tools.smk"))
         body = rules.get("add_md_tag", "")
         self.assertIn(
             'container_for("wgs")',
@@ -411,7 +415,7 @@ class TestEdgeCases(unittest.TestCase):
 
     def test_ec1_downstream_submodule_documented_in_config(self):
         """EC-1/R-6: config.yaml has comment about git submodule init."""
-        with open(os.path.join(PIPELINE_DIR, "config.yaml")) as fh:
+        with open(os.path.join(EXAMPLE_DIR, "config.yaml")) as fh:
             raw = fh.read()
         self.assertIn(
             "submodule",
@@ -421,7 +425,7 @@ class TestEdgeCases(unittest.TestCase):
 
     def test_ec4_bcftools_sentinel_stdout(self):
         """EC-4/D-8: bcftools rule writes sentinel to log.stdout."""
-        rules = _parse_rules(os.path.join(PIPELINE_DIR, "tools.smk"))
+        rules = _parse_rules(os.path.join(PIPELINE_DIR, "rules", "tools.smk"))
         body = rules.get("bcftools", "")
         self.assertIn(
             "log.stdout",
@@ -431,7 +435,7 @@ class TestEdgeCases(unittest.TestCase):
 
     def test_ec5_jacusa2_log_paths_have_no_wildcards(self):
         """EC-5: jacusa2 log paths must be literal strings (no wildcards)."""
-        rules = _parse_rules(os.path.join(PIPELINE_DIR, "tools.smk"))
+        rules = _parse_rules(os.path.join(PIPELINE_DIR, "rules", "tools.smk"))
         body = rules.get("jacusa2", "")
         log_match = re.search(
             r"^\s+log:\s*\n((?:\s+.*\n)+)", body, re.MULTILINE
@@ -451,7 +455,7 @@ class TestEdgeCases(unittest.TestCase):
 
     def test_downstream_log_paths_have_no_wildcards(self):
         """EC-6: downstream rule log paths use literal rule names."""
-        rules = _parse_rules(os.path.join(PIPELINE_DIR, "downstream.smk"))
+        rules = _parse_rules(os.path.join(PIPELINE_DIR, "rules", "morales_downstream.smk"))
         for name in ("run_downstream_parsers", "update_alu", "individual_analysis",
                      "reanalysis_multiple", "multiple_analysis"):
             body = rules.get(name, "")
@@ -468,7 +472,7 @@ class TestEdgeCases(unittest.TestCase):
 
     def test_mark_duplicates_has_no_java_jar_with_heap_flag(self):
         """R-1 mitigation: mark_duplicates uses wrapper, not java -jar with heap."""
-        with open(os.path.join(PIPELINE_DIR, "preprocessing.smk")) as fh:
+        with open(os.path.join(PIPELINE_DIR, "rules", "preprocessing.smk")) as fh:
             content = fh.read()
         self.assertNotRegex(
             content,
@@ -478,7 +482,7 @@ class TestEdgeCases(unittest.TestCase):
 
     def test_star_mapping_resources_floor_is_32gb(self):
         """NFR-5: star_mapping base mem_mb must be >= 32000."""
-        rules = _parse_rules(os.path.join(PIPELINE_DIR, "preprocessing.smk"))
+        rules = _parse_rules(os.path.join(PIPELINE_DIR, "rules", "preprocessing.smk"))
         body = rules.get("star_mapping", "")
         mem_match = re.search(r"mem_mb\s*=\s*lambda[^:]+:\s*(\d+)", body)
         if mem_match:
@@ -491,7 +495,7 @@ class TestEdgeCases(unittest.TestCase):
 
     def test_jacusa2_resources_floor_is_32gb(self):
         """NFR-5: jacusa2 base mem_mb must be >= 32000."""
-        rules = _parse_rules(os.path.join(PIPELINE_DIR, "tools.smk"))
+        rules = _parse_rules(os.path.join(PIPELINE_DIR, "rules", "tools.smk"))
         body = rules.get("jacusa2", "")
         mem_match = re.search(r"mem_mb\s*=\s*lambda[^:]+:\s*(\d+)", body)
         if mem_match:
@@ -506,18 +510,22 @@ class TestEdgeCases(unittest.TestCase):
         """AC-2 idempotency: dry-run twice produces identical output."""
         result1 = subprocess.run(
             ["conda", "run", "-n", "snakemake9",
-             "snakemake", "-n", "--snakefile", "Snakefile",
-             "--configfile", "config.yaml", "--cores", "1",
+             "snakemake", "-n",
+             "--snakefile", os.path.join(PIPELINE_DIR, "Snakefile"),
+             "--configfile", os.path.join(EXAMPLE_DIR, "config.yaml"),
+             "--cores", "1",
              "--quiet", "rules"],
-            cwd=os.path.join(REPO_ROOT, "pipelines", "Morales_et_all"),
+            cwd=EXAMPLE_DIR,
             capture_output=True, text=True, timeout=60,
         )
         result2 = subprocess.run(
             ["conda", "run", "-n", "snakemake9",
-             "snakemake", "-n", "--snakefile", "Snakefile",
-             "--configfile", "config.yaml", "--cores", "1",
+             "snakemake", "-n",
+             "--snakefile", os.path.join(PIPELINE_DIR, "Snakefile"),
+             "--configfile", os.path.join(EXAMPLE_DIR, "config.yaml"),
+             "--cores", "1",
              "--quiet", "rules"],
-            cwd=os.path.join(REPO_ROOT, "pipelines", "Morales_et_all"),
+            cwd=EXAMPLE_DIR,
             capture_output=True, text=True, timeout=60,
         )
         self.assertEqual(result1.returncode, 0, msg="First dry-run failed")

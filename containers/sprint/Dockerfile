@@ -16,6 +16,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         python \
         python-dev \
         python-pip \
+        python3 \
+        python3-pip \
         wget \
         zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
@@ -32,8 +34,13 @@ RUN git clone --depth 1 https://github.com/jumphone/SPRINT.git /opt/sprint \
     && python -m pip install --no-cache-dir --upgrade "pip<21" "setuptools<45" wheel \
     && if [ -f /opt/sprint/setup.py ]; then python /opt/sprint/setup.py install; fi
 
+# Install pysam for proper BAM MAPQ rewriting (changesammapq.py produces
+# malformed BGZF blocks when processing STAR/HISAT2 BAMs)
+RUN pip3 install --no-cache-dir pysam
+
+COPY rewrite_mapq.py /usr/local/bin/rewrite_mapq.py
 COPY validate.sh /usr/local/bin/validate-sprint
-RUN chmod +x /usr/local/bin/validate-sprint
+RUN chmod +x /usr/local/bin/rewrite_mapq.py /usr/local/bin/validate-sprint
 
 WORKDIR /opt/sprint
 CMD ["validate-sprint"]
