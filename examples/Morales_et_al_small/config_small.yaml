@@ -102,3 +102,19 @@ params:
   marine:
     strandedness: 0      # 0=unstranded, 1=stranded, 2=reverse-stranded
     paired_end: true
+
+visualization:
+  tools:
+    - reditools
+    - reditools3
+    - sprint
+    - red_ml
+    - bcftools
+    - redinet
+    - marine
+  bigwig_binsize: 10
+  bigbed_min_cov: 0
+  bigbed_min_score: 0
+  ucsc_assembly: hg38
+  hub_name: "Morales_et_al_small RNA Editing"
+  hub_email: "user@example.com"

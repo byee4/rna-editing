@@ -190,7 +190,7 @@ rule hisat2_mapping:
         rg_id=lambda wildcards: f"{wildcards.condition}_{wildcards.sample}",
     shell:
         r"""
-        set -eu
+        set -euo pipefail
         hisat2 -p {threads} -x {params.idx_prefix} {params.reads} \
             --rg-id "{params.rg_id}" \
             --rg "SM:{params.rg_id}" --rg "PL:ILLUMINA" --rg "LB:{params.rg_id}" \
