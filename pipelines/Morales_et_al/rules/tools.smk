@@ -44,6 +44,7 @@ rule split_bam_by_chrom:
         runtime=lambda wildcards, attempt: 20 * (2 ** (attempt - 1))
     container: container_for("wgs")
     log:
+        stdout="results/logs/{aligner}_{condition}_{sample}_{chrom}.split_bam.out",
         stderr="results/logs/{aligner}_{condition}_{sample}_{chrom}.split_bam.err"
     shell:
         r"""
@@ -51,6 +52,7 @@ rule split_bam_by_chrom:
         mkdir -p "$(dirname {output.bam})"
         samtools view -b {input.bam} {wildcards.chrom} > {output.bam} 2> {log.stderr}
         samtools index {output.bam} 2>> {log.stderr}
+        echo "done" > {log.stdout}
         """
 
 
@@ -130,17 +132,24 @@ rule unzip_rmsk:
         mem_mb=lambda wildcards, attempt: 24000 * (1.5 ** (attempt - 1)),
         runtime=lambda wildcards, attempt: 10 * (2 ** (attempt - 1))
     container: container_for("sprint")
+    log:
+        stdout="results/logs/unzip_rmsk.out",
+        stderr="results/logs/unzip_rmsk.err"
     shell:
-        """
-        zcat {params.rmsk} > {output.rmsk}
+        r"""
+        set -euo pipefail
+        zcat {params.rmsk} > {output.rmsk} 2> {log.stderr}
+        echo "done" > {log.stdout}
         """
 
 
 rule sprint_mapq_bam:
     # STAR and HISAT2 emit MAPQ=255 for uniquely mapped reads; SPRINT rejects
-    # this value. Rewrite to MAPQ=30 using SPRINT's own changesammapq.py so
-    # the shared rmdup BAM is not modified. BWA assigns real MAPQ values and
-    # skips this rule via the wildcard_constraints guard below.
+    # this value. Rewrite to MAPQ=30 using rewrite_mapq.py (pysam-based) so
+    # the shared rmdup BAM is not modified. changesammapq.py (SPRINT's own
+    # utility) produces malformed BGZF blocks that SAMtools 1.2 inside
+    # sprint_from_bam.py cannot read, causing empty output for non-BWA aligners.
+    # BWA assigns real MAPQ values and skips this rule via wildcard_constraints.
     input:
         bam="results/mapped/{aligner}/{condition}_{sample}.rmdup.bam",
         bai="results/mapped/{aligner}/{condition}_{sample}.rmdup.bam.bai"
@@ -160,7 +169,7 @@ rule sprint_mapq_bam:
     shell:
         r"""
         set -euo pipefail
-        python /opt/sprint/utilities/changesammapq.py {input.bam} {output.bam} 30 2> {log.stderr}
+        python3 /usr/local/bin/rewrite_mapq.py {input.bam} {output.bam} 30 2> {log.stderr}
         samtools index {output.bam} 2>> {log.stderr}
         echo "done" > {log.stdout}
         """
