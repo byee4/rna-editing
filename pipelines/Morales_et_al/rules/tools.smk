@@ -239,7 +239,7 @@ rule red_ml:
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: 48000 * (1.5 ** (attempt - 1)),
-        runtime=lambda wildcards, attempt: 120 * (2 ** (attempt - 1))
+        runtime=lambda wildcards, attempt: 240 * (2 ** (attempt - 1))
     container: container_for("red_ml")
     log:
         stdout="results/logs/{aligner}_{condition}_{sample}.red_ml.out",

@@ -10,7 +10,7 @@ rule prepare_fastq:
     input:
         samplesheet_fastq_path
     output:
-        "data/fastq/{condition}_{sample}_{read}.fastq"
+        temp("data/fastq/{condition}_{sample}_{read}.fastq")
     shell:
         "zcat {input} > {output}"
 
