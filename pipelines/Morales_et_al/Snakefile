@@ -166,8 +166,15 @@ rule all:
         "results/compare_all_tools/edit_coverage_matrix.tsv",
         "results/compare_all_tools/edit_fraction_matrix.tsv",
         "results/compare_all_tools/tool_score_matrix.tsv",
-        # Tool and aligner correlation
-        expand("results/correlation/tool_correlation_{aligner}.tsv", aligner=_ALIGNERS),
+        # Intersection co-call table + per-output-type correlation (replaces the
+        # old mixed tool_correlation heatmap)
+        expand("results/correlation/intersect/edits_intersect_{aligner}.tsv", aligner=_ALIGNERS),
+        expand("results/correlation/intersect/tool_jaccard_{aligner}.tsv", aligner=_ALIGNERS),
+        expand("results/correlation/by_output_type/per-site-fraction-correlation_{aligner}.tsv", aligner=_ALIGNERS),
+        expand("results/correlation/by_output_type/per-gene-fraction-correlation_{aligner}.tsv", aligner=_ALIGNERS),
+        expand("results/correlation/by_output_type/qual-or-score-correlation_{aligner}.tsv", aligner=_ALIGNERS),
+        expand("results/correlation/by_output_type/read-count-correlation_{aligner}.tsv", aligner=_ALIGNERS),
+        # Aligner correlation (per-tool, across aligners) — unchanged
         expand("results/correlation/aligner_correlation_{tool}.tsv", tool=_BED_TOOLS),
         # Coverage BigWig (one per BAM)
         expand("results/bigwig/{aligner}/{condition}_{sample}.bw",

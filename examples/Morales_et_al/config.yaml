@@ -45,6 +45,10 @@ containers:
   jacusa2: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/jacusa2.sif"
   morales_downstream: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/morales_downstream.sif"
   redinet: "/tscc/nfs/home/bay001/projects/codebase/rna-editing/singularity/redinet.sif"
+  # Pulled directly from Docker Hub (no local Dockerfile):
+  #   module load singularitypro
+  #   singularity pull -F singularity/bedtools.sif docker://biocontainers/bedtools:v2.28.0_cv2
+  bedtools: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/bedtools.sif"
 
 # ==========================================
 # WGS Samples for HEK293T SNP Database
