@@ -25,6 +25,19 @@ import sys
 import numpy as np
 
 
+# Substitution classes kept by the parsers. Default is A->I (AG) plus its
+# reverse-strand complement (TC); overridden by --edit-type in main().
+def edit_type_set(edit_type):
+    """Return {edit, reverse-complement} in both 'AG' and 'A>G' notations."""
+    comp = {"A": "T", "T": "A", "G": "C", "C": "G"}
+    et = edit_type.upper()
+    rc = comp[et[0]] + comp[et[1]]
+    return {et, rc, f"{et[0]}>{et[1]}", f"{rc[0]}>{rc[1]}"}
+
+
+EDIT_TYPES = edit_type_set("AG")
+
+
 # ---------------------------------------------------------------------------
 # Per-tool parsers
 # Each returns dict[(chrom, pos_str)] -> (coverage, fraction, score)
@@ -51,7 +64,7 @@ def parse_reditools2(filepath):
             if len(c) < 9:
                 continue
             edit_type = c[7]
-            if edit_type not in ("AG", "TC"):
+            if edit_type not in EDIT_TYPES:
                 continue
             try:
                 cov = float(c[4])
@@ -83,7 +96,7 @@ def parse_reditools3(filepath):
             if header is not None:
                 row = dict(zip(header, c))
                 edit_type = row.get("allsubs", row.get("type", ""))
-                if edit_type not in ("AG", "TC"):
+                if edit_type not in EDIT_TYPES:
                     continue
                 try:
                     cov = float(row.get("coverage-q30", row.get("coverage", 0)))
@@ -97,7 +110,7 @@ def parse_reditools3(filepath):
                 # No header — assume same layout as REDItools2
                 if len(c) < 9:
                     continue
-                if c[7] not in ("AG", "TC"):
+                if c[7] not in EDIT_TYPES:
                     continue
                 try:
                     cov = float(c[4])
@@ -125,7 +138,7 @@ def parse_sprint(dirpath):
             if len(c) < 5:
                 continue
             edit_type = c[3] if len(c) > 3 else ""
-            if edit_type not in ("AG", "TC"):
+            if edit_type not in EDIT_TYPES:
                 continue
             chrom, pos = c[0], c[2]
             try:
@@ -156,7 +169,7 @@ def parse_red_ml(dirpath):
                 continue
             ref, alt = c[3], c[5]
             edit_type = ref + alt
-            if edit_type not in ("AG", "TC"):
+            if edit_type not in EDIT_TYPES:
                 continue
             try:
                 cov = float(c[4])
@@ -194,7 +207,7 @@ def parse_bcftools(bcf_path):
             continue
         chrom, pos, ref, alt = c[0], c[1], c[3], c[4]
         edit_type = ref + alt
-        if edit_type not in ("AG", "TC"):
+        if edit_type not in EDIT_TYPES:
             continue
         try:
             score = float(c[5]) if c[5] != "." else 0.0
@@ -299,7 +312,7 @@ def parse_marine(filepath):
             chrom = row.get("contig", row.get("chrom", row.get("chromosome", c[0] if c else "")))
             pos = row.get("position", row.get("pos", c[1] if len(c) > 1 else ""))
             edit_type = row.get("editing_type", row.get("type", row.get("ref_alt", "")))
-            if edit_type and edit_type not in ("AG", "TC", "A>G", "T>C"):
+            if edit_type and edit_type not in EDIT_TYPES:
                 continue
             try:
                 cov = float(row.get("coverage", row.get("cov", 0)))
@@ -506,11 +519,17 @@ def main():
                     help="Aligners to include")
     ap.add_argument("--conditions", nargs="+", required=True)
     ap.add_argument("--samples", nargs="+", required=True)
+    ap.add_argument("--edit-type", default="AG",
+                    help="Substitution to keep (plus its reverse complement). Default AG (A->I).")
     args = ap.parse_args()
+
+    global EDIT_TYPES
+    EDIT_TYPES = edit_type_set(args.edit_type)
 
     os.makedirs(args.outdir, exist_ok=True)
 
-    print("Building matrices...", file=sys.stderr)
+    print(f"Building matrices (edit_type={args.edit_type} -> {sorted(EDIT_TYPES)})...",
+          file=sys.stderr)
     cov_data, frac_data, score_data = build_matrices(
         args.results_dir, args.tools, args.aligners,
         args.conditions, args.samples

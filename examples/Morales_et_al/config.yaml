@@ -79,6 +79,15 @@ tmpdir: "/tscc/lustre/ddn/scratch/bay001/"
 # Tool Specific Parameters
 # ==========================================
 params:
+  # Single source of truth for filters shared across edit callers. Applied via each
+  # tool's own CLI flag where exposed (see docs/edit_calling_parameters.md).
+  # Production data: base_quality 30, min_coverage 10. This is the small example config,
+  # so min_coverage is lowered to 5.
+  common:
+    base_quality: 30
+    min_coverage: 5
+    edit_type: "AG"        # A->I; reverse-strand complement "TC" derived in code
+    min_tools: 2           # co-call threshold for compare_outputs
   fastx_trimmer:
     quality: 33
     length: 130
@@ -88,7 +97,6 @@ params:
   bcftools:
     max_depth: 10000
     map_quality: 20
-    base_quality: 20
   red_ml:
     p_value: 0.5
   jacusa2:
@@ -96,12 +104,9 @@ params:
   reditools3:
     strand: 0       # 0=unstranded, 1=stranded, 2=reverse-stranded
     map_quality: 20
-    base_quality: 30
   redinet:
     reditools_strand: 0    # REDItoolDnaRna.py -s: 0=no strand inference, 1=infer
     map_quality: 20
-    base_quality: 20
-    min_cov: 5             # lowered for small test (default 10)
     cov_threshold: 5       # REDInet_Inference.py --C: min coverage (default 50)
     agfreq_threshold: 0.01
     min_ag_subs: 1         # min AG substitutions (default 3; lowered for small test)

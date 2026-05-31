@@ -219,7 +219,8 @@ rule compare_all_tools:
         tools=" ".join(_BED_TOOLS + ["jacusa2"]),
         aligners=" ".join(_ALIGNERS),
         conditions=" ".join(config["conditions"]),
-        samples=" ".join(config["samples"])
+        samples=" ".join(config["samples"]),
+        edit_type=config["params"]["common"]["edit_type"]
     shell:
         r"""
         set -euo pipefail
@@ -231,6 +232,7 @@ rule compare_all_tools:
             --aligners {params.aligners} \
             --conditions {params.conditions} \
             --samples {params.samples} \
+            --edit-type {params.edit_type} \
             1> {log.stdout} 2> {log.stderr}
         """
 

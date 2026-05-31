@@ -32,3 +32,8 @@ snakemake -kps /tscc/nfs/home/bay001/projects/codebase/rna-editing/pipelines/Mor
 --profile /tscc/nfs/home/bay001/projects/codebase/rna-editing/profiles/tscc2 \
 --use-singularity
 ```
+
+The Morales_et_al callers share harmonized base-quality, min-coverage, and edit-type
+settings (`params.common` in the config); see
+[`docs/edit_calling_parameters.md`](docs/edit_calling_parameters.md) for the verified
+per-tool flag matrix and the dbSNP/simpleRepeat/Alu filtering policy.
