@@ -108,6 +108,10 @@ rule prepare_editing_filters:
     re-sorted into reference (.fai) order so it matches bcftools output order for
     streaming `bcftools view -T ^<bed>` exclusion. Alu is NOT excluded (it is an
     editing-enriched feature; see docs/edit_calling_parameters.md).
+
+    The UCSC dbSNP table includes alt/random contigs absent from the
+    no-alt analysis-set reference, so rows are filtered to contigs present in
+    the .fai before `bedtools sort -faidx` (which aborts on any unknown contig).
     """
     input:
         dbsnp=config["references"]["dbsnp"],
@@ -130,9 +134,12 @@ rule prepare_editing_filters:
         tmp="$(mktemp)"
         zcat {input.dbsnp} | awk 'BEGIN{{OFS="\t"}} {{print $2,$3,$4}}' > "$tmp"
         cat {input.simple_repeat} >> "$tmp"
-        bedtools sort -i "$tmp" | bedtools merge | bedtools sort -faidx {input.fai} \
+        # Keep only contigs present in the reference .fai; `bedtools sort -faidx`
+        # aborts on the alt/random contigs the UCSC dbSNP table carries.
+        awk 'NR==FNR{{ok[$1]=1; next}} ($1 in ok)' {input.fai} "$tmp" > "$tmp.flt"
+        bedtools sort -i "$tmp.flt" | bedtools merge | bedtools sort -faidx {input.fai} \
             > {output} 2> {log.stderr}
-        rm -f "$tmp"
+        rm -f "$tmp" "$tmp.flt"
         echo "done" > {log.stdout}
         """
 
