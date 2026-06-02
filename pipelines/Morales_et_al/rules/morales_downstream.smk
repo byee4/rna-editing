@@ -76,6 +76,14 @@ code = code.replace(
     "    df_filt = df_filt.dropna(subset=['wt', 'adarko'], how='all')\n"
     "    df_filt['wt'] = df_filt['wt'].fillna('')\n"
     "    df_filt['adarko'] = df_filt['adarko'].fillna('')")
+# pd.to_csv writes '' for empty strings; pd.read_csv re-reads them as NaN.
+# Add fillna at WTID/ADARID construction so .str.replace never sees a float.
+code = code.replace(
+    "data['wt'].str.replace('->', '')",
+    "data['wt'].fillna('').str.replace('->', '')")
+code = code.replace(
+    "data['adarko'].str.replace('->', '')",
+    "data['adarko'].fillna('').str.replace('->', '')")
 # rna-editing-51k: re-key the JACUSA2 export to the real condition names. The 'wt'
 # column is bases1* (= condition1) and 'adarko' is bases2* (= condition2), so the
 # positional keys map condition1 -> 'WT' slot and condition2 -> 'ADAR1KO' slot.
