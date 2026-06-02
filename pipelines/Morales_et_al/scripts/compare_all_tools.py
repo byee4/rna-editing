@@ -18,6 +18,7 @@ Run via:
 """
 
 import argparse
+import glob
 import os
 import subprocess
 import sys
@@ -354,9 +355,12 @@ def parse_redinet(filepath):
 
 def parse_marine(filepath):
     """
-    MARINE final_filtered_site_info.tsv.
-    Expected cols: contig  position  strand  editing_type  coverage  edited_reads
-                   edit_frequency  ...
+    MARINE edit-type-filtered site table (final_filtered_site_info.<EDIT_TYPE>.tsv).
+    Columns: site_id barcode contig position ref alt strand count coverage
+             conversion strand_conversion
+    MARINE has no edit-fraction column, so it is computed as count/coverage.
+    The file is already restricted to one strand_conversion by the Snakemake
+    filter rule; the EDIT_TYPES check below is a defensive no-op.
     """
     sites = {}
     if not os.path.exists(filepath) or os.path.getsize(filepath) == 0:
@@ -371,16 +375,17 @@ def parse_marine(filepath):
                 header = [x.lower() for x in c]
                 continue
             row = dict(zip(header, c))
-            chrom = row.get("contig", row.get("chrom", row.get("chromosome", c[0] if c else "")))
-            pos = row.get("position", row.get("pos", c[1] if len(c) > 1 else ""))
-            edit_type = row.get("editing_type", row.get("type", row.get("ref_alt", "")))
-            if edit_type and edit_type not in EDIT_TYPES:
+            chrom = row.get("contig", row.get("chrom", ""))
+            pos = row.get("position", row.get("pos", ""))
+            conversion = row.get("strand_conversion", row.get("conversion", ""))
+            if conversion and conversion not in EDIT_TYPES:
                 continue
             try:
-                cov = float(row.get("coverage", row.get("cov", 0)))
-                frac = float(row.get("edit_frequency", row.get("frequency", row.get("freq", 0))))
+                cov = float(row.get("coverage", 0))
+                edited = float(row.get("count", 0))
             except (ValueError, KeyError):
                 continue
+            frac = edited / cov if cov else 0.0
             if chrom and pos:
                 sites[(chrom, pos)] = (cov, frac, frac)
     return sites
@@ -428,12 +433,17 @@ def locate_tool_output(results_dir, tool_dir, aligner, condition, sample):
         os.path.join(base, f"{condition}_{sample}.out"),
         # redinet
         os.path.join(base, f"{condition}_{sample}.predictions.tsv"),
-        # marine
-        os.path.join(base, f"{condition}_{sample}", "final_filtered_site_info.tsv"),
     ]
     for p in candidates:
         if os.path.exists(p):
             return p
+    # marine: edit-type-filtered TSV (edit type baked into filename); match the
+    # filtered variant only, never the raw final_filtered_site_info.tsv.gz.
+    marine_hits = glob.glob(
+        os.path.join(base, f"{condition}_{sample}", "final_filtered_site_info.*.tsv")
+    )
+    if marine_hits:
+        return marine_hits[0]
     return None
 
 

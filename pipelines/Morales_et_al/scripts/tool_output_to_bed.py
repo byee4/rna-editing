@@ -212,6 +212,9 @@ def to_bed_redinet(path, out_fh):
 
 
 def to_bed_marine(path, out_fh):
+    """MARINE edit-type-filtered site table (final_filtered_site_info.<EDIT_TYPE>.tsv).
+    Columns: site_id barcode contig position ref alt strand count coverage
+             conversion strand_conversion. No fraction column; compute count/coverage."""
     if not os.path.exists(path) or os.path.getsize(path) == 0:
         return
     with open(path) as f:
@@ -226,18 +229,19 @@ def to_bed_marine(path, out_fh):
             row = dict(zip(header, c))
             chrom = row.get("contig", row.get("chrom", c[0] if c else ""))
             pos_str = row.get("position", row.get("pos", c[1] if len(c) > 1 else ""))
-            edit_type = row.get("editing_type", row.get("type", "AG"))
+            edit_type = row.get("strand_conversion", row.get("conversion", "AG"))
             if edit_type not in ("AG", "TC", "A>G", "T>C"):
                 continue
             edit_type = edit_type.replace(">", "")
-            frac = row.get("edit_frequency", row.get("frequency", 0))
             strand = row.get("strand", ".")
             if not chrom or not pos_str:
                 continue
             try:
                 pos = int(pos_str)
+                cov = int(float(row.get("coverage", 0)))
+                edited = float(row.get("count", 0))
+                frac = edited / cov if cov else 0.0
                 score = _score1000(frac)
-                cov = int(row.get("coverage", row.get("dp", row.get("depth", 0))))
             except (ValueError, TypeError):
                 continue
             if cov < MIN_COV or score < MIN_SCORE:
