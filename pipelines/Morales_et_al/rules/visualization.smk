@@ -39,6 +39,7 @@ _TOOL_DIR = {
     "bcftools":   "bcftools",
     "redinet":    "redinet",
     "jacusa2_call1": "jacusa2_call1",
+    "marine":     "marine",
 }
 
 # Tool-output filename/dir relative to results/tools/{aligner}/{tool_dir}/
@@ -52,6 +53,9 @@ _TOOL_OUTPUT = {
     "bcftools":   "{condition}_{sample}.bcf",
     "redinet":    "{condition}_{sample}.predictions.tsv",
     "jacusa2_call1": "{condition}_{sample}.out",
+    # MARINE: edit-type-filtered TSV; edit type baked into the filename (see
+    # filter_marine_by_edit_type in rules/tools.smk).
+    "marine":     "{condition}_{sample}/final_filtered_site_info." + config["params"]["common"]["edit_type"] + ".tsv",
 }
 
 

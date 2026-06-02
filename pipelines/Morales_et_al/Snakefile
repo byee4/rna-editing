@@ -84,7 +84,11 @@ if _RUN_JACUSA2:
 _BED_TOOLS = [t for t in config.get("visualization", {}).get("tools", [
     "reditools", "reditools3", "sprint", "red_ml",
     "bcftools", "redinet", "jacusa2_call1",
-]) if t not in ("jacusa2", "marine")]
+]) if t not in ("jacusa2",)]
+
+# Edit type baked into the MARINE filtered-output filename (see filter_marine_by_edit_type
+# in rules/tools.smk). e.g. "AG".
+_MARINE_EDIT_TYPE = config["params"]["common"]["edit_type"]
 
 
 def is_paired(condition, sample):
@@ -178,6 +182,9 @@ rule all:
         (["results/downstream/Downstream/JACUSA2_Table.csv"] if _RUN_JACUSA2 else []),
         # REDItools3 outputs (one per aligner per sample)
         expand("results/tools/{aligner}/reditools3/{condition}_{sample}.txt",
+               aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),
+        # MARINE edit-type-filtered outputs (one per aligner per sample)
+        expand("results/tools/{aligner}/marine/{condition}_{sample}/final_filtered_site_info." + _MARINE_EDIT_TYPE + ".tsv",
                aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),
         # REDInet step 2: bgzip+tabix indexed REDItoolDnaRna.py output
         expand("results/tools/{aligner}/reditools_redinet/{condition}_{sample}/{condition}_{sample}.output.gz",
