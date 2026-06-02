@@ -44,7 +44,7 @@ In addition to the `call-2` WT-vs-KO contrast (one `Jacusa.out` per aligner),
 the Morales_et_al pipeline runs JACUSA2 `call-1`, which identifies variants
 against the reference genome from a single condition (one MD-tagged BAM). Because
 `call-1` is single-condition it is **per-sample**, so its edit set is compared
-against the other per-sample tools (REDItools, SPRINT, RED-ML, BCFtools, REDInet):
+against the other per-sample tools (REDItools, SPRINT, RED-ML, BCFtools, REDInet, MARINE):
 the `bases11` A,C,G,T counts give per-site coverage and editing fraction plus the
 JACUSA2 score, which feed the comparison matrices, per-output-type correlations,
 and BigBed tracks.
@@ -62,3 +62,18 @@ those sites are filtered for the comparison is configurable via
 The same setting governs both the cross-tool comparison
 (`scripts/compare_all_tools.py`) and the BigBed track conversion
 (`scripts/tool_output_to_bed.py`).
+
+### MARINE (marine.py)
+
+The Yeo Lab's [MARINE](https://github.com/yeolab/marine) A-to-I detector runs from
+`marine.sif` on an MD-tagged BAM plus a gene-annotation BED6 derived from the reference GTF
+(`generate_marine_annotation`). It is parallelized per-chromosome (split MD BAM → MARINE with
+`--contigs` → join), mirroring the REDItools pattern. MARINE reports all twelve conversion
+types genome-wide, so the joined output is gzipped
+(`final_filtered_site_info.tsv.gz`) and an edit-type filter keeps only sites whose
+`strand_conversion` matches `params.common.edit_type` (`AG` → `A>G`), producing
+`final_filtered_site_info.AG.tsv` — the file fed into the comparison matrices, correlations,
+consensus analysis, and BigBed tracks. The edit type is baked into the filename so changing
+`edit_type` regenerates the filter without rerunning MARINE. `--strandedness` (default 2) is
+configurable via `params.marine.strandedness`; `--paired_end` is set per-sample when the
+samplesheet provides R2 reads. See `docs/tools_reference.md` for the full flag table.

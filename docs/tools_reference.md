@@ -27,6 +27,7 @@ Singularity/Apptainer container (see [Orthogonal verification](#orthogonal-verif
    - [JACUSA2 call-2 (differential)](#jacusa2-call-2-differential)
    - [JACUSA2 call-1 (per-sample)](#jacusa2-call-1-per-sample)
    - [REDInet (REDItoolDnaRna → classifier)](#redinet-reditooldnarna--classifier)
+   - [MARINE (marine.py)](#marine-marinepy)
 4. [Orthogonal verification](#orthogonal-verification)
 
 ---
@@ -598,6 +599,66 @@ region  position  Strand  FreqAGrna  [A,C,G,T]  start  stop  int_len  TabixLen  
 | `snp_proba` | Probability of being an SNP |
 | `ed_proba` | Probability of being a genuine edit |
 | `y_hat` | Binary classification: 1=editing, 0=SNP |
+
+---
+
+### MARINE (marine.py)
+
+**Container:** `marine.sif` (conda env `marine`, Python 3.8)  
+**GitHub:** https://github.com/yeolab/marine  
+**Mode:** Per-sample; bulk A-to-I detection on an MD-tagged BAM with gene annotation.  
+**Parallelization:** Per-chromosome, mirroring REDItools. The MD-tagged BAM is split by
+chromosome (`split_marine_md_bam_by_chrom`, reusing the `get_chrom_list` checkpoint), MARINE
+runs on each single-chromosome BAM with `--contigs {chrom}` (`marine_by_chrom`), and the
+per-chrom `final_filtered_site_info.tsv` files are concatenated (header kept once) and
+gzipped by `join_marine_output`.
+
+> **Container note:** MARINE imports `numba`/`matplotlib`, which fail under a read-only
+> `$HOME`. The rule exports `NUMBA_CACHE_DIR` and `MPLCONFIGDIR` to fresh temp dirs.
+> The entrypoint is `/opt/conda/envs/marine/bin/python /opt/marine/marine.py`.
+
+**Command:**
+```
+python /opt/marine/marine.py \
+    --bam_filepath {input.bam} --output_folder {outdir} \
+    --annotation_bedfile_path {marine_annotation_bed} \
+    --contigs {chrom} --strandedness {strandedness} \
+    --min_read_quality {min_read_quality} --min_base_quality {base_quality} \
+    [--paired_end] --cores {threads}
+```
+
+| Flag | Value | Meaning |
+|---|---|---|
+| `--bam_filepath` | `{aligner}/{cond}_{samp}.rmdup_MD.bam` | MD-tagged, indexed BAM (from `add_md_tag`) |
+| `--annotation_bedfile_path` | `references.marine_annotation_bed` | Gene BED6 (`generate_marine_annotation`, from GTF `gene` features) |
+| `--contigs` | chromosome wildcard | Restricts processing to the split chromosome |
+| `--strandedness` | `params.marine.strandedness` (default 2 = reverse-stranded) | Strand model; configurable |
+| `--min_read_quality` | `params.marine.min_read_quality` (20) | Minimum MAPQ |
+| `--min_base_quality` | `params.common.base_quality` (30) | Minimum base quality (harmonized with other callers) |
+| `--paired_end` | set per-sample iff `is_paired()` is true | Dedupe overlapping mate coverage (slower, accurate) |
+| `--cores` | rule `threads` (4) | CPUs; matched to allocated threads |
+
+Barcode flags (`--barcode_tag`, `--barcode_whitelist_file`) are single-cell only and omitted
+for bulk. Intermediate files are not kept (`--keep_intermediate_files` is not passed).
+
+**Output:** `final_filtered_site_info.tsv` (per output folder). MARINE reports **all** twelve
+conversion types genome-wide, so the raw joined file is gzipped to
+`final_filtered_site_info.tsv.gz`, and `filter_marine_by_edit_type` derives the comparison
+input by keeping only rows whose `strand_conversion` equals the configured edit type
+(`params.common.edit_type` "AG" → `A>G`). The edit type is baked into the filtered filename
+(`final_filtered_site_info.AG.tsv`) so changing `edit_type` regenerates the filter without
+rerunning MARINE (the TSCC profile uses `rerun-triggers: mtime`).
+
+Key columns of `final_filtered_site_info.tsv`:
+
+| Column | Description |
+|---|---|
+| `contig`, `position` | 1-based site coordinate |
+| `ref`, `alt`, `strand` | Reference/alt base and strand |
+| `count` | Edited-read count |
+| `coverage` | Site coverage (edit fraction = `count / coverage`; MARINE has no fraction column) |
+| `conversion` | Genomic ref>alt (e.g. `T>C`) |
+| `strand_conversion` | Strand-corrected conversion (e.g. `A>G`); the column the edit-type filter matches |
 
 ---
 

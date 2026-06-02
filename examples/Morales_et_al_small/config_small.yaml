@@ -55,6 +55,7 @@ containers:
   jacusa2: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/jacusa2.sif"
   morales_downstream: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/morales_downstream.sif"
   redinet: "/tscc/nfs/home/bay001/projects/codebase/rna-editing/singularity/redinet.sif"
+  marine: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/marine.sif"
 
 # ==========================================
 # WGS Samples for HEK293T SNP Database
@@ -120,8 +121,9 @@ params:
     agfreq_threshold: 0.01
     min_ag_subs: 1         # min AG substitutions (default 3; lowered for small test)
   marine:
-    strandedness: 0      # 0=unstranded, 1=stranded, 2=reverse-stranded
-    paired_end: true
+    strandedness: 2        # 0=unstranded, 1=stranded, 2=reverse-stranded
+    min_read_quality: 20   # MARINE --min_read_quality (MAPQ filter). --min_base_quality uses params.common.base_quality.
+                           # --paired_end is set per-sample from the samplesheet (is_paired), not configured here.
 
 visualization:
   tools:

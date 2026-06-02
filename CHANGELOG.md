@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased]
+
+### Added
+
+- **MARINE (marine.py) integration** into the Morales_et_al benchmark suite. New container `containers/marine/` (`marine.sif`, conda env `marine`) and rules in `rules/tools.smk`: `split_marine_md_bam_by_chrom`, `marine_by_chrom`, `join_marine_output`, `filter_marine_by_edit_type`, plus `generate_marine_annotation` in `rules/references.smk`. MARINE runs per-chromosome on the MD-tagged BAM (mirroring REDItools), with `--cores` matched to rule threads, `--strandedness` (default 2) and `--min_read_quality` (20) from config, `--min_base_quality` harmonized to `params.common.base_quality`, and `--paired_end` set per-sample via `is_paired()`.
+- **Edit-type filtering for MARINE**: the genome-wide, all-conversion `final_filtered_site_info.tsv` is gzipped, and `filter_marine_by_edit_type` derives a per-edit-type TSV (`final_filtered_site_info.<EDIT_TYPE>.tsv`, e.g. `A>G` from `params.common.edit_type`). The edit type is encoded in the filename so a change to `edit_type` regenerates only the filter step (the TSCC profile uses `rerun-triggers: mtime`).
+- MARINE wired into the cross-tool comparison matrices, intersection/correlation, consensus analysis, and BigBed/trackhub outputs (added to `_BED_TOOLS`).
+
+### Fixed
+
+- `containers/marine/validate.sh` pointed at a non-existent `marine.py` path and used `conda run`; corrected to call `/opt/marine/marine.py` via the env's Python with writable `NUMBA_CACHE_DIR`/`MPLCONFIGDIR`.
+- `parse_marine` (`scripts/compare_all_tools.py`) and `to_bed_marine` (`scripts/tool_output_to_bed.py`) read non-existent `editing_type`/`edit_frequency` columns; updated to MARINE's actual `strand_conversion`/`count`/`coverage` columns, computing edit fraction as `count / coverage`.
+
 ## [0.2.0] - 2026-05-07
 
 ### Added
