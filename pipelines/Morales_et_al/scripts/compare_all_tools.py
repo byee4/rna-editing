@@ -25,6 +25,24 @@ import sys
 import numpy as np
 
 
+# Substitution classes kept by the parsers. Default is A->I (AG) plus its
+# reverse-strand complement (TC); overridden by --edit-type in main().
+def edit_type_set(edit_type):
+    """Return {edit, reverse-complement} in both 'AG' and 'A>G' notations."""
+    comp = {"A": "T", "T": "A", "G": "C", "C": "G"}
+    et = edit_type.upper()
+    rc = comp[et[0]] + comp[et[1]]
+    return {et, rc, f"{et[0]}>{et[1]}", f"{rc[0]}>{rc[1]}"}
+
+
+EDIT_TYPES = edit_type_set("AG")
+
+# How JACUSA2 call-1 sites are filtered (set from --jacusa2-call1-filter in main()):
+#   "edit_type"  reditools-style — keep only sites whose ref->alt is in EDIT_TYPES
+#   "unfiltered" JACUSA2-style   — keep every site JACUSA2 call-1 reported
+JACUSA2_CALL1_FILTER = "edit_type"
+
+
 # ---------------------------------------------------------------------------
 # Per-tool parsers
 # Each returns dict[(chrom, pos_str)] -> (coverage, fraction, score)
@@ -51,7 +69,7 @@ def parse_reditools2(filepath):
             if len(c) < 9:
                 continue
             edit_type = c[7]
-            if edit_type not in ("AG", "TC"):
+            if edit_type not in EDIT_TYPES:
                 continue
             try:
                 cov = float(c[4])
@@ -83,7 +101,7 @@ def parse_reditools3(filepath):
             if header is not None:
                 row = dict(zip(header, c))
                 edit_type = row.get("allsubs", row.get("type", ""))
-                if edit_type not in ("AG", "TC"):
+                if edit_type not in EDIT_TYPES:
                     continue
                 try:
                     cov = float(row.get("coverage-q30", row.get("coverage", 0)))
@@ -97,7 +115,7 @@ def parse_reditools3(filepath):
                 # No header — assume same layout as REDItools2
                 if len(c) < 9:
                     continue
-                if c[7] not in ("AG", "TC"):
+                if c[7] not in EDIT_TYPES:
                     continue
                 try:
                     cov = float(c[4])
@@ -125,7 +143,7 @@ def parse_sprint(dirpath):
             if len(c) < 5:
                 continue
             edit_type = c[3] if len(c) > 3 else ""
-            if edit_type not in ("AG", "TC"):
+            if edit_type not in EDIT_TYPES:
                 continue
             chrom, pos = c[0], c[2]
             try:
@@ -156,7 +174,7 @@ def parse_red_ml(dirpath):
                 continue
             ref, alt = c[3], c[5]
             edit_type = ref + alt
-            if edit_type not in ("AG", "TC"):
+            if edit_type not in EDIT_TYPES:
                 continue
             try:
                 cov = float(c[4])
@@ -194,7 +212,7 @@ def parse_bcftools(bcf_path):
             continue
         chrom, pos, ref, alt = c[0], c[1], c[3], c[4]
         edit_type = ref + alt
-        if edit_type not in ("AG", "TC"):
+        if edit_type not in EDIT_TYPES:
             continue
         try:
             score = float(c[5]) if c[5] != "." else 0.0
@@ -241,6 +259,63 @@ def parse_jacusa2(filepath):
                 score = 0.0
             if chrom and pos:
                 sites[(chrom, pos)] = (0.0, 0.0, score)
+    return sites
+
+
+def parse_jacusa2_call1(filepath):
+    """
+    JACUSA2 call-1 output (one condition vs the reference genome): BED6 plus
+    method-specific columns. Relevant columns: contig start end name score strand
+    ref bases11 ... where bases11 holds comma-separated A,C,G,T counts for the
+    single sample. Unlike call-2 (group contrast), this yields per-site coverage
+    (sum of counts) and editing fraction (alt/coverage), so call-1 is comparable
+    to the other per-sample tools. When JACUSA2_CALL1_FILTER == "edit_type" only
+    sites whose ref->alt is in EDIT_TYPES are kept (reditools-style); "unfiltered"
+    keeps every site JACUSA2 reported (JACUSA2-style).
+    """
+    base_index = {"A": 0, "C": 1, "G": 2, "T": 3}
+    sites = {}
+    if not os.path.exists(filepath) or os.path.getsize(filepath) == 0:
+        return sites
+    header = None
+    with _open(filepath) as fh:
+        for line in fh:
+            if line.startswith("##"):
+                continue
+            if line.startswith("#"):
+                header = line.lstrip("#").rstrip("\n").split("\t")
+                continue
+            if header is None:
+                continue
+            c = line.rstrip("\n").split("\t")
+            row = dict(zip(header, c))
+            ref = row.get("ref", "").upper()
+            bases = row.get("bases11", "")
+            if ref not in base_index or "," not in bases:
+                continue
+            try:
+                counts = [float(x) for x in bases.split(",")]
+            except ValueError:
+                continue
+            if len(counts) < 4:
+                continue
+            cov = sum(counts[:4])
+            if cov <= 0:
+                continue
+            ref_i = base_index[ref]
+            alt_i = max((i for i in range(4) if i != ref_i), key=lambda i: counts[i])
+            if JACUSA2_CALL1_FILTER == "edit_type" and (ref + "ACGT"[alt_i]) not in EDIT_TYPES:
+                continue
+            frac = counts[alt_i] / cov
+            try:
+                score = float(row.get("score", c[4] if len(c) > 4 else 0))
+            except ValueError:
+                score = 0.0
+            try:
+                pos = str(int(row.get("start", c[1])) + 1)
+            except (ValueError, IndexError):
+                continue
+            sites[(row.get("contig", c[0] if c else ""), pos)] = (cov, frac, score)
     return sites
 
 
@@ -299,7 +374,7 @@ def parse_marine(filepath):
             chrom = row.get("contig", row.get("chrom", row.get("chromosome", c[0] if c else "")))
             pos = row.get("position", row.get("pos", c[1] if len(c) > 1 else ""))
             edit_type = row.get("editing_type", row.get("type", row.get("ref_alt", "")))
-            if edit_type and edit_type not in ("AG", "TC", "A>G", "T>C"):
+            if edit_type and edit_type not in EDIT_TYPES:
                 continue
             try:
                 cov = float(row.get("coverage", row.get("cov", 0)))
@@ -324,6 +399,7 @@ TOOL_PARSERS = {
     "redml":      ("red_ml",    parse_red_ml),
     "bcftools":   ("bcftools",  parse_bcftools),
     "jacusa2":    ("jacusa2",   parse_jacusa2),
+    "jacusa2_call1": ("jacusa2_call1", parse_jacusa2_call1),
     "redinet":    ("redinet",   parse_redinet),
     "marine":     ("marine",    parse_marine),
 }
@@ -348,6 +424,8 @@ def locate_tool_output(results_dir, tool_dir, aligner, condition, sample):
         os.path.join(base, f"{condition}_{sample}.bcf"),
         # jacusa2 (single file for all samples)
         os.path.join(base, "Jacusa.out"),
+        # jacusa2_call1 (per-sample, one condition vs reference)
+        os.path.join(base, f"{condition}_{sample}.out"),
         # redinet
         os.path.join(base, f"{condition}_{sample}.predictions.tsv"),
         # marine
@@ -500,17 +578,29 @@ def main():
                     help="Output directory for matrix TSVs")
     ap.add_argument("--tools", nargs="+",
                     default=["reditools", "sprint", "red_ml", "bcftools",
-                             "jacusa2", "reditools3", "redinet", "marine"],
+                             "jacusa2", "jacusa2_call1", "reditools3",
+                             "redinet", "marine"],
                     help="Tools to include")
     ap.add_argument("--aligners", nargs="+", default=["star"],
                     help="Aligners to include")
     ap.add_argument("--conditions", nargs="+", required=True)
     ap.add_argument("--samples", nargs="+", required=True)
+    ap.add_argument("--edit-type", default="AG",
+                    help="Substitution to keep (plus its reverse complement). Default AG (A->I).")
+    ap.add_argument("--jacusa2-call1-filter", default="edit_type",
+                    choices=["edit_type", "unfiltered"],
+                    help="JACUSA2 call-1 site filtering: 'edit_type' (reditools-style, "
+                         "keep only --edit-type sites) or 'unfiltered' (JACUSA2-style, keep all).")
     args = ap.parse_args()
+
+    global EDIT_TYPES, JACUSA2_CALL1_FILTER
+    EDIT_TYPES = edit_type_set(args.edit_type)
+    JACUSA2_CALL1_FILTER = args.jacusa2_call1_filter
 
     os.makedirs(args.outdir, exist_ok=True)
 
-    print("Building matrices...", file=sys.stderr)
+    print(f"Building matrices (edit_type={args.edit_type} -> {sorted(EDIT_TYPES)})...",
+          file=sys.stderr)
     cov_data, frac_data, score_data = build_matrices(
         args.results_dir, args.tools, args.aligners,
         args.conditions, args.samples

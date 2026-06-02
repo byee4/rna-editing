@@ -68,18 +68,20 @@ rule reditools_by_chrom:
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: 8000 * (1.5 ** (attempt - 1)),
-        runtime=lambda wildcards, attempt: 120 * (1.5 ** (attempt - 1))
+        runtime=lambda wildcards, attempt: 240 * (1.5 ** (attempt - 1))
     container: container_for("reditools")
     log:
         stdout="results/logs/{aligner}_{condition}_{sample}_{chrom}.reditools.out",
         stderr="results/logs/{aligner}_{condition}_{sample}_{chrom}.reditools.err"
     params:
-        ref=config["references"]["fasta"]
+        ref=config["references"]["fasta"],
+        base_quality=config["params"]["common"]["base_quality"],
+        min_coverage=config["params"]["common"]["min_coverage"]
     shell:
         r"""
         set -euo pipefail
         mkdir -p "$(dirname {output})"
-        reditools.py -S -C -bq 20 -q 20 \
+        reditools.py -S -C -bq {params.base_quality} -q 20 -l {params.min_coverage} \
             -f {input.bam} -r {params.ref} \
             -g {wildcards.chrom} -o {output} \
             1> {log.stdout} 2> {log.stderr}
@@ -205,7 +207,8 @@ rule sprint:
 rule bcftools:
     input:
         bam="results/mapped/{aligner}/{condition}_{sample}.rmdup.bam",
-        bai="results/mapped/{aligner}/{condition}_{sample}.rmdup.bam.bai"
+        bai="results/mapped/{aligner}/{condition}_{sample}.rmdup.bam.bai",
+        exclude="results/references/editing_exclude.bed"
     output:
         "results/tools/{aligner}/bcftools/{condition}_{sample}.bcf"
     threads: 1
@@ -220,12 +223,16 @@ rule bcftools:
         ref=config["references"]["fasta"],
         max_depth=config["params"]["bcftools"]["max_depth"],
         map_q=config["params"]["bcftools"]["map_quality"],
-        base_q=config["params"]["bcftools"]["base_quality"]
+        base_q=config["params"]["common"]["base_quality"],
+        min_cov=config["params"]["common"]["min_coverage"]
     shell:
         r"""
         set -euo pipefail
+        # Call variants, drop low-coverage sites, and exclude dbSNP/simpleRepeat
+        # positions (reference-ordered exclude BED via -T ^).
         bcftools mpileup -Ou --max-depth {params.max_depth} -q {params.map_q} -Q {params.base_q} -f {params.ref} {input.bam} 2> {log.stderr} | \
-            bcftools call -mv -O b -o {output} 2>> {log.stderr}
+            bcftools call -mv -Ou 2>> {log.stderr} | \
+            bcftools view -e 'INFO/DP<{params.min_cov}' -T ^{input.exclude} -O b -o {output} 2>> {log.stderr}
         echo "bcftools done" > {log.stdout}
         """
 
@@ -239,7 +246,7 @@ rule red_ml:
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: 48000 * (1.5 ** (attempt - 1)),
-        runtime=lambda wildcards, attempt: 120 * (2 ** (attempt - 1))
+        runtime=lambda wildcards, attempt: 240 * (2 ** (attempt - 1))
     container: container_for("red_ml")
     log:
         stdout="results/logs/{aligner}_{condition}_{sample}.red_ml.out",
@@ -248,14 +255,16 @@ rule red_ml:
         ref=config["references"]["fasta"],
         dbsnp=config["references"]["dbsnp"],
         simple_repeat=config["references"]["simple_repeat"],
-        alu=config["references"]["alu_bed"],
+        # Alu is a positive feature for RED-ML; pass --alu only when configured.
+        alu_flag=(f"--alu {config['references']['alu_bed']}"
+                  if config.get("references", {}).get("alu_bed") else ""),
         pval=config["params"]["red_ml"]["p_value"]
     shell:
         r"""
         set -euo pipefail
         red_ML.pl --rnabam {input.bam} --reference {params.ref} \
              --dbsnp {params.dbsnp} --simpleRepeat {params.simple_repeat} \
-             --alu {params.alu} --outdir {output} -p {params.pval} \
+             {params.alu_flag} --outdir {output} -p {params.pval} \
              1> {log.stdout} 2> {log.stderr}
         """
 
@@ -292,13 +301,15 @@ rule add_md_tag:
 rule jacusa2:
     input:
         wt_bams=lambda wildcards: expand(
-            "results/mapped/{aligner}/WT_{sample}.rmdup_MD.bam",
+            "results/mapped/{aligner}/{cond}_{sample}.rmdup_MD.bam",
             aligner=wildcards.aligner,
+            cond=config["jacusa2_comparison"]["condition1"],
             sample=config["samples"]
         ),
         ko_bams=lambda wildcards: expand(
-            "results/mapped/{aligner}/ADAR1KO_{sample}.rmdup_MD.bam",
+            "results/mapped/{aligner}/{cond}_{sample}.rmdup_MD.bam",
             aligner=wildcards.aligner,
+            cond=config["jacusa2_comparison"]["condition2"],
             sample=config["samples"]
         )
     output:
@@ -312,13 +323,46 @@ rule jacusa2:
         stdout="results/logs/{aligner}.jacusa2.out",
         stderr="results/logs/{aligner}.jacusa2.err"
     params:
-        pileup=config["params"]["jacusa2"]["pileup_filter"]
+        pileup=config["params"]["jacusa2"]["pileup_filter"],
+        base_quality=config["params"]["common"]["base_quality"],
+        min_coverage=config["params"]["common"]["min_coverage"]
     shell:
         r"""
         set -euo pipefail
         wt_list=$(echo {input.wt_bams} | tr ' ' ',')
         ko_list=$(echo {input.ko_bams} | tr ' ' ',')
-        java -jar /opt/jacusa2/jacusa2.jar call-2 -a {params.pileup} -p {threads} -r {output} $wt_list $ko_list \
+        java -jar /opt/jacusa2/jacusa2.jar call-2 -a {params.pileup} -q {params.base_quality} -c {params.min_coverage} -p {threads} -r {output} $wt_list $ko_list \
+            1> {log.stdout} 2> {log.stderr}
+        """
+
+
+# JACUSA2 call-1 identifies variants against the reference genome from a single
+# condition (one BAM), giving a per-sample edit set comparable to the other
+# per-sample tools. Unlike call-2 (WT-vs-KO group contrast), it needs no second
+# condition. Reuses the MD-tagged, indexed BAM produced by add_md_tag.
+# Source: https://github.com/dieterich-lab/JACUSA2#call-1
+rule jacusa2_call1:
+    input:
+        bam="results/mapped/{aligner}/{condition}_{sample}.rmdup_MD.bam",
+        bai="results/mapped/{aligner}/{condition}_{sample}.rmdup_MD.bam.bai"
+    output:
+        "results/tools/{aligner}/jacusa2_call1/{condition}_{sample}.out"
+    threads: 5
+    resources:
+        mem_mb=lambda wildcards, attempt: 48000 * (1.5 ** (attempt - 1)),
+        runtime=lambda wildcards, attempt: 240 * (2 ** (attempt - 1))
+    container: container_for("jacusa2")
+    log:
+        stdout="results/logs/{aligner}_{condition}_{sample}.jacusa2_call1.out",
+        stderr="results/logs/{aligner}_{condition}_{sample}.jacusa2_call1.err"
+    params:
+        pileup=config["params"]["jacusa2"]["pileup_filter"],
+        base_quality=config["params"]["common"]["base_quality"],
+        min_coverage=config["params"]["common"]["min_coverage"]
+    shell:
+        r"""
+        set -euo pipefail
+        java -jar /opt/jacusa2/jacusa2.jar call-1 -a {params.pileup} -q {params.base_quality} -c {params.min_coverage} -p {threads} -r {output} {input.bam} \
             1> {log.stdout} 2> {log.stderr}
         """
 
@@ -345,7 +389,8 @@ rule reditools3:
     params:
         strand=config["params"]["reditools3"]["strand"],
         map_quality=config["params"]["reditools3"]["map_quality"],
-        base_quality=config["params"]["reditools3"]["base_quality"]
+        base_quality=config["params"]["common"]["base_quality"],
+        min_coverage=config["params"]["common"]["min_coverage"]
     shell:
         r"""
         set -euo pipefail
@@ -357,6 +402,7 @@ rule reditools3:
             -s {params.strand} \
             -q {params.map_quality} \
             -bq {params.base_quality} \
+            -l {params.min_coverage} \
             1> {log.stdout} 2> {log.stderr}
         """
 
@@ -375,7 +421,7 @@ rule reditools_redinet_by_chrom:
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: 36000 * (1.5 ** (attempt - 1)),
-        runtime=lambda wildcards, attempt: 120 * (1.5 ** (attempt - 1))
+        runtime=lambda wildcards, attempt: 240 * (1.5 ** (attempt - 1))
     container: container_for("reditools")
     log:
         stdout="results/logs/{aligner}_{condition}_{sample}_{chrom}.reditools_redinet.out",
@@ -384,8 +430,8 @@ rule reditools_redinet_by_chrom:
         ref=config["references"]["fasta"],
         strand=config["params"]["redinet"]["reditools_strand"],
         map_quality=config["params"]["redinet"]["map_quality"],
-        base_quality=config["params"]["redinet"]["base_quality"],
-        min_cov=config["params"]["redinet"]["min_cov"]
+        base_quality=config["params"]["common"]["base_quality"],
+        min_cov=config["params"]["common"]["min_coverage"]
     shell:
         r"""
         set -euo pipefail

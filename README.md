@@ -32,3 +32,33 @@ snakemake -kps /tscc/nfs/home/bay001/projects/codebase/rna-editing/pipelines/Mor
 --profile /tscc/nfs/home/bay001/projects/codebase/rna-editing/profiles/tscc2 \
 --use-singularity
 ```
+
+The Morales_et_al callers share harmonized base-quality, min-coverage, and edit-type
+settings (`params.common` in the config); see
+[`docs/edit_calling_parameters.md`](docs/edit_calling_parameters.md) for the verified
+per-tool flag matrix and the dbSNP/simpleRepeat/Alu filtering policy.
+
+### JACUSA2 call-1 (per-sample variants vs. the reference genome)
+
+In addition to the `call-2` WT-vs-KO contrast (one `Jacusa.out` per aligner),
+the Morales_et_al pipeline runs JACUSA2 `call-1`, which identifies variants
+against the reference genome from a single condition (one MD-tagged BAM). Because
+`call-1` is single-condition it is **per-sample**, so its edit set is compared
+against the other per-sample tools (REDItools, SPRINT, RED-ML, BCFtools, REDInet):
+the `bases11` A,C,G,T counts give per-site coverage and editing fraction plus the
+JACUSA2 score, which feed the comparison matrices, per-output-type correlations,
+and BigBed tracks.
+
+`call-1` reports every position it judges variant, not only A-to-I sites. How
+those sites are filtered for the comparison is configurable via
+`params.jacusa2.call1_filter`:
+
+- `edit_type` (default) — **reditools-style**: keep only sites whose `ref->alt`
+  matches `params.common.edit_type` (e.g. `AG` plus its reverse complement `TC`),
+  matching how the other per-sample tools are filtered.
+- `unfiltered` — **JACUSA2-style**: keep every site JACUSA2 `call-1` reported,
+  regardless of substitution type.
+
+The same setting governs both the cross-tool comparison
+(`scripts/compare_all_tools.py`) and the BigBed track conversion
+(`scripts/tool_output_to_bed.py`).

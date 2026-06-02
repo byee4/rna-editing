@@ -13,6 +13,16 @@ aligners:
   - bwa
   - hisat2
 
+# Optional: enable the JACUSA2 differential-editing (call-2) comparison.
+# condition1/condition2 must match `conditions` derived from the samplesheet; they
+# map to JACUSA2's bases1*/bases2* groups and label the downstream JSON keys, table
+# rows, and figure panels (condition1 → left panel, condition2 → right) with the real
+# names, so any ordering is labeled truthfully.
+# Omit this entire block to skip JACUSA2 everywhere (caller, parsing, and figures).
+jacusa2_comparison:
+  condition1: WT
+  condition2: ADAR1KO
+
 # ==========================================
 # References and Annotations
 # ==========================================
@@ -45,6 +55,10 @@ containers:
   jacusa2: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/jacusa2.sif"
   morales_downstream: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/morales_downstream.sif"
   redinet: "/tscc/nfs/home/bay001/projects/codebase/rna-editing/singularity/redinet.sif"
+  # Pulled directly from Docker Hub (no local Dockerfile):
+  #   module load singularitypro
+  #   singularity pull -F singularity/bedtools.sif docker://biocontainers/bedtools:v2.28.0_cv2
+  bedtools: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/bedtools.sif"
 
 # ==========================================
 # WGS Samples for HEK293T SNP Database
@@ -75,6 +89,15 @@ tmpdir: "/tscc/lustre/ddn/scratch/bay001/"
 # Tool Specific Parameters
 # ==========================================
 params:
+  # Single source of truth for filters shared across edit callers. Applied via each
+  # tool's own CLI flag where exposed (see docs/edit_calling_parameters.md).
+  # Production data: base_quality 30, min_coverage 10. This is the small example config,
+  # so min_coverage is lowered to 5.
+  common:
+    base_quality: 30
+    min_coverage: 5
+    edit_type: "AG"        # A->I; reverse-strand complement "TC" derived in code
+    min_tools: 2           # co-call threshold for compare_outputs
   fastx_trimmer:
     quality: 33
     length: 130
@@ -84,20 +107,21 @@ params:
   bcftools:
     max_depth: 10000
     map_quality: 20
-    base_quality: 20
   red_ml:
     p_value: 0.5
   jacusa2:
     pileup_filter: "D"
+    # JACUSA2 call-1 (per-sample variants vs reference) site filtering in the
+    # cross-tool comparison and BigBed tracks:
+    #   edit_type  reditools-style — keep only edit_type sites (params.common.edit_type, e.g. A->I)
+    #   unfiltered JACUSA2-style   — keep every site JACUSA2 call-1 reported
+    call1_filter: "edit_type"
   reditools3:
     strand: 0       # 0=unstranded, 1=stranded, 2=reverse-stranded
     map_quality: 20
-    base_quality: 30
   redinet:
     reditools_strand: 0    # REDItoolDnaRna.py -s: 0=no strand inference, 1=infer
     map_quality: 20
-    base_quality: 20
-    min_cov: 5             # lowered for small test (default 10)
     cov_threshold: 5       # REDInet_Inference.py --C: min coverage (default 50)
     agfreq_threshold: 0.01
     min_ag_subs: 1         # min AG substitutions (default 3; lowered for small test)
@@ -113,6 +137,7 @@ visualization:
     - red_ml
     - bcftools
     - redinet
+    - jacusa2_call1
   bigwig_binsize: 10
   bigbed_min_cov: 0
   bigbed_min_score: 0

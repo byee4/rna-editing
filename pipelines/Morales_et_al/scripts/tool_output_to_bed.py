@@ -20,6 +20,11 @@ import sys
 MIN_COV = 0
 MIN_SCORE = 0
 
+# JACUSA2 call-1 site filtering — overridden by CLI --jacusa2-call1-filter
+#   "edit_type"  reditools-style — keep only AG/TC sites
+#   "unfiltered" JACUSA2-style   — keep every site JACUSA2 call-1 reported
+JACUSA2_CALL1_FILTER = "edit_type"
+
 
 def _score1000(frac):
     """Map editing fraction [0,1] to UCSC BED score [0,1000]."""
@@ -240,6 +245,51 @@ def to_bed_marine(path, out_fh):
             out_fh.write(f"{chrom}\t{pos-1}\t{pos}\t{edit_type}\t{score}\t{strand}\n")
 
 
+def to_bed_jacusa2_call1(path, out_fh):
+    """JACUSA2 call-1 output: BED6 + method columns. Derive coverage and editing
+    fraction from the bases11 A,C,G,T counts; BED score = fraction * 1000."""
+    if not os.path.exists(path) or os.path.getsize(path) == 0:
+        return
+    base_index = {"A": 0, "C": 1, "G": 2, "T": 3}
+    with open(path) as f:
+        header = None
+        for line in f:
+            if line.startswith("##"):
+                continue
+            if line.startswith("#"):
+                header = line.lstrip("#").rstrip("\n").split("\t")
+                continue
+            if header is None:
+                continue
+            c = line.rstrip("\n").split("\t")
+            row = dict(zip(header, c))
+            ref = row.get("ref", "").upper()
+            bases = row.get("bases11", "")
+            if ref not in base_index or "," not in bases:
+                continue
+            try:
+                counts = [float(x) for x in bases.split(",")]
+                pos = int(row.get("start", c[1])) + 1
+                chrom = row.get("contig", c[0])
+                strand = row.get("strand", ".")
+            except (ValueError, IndexError):
+                continue
+            if len(counts) < 4:
+                continue
+            cov = sum(counts[:4])
+            if cov <= 0:
+                continue
+            ref_i = base_index[ref]
+            alt_i = max((i for i in range(4) if i != ref_i), key=lambda i: counts[i])
+            edit_type = ref + "ACGT"[alt_i]
+            if JACUSA2_CALL1_FILTER == "edit_type" and edit_type not in ("AG", "TC"):
+                continue
+            score = _score1000(counts[alt_i] / cov)
+            if cov < MIN_COV or score < MIN_SCORE:
+                continue
+            out_fh.write(f"{chrom}\t{pos-1}\t{pos}\t{edit_type}\t{score}\t{strand}\n")
+
+
 CONVERTERS = {
     "reditools":  to_bed_reditools2,
     "reditools2": to_bed_reditools2,
@@ -250,11 +300,12 @@ CONVERTERS = {
     "bcftools":   to_bed_bcftools,
     "redinet":    to_bed_redinet,
     "marine":     to_bed_marine,
+    "jacusa2_call1": to_bed_jacusa2_call1,
 }
 
 
 def main():
-    global MIN_COV, MIN_SCORE
+    global MIN_COV, MIN_SCORE, JACUSA2_CALL1_FILTER
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--tool", required=True, choices=list(CONVERTERS))
     ap.add_argument("--input", required=True, help="Tool output file or directory")
@@ -263,10 +314,15 @@ def main():
                     help="Minimum coverage (depth) to include a site")
     ap.add_argument("--min-score", type=int, default=0,
                     help="Minimum BED score (0-1000) to include a site")
+    ap.add_argument("--jacusa2-call1-filter", default="edit_type",
+                    choices=["edit_type", "unfiltered"],
+                    help="JACUSA2 call-1 site filtering: 'edit_type' (reditools-style, "
+                         "keep only AG/TC) or 'unfiltered' (JACUSA2-style, keep all).")
     args = ap.parse_args()
 
     MIN_COV = args.min_cov
     MIN_SCORE = args.min_score
+    JACUSA2_CALL1_FILTER = args.jacusa2_call1_filter
 
     fn = CONVERTERS[args.tool]
     os.makedirs(os.path.dirname(os.path.abspath(args.output)), exist_ok=True)

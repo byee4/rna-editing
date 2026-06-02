@@ -56,11 +56,34 @@ config["samples"] = sorted(set(k[1] for k in SAMPLESHEET))
 # Aligners to run — consumed by rule all and downstream rules.
 _ALIGNERS = config.get("aligners", ["star"])
 
-# Per-sample tools included in BigBed and comparison matrices (JACUSA2 excluded
-# because it produces one comparison file per aligner, not per sample).
+# JACUSA2 differential comparison (optional). When `jacusa2_comparison` names two
+# condition groups, JACUSA2 runs a call-2 contrast between them and its outputs are
+# produced/parsed/plotted. When the key is absent, JACUSA2 is skipped everywhere.
+# condition1 → JACUSA2 bases1* group (left figure panel); condition2 → bases2* (right).
+# The downstream JSON keys, table rows, and figure panels are labeled with the real
+# condition1/condition2 names, so any ordering is labeled truthfully.
+JACUSA2_COMPARISON = config.get("jacusa2_comparison")
+_RUN_JACUSA2 = bool(JACUSA2_COMPARISON)
+# Defaults are only used as harmless placeholders when JACUSA2 is disabled (JACUSA2.py
+# does not run, and Multiple-Analysis.py keeps its hard-coded conditions in that path).
+_JAC_C1, _JAC_C2 = "WT", "ADAR1KO"
+if _RUN_JACUSA2:
+    _JAC_C1 = JACUSA2_COMPARISON.get("condition1")
+    _JAC_C2 = JACUSA2_COMPARISON.get("condition2")
+    _missing = [c for c in (_JAC_C1, _JAC_C2) if c not in config["conditions"]]
+    if None in (_JAC_C1, _JAC_C2) or _missing:
+        raise ValueError(
+            "jacusa2_comparison requires condition1/condition2 present in samplesheet "
+            "conditions {}; got {}".format(config["conditions"], (_JAC_C1, _JAC_C2))
+        )
+
+# Per-sample tools included in BigBed and comparison matrices. The call-2 JACUSA2
+# contrast ("jacusa2") is excluded because it produces one comparison file per
+# aligner, not per sample; JACUSA2 call-1 ("jacusa2_call1") is per-sample and is
+# kept so its reference-genome edit set is compared against the other tools.
 _BED_TOOLS = [t for t in config.get("visualization", {}).get("tools", [
     "reditools", "reditools3", "sprint", "red_ml",
-    "bcftools", "redinet",
+    "bcftools", "redinet", "jacusa2_call1",
 ]) if t not in ("jacusa2", "marine")]
 
 
@@ -130,7 +153,7 @@ rule all:
                aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),
         expand("results/tools/{aligner}/bcftools/{condition}_{sample}.bcf",
                aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),
-        expand("results/tools/{aligner}/jacusa2/Jacusa.out", aligner=_ALIGNERS),
+        expand("results/tools/{aligner}/jacusa2/Jacusa.out", aligner=_ALIGNERS) if _RUN_JACUSA2 else [],
         # Reference databases — built from WGS alignment when wgs_samples is configured
         _WGS_DB_FILES,
         # Downstream analysis — single run that processes all aligners together
@@ -140,7 +163,7 @@ rule all:
         "results/downstream/Data_SPRINT.json",
         "results/downstream/Data_REDML.json",
         "results/downstream/Data_BCFTools.json",
-        "results/downstream/Data_JACUSA2.json",
+        (["results/downstream/Data_JACUSA2.json"] if _RUN_JACUSA2 else []),
         "results/downstream/Data_REDItools2-Multiple.json",
         "results/downstream/Data_SPRINT-Multiple.json",
         "results/downstream/Data_BCFTools-Multiple.json",
@@ -152,7 +175,7 @@ rule all:
         "results/downstream/Downstream/BCFTools_Table.csv",
         "results/downstream/Downstream/REDItools2-Multiple_Table.csv",
         "results/downstream/Downstream/BCFTools-Multiple_Table.csv",
-        "results/downstream/Downstream/JACUSA2_Table.csv",
+        (["results/downstream/Downstream/JACUSA2_Table.csv"] if _RUN_JACUSA2 else []),
         # REDItools3 outputs (one per aligner per sample)
         expand("results/tools/{aligner}/reditools3/{condition}_{sample}.txt",
                aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),
@@ -166,8 +189,15 @@ rule all:
         "results/compare_all_tools/edit_coverage_matrix.tsv",
         "results/compare_all_tools/edit_fraction_matrix.tsv",
         "results/compare_all_tools/tool_score_matrix.tsv",
-        # Tool and aligner correlation
-        expand("results/correlation/tool_correlation_{aligner}.tsv", aligner=_ALIGNERS),
+        # Intersection co-call table + per-output-type correlation (replaces the
+        # old mixed tool_correlation heatmap)
+        expand("results/correlation/intersect/edits_intersect_{aligner}.tsv", aligner=_ALIGNERS),
+        expand("results/correlation/intersect/tool_jaccard_{aligner}.tsv", aligner=_ALIGNERS),
+        expand("results/correlation/by_output_type/per-site-fraction-correlation_{aligner}.tsv", aligner=_ALIGNERS),
+        expand("results/correlation/by_output_type/per-gene-fraction-correlation_{aligner}.tsv", aligner=_ALIGNERS),
+        expand("results/correlation/by_output_type/qual-or-score-correlation_{aligner}.tsv", aligner=_ALIGNERS),
+        expand("results/correlation/by_output_type/read-count-correlation_{aligner}.tsv", aligner=_ALIGNERS),
+        # Aligner correlation (per-tool, across aligners) — unchanged
         expand("results/correlation/aligner_correlation_{tool}.tsv", tool=_BED_TOOLS),
         # Coverage BigWig (one per BAM)
         expand("results/bigwig/{aligner}/{condition}_{sample}.bw",

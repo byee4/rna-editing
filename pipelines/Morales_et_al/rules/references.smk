@@ -50,7 +50,7 @@ rule generate_simple_repeat:
     resources:
         mem_mb=lambda wildcards, attempt: 4000 * (1.5 ** (attempt - 1)),
         runtime=lambda wildcards, attempt: 30 * (2 ** (attempt - 1))
-    container: container_for("wgs")
+    container: container_for("bedtools")
     log:
         stdout="results/logs/generate_simple_repeat.out",
         stderr="results/logs/generate_simple_repeat.err"
@@ -82,7 +82,7 @@ rule generate_alu_bed:
     resources:
         mem_mb=lambda wildcards, attempt: 4000 * (1.5 ** (attempt - 1)),
         runtime=lambda wildcards, attempt: 30 * (2 ** (attempt - 1))
-    container: container_for("wgs")
+    container: container_for("bedtools")
     log:
         stdout="results/logs/generate_alu_bed.out",
         stderr="results/logs/generate_alu_bed.err"
@@ -95,6 +95,57 @@ rule generate_alu_bed:
             | bedtools merge \
             > {output} \
             2> {log.stderr}
+        echo "done" > {log.stdout}
+        """
+
+
+rule prepare_editing_filters:
+    """
+    Build the dbSNP + simpleRepeat exclusion BED consumed by the bcftools rule.
+
+    dbSNP UCSC table cols: bin, chrom, chromStart, chromEnd, ...  -> BED via awk.
+    Concatenated with the merged simpleRepeat BED, then merged. The final file is
+    re-sorted into reference (.fai) order so it matches bcftools output order for
+    streaming `bcftools view -T ^<bed>` exclusion. Alu is NOT excluded (it is an
+    editing-enriched feature; see docs/edit_calling_parameters.md).
+
+    The UCSC dbSNP table includes alt/random contigs absent from the
+    no-alt analysis-set reference, so rows are filtered to contigs present in
+    the .fai before `bedtools sort -faidx` (which aborts on any unknown contig).
+    """
+    input:
+        dbsnp=config["references"]["dbsnp"],
+        simple_repeat=config["references"]["simple_repeat"],
+        fai=config["references"]["fasta"] + ".fai"
+    output:
+        "results/references/editing_exclude.bed"
+    threads: 1
+    resources:
+        mem_mb=lambda wildcards, attempt: 8000 * (1.5 ** (attempt - 1)),
+        runtime=lambda wildcards, attempt: 30 * (2 ** (attempt - 1))
+    params:
+        tmpdir=config.get("tmpdir", "/tmp")
+    container: container_for("bedtools")
+    log:
+        stdout="results/logs/prepare_editing_filters.out",
+        stderr="results/logs/prepare_editing_filters.err"
+    shell:
+        r"""
+        set -euo pipefail
+        export TMPDIR={params.tmpdir}
+        mkdir -p "$(dirname {output})"
+        tmp="$(mktemp -p {params.tmpdir})"
+        zcat {input.dbsnp} | awk 'BEGIN{{OFS="\t"}} {{print $2,$3,$4}}' > "$tmp"
+        cat {input.simple_repeat} >> "$tmp"
+        # Keep only contigs present in the reference .fai; `bedtools sort -faidx`
+        # aborts on the alt/random contigs the UCSC dbSNP table carries.
+        # unix sort spills to TMPDIR rather than loading the full file into RAM.
+        awk 'NR==FNR{{ok[$1]=1; next}} ($1 in ok)' {input.fai} "$tmp" \
+            | sort -k1,1 -k2,2n \
+            | bedtools merge \
+            | bedtools sort -faidx {input.fai} \
+            > {output} 2> {log.stderr}
+        rm -f "$tmp"
         echo "done" > {log.stdout}
         """
 

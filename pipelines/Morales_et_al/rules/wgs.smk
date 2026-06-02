@@ -109,7 +109,7 @@ rule wgs_call_variants:
     params:
         max_depth=config["params"]["bcftools"]["max_depth"],
         map_q=config["params"]["bcftools"]["map_quality"],
-        base_q=config["params"]["bcftools"]["base_quality"]
+        base_q=config["params"]["common"]["base_quality"]
     shell:
         r"""
         set -euo pipefail

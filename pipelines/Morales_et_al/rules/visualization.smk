@@ -7,7 +7,7 @@ Rules defined here:
   tool_output_to_bed        convert each tool's output to BED6
   sort_and_bigbed           sort BED + bedToBigBed → .bb
   compare_all_tools         build coverage/fraction/score matrices
-  tool_correlation          Spearman correlation among tools (per aligner)
+  compare_outputs           intersection co-call table + per-output-type correlation
   aligner_correlation       Spearman correlation among aligners (per tool)
   make_trackhub             assemble UCSC trackhub from BigWig + BigBed
 
@@ -38,6 +38,7 @@ _TOOL_DIR = {
     "redml":      "red_ml",
     "bcftools":   "bcftools",
     "redinet":    "redinet",
+    "jacusa2_call1": "jacusa2_call1",
 }
 
 # Tool-output filename/dir relative to results/tools/{aligner}/{tool_dir}/
@@ -50,6 +51,7 @@ _TOOL_OUTPUT = {
     "redml":      "{condition}_{sample}_output",
     "bcftools":   "{condition}_{sample}.bcf",
     "redinet":    "{condition}_{sample}.predictions.tsv",
+    "jacusa2_call1": "{condition}_{sample}.out",
 }
 
 
@@ -127,7 +129,8 @@ rule tool_output_to_bed:
     params:
         script=os.path.join(_VIZ_SCRIPTS, "tool_output_to_bed.py"),
         min_cov=config.get("visualization", {}).get("bigbed_min_cov", 0),
-        min_score=config.get("visualization", {}).get("bigbed_min_score", 0)
+        min_score=config.get("visualization", {}).get("bigbed_min_score", 0),
+        jacusa2_call1_filter=config.get("params", {}).get("jacusa2", {}).get("call1_filter", "edit_type")
     shell:
         r"""
         set -euo pipefail
@@ -139,6 +142,7 @@ rule tool_output_to_bed:
             --output {output} \
             --min-cov {params.min_cov} \
             --min-score {params.min_score} \
+            --jacusa2-call1-filter {params.jacusa2_call1_filter} \
             2> {log.stderr}
         """
 
@@ -219,7 +223,9 @@ rule compare_all_tools:
         tools=" ".join(_BED_TOOLS + ["jacusa2"]),
         aligners=" ".join(_ALIGNERS),
         conditions=" ".join(config["conditions"]),
-        samples=" ".join(config["samples"])
+        samples=" ".join(config["samples"]),
+        edit_type=config["params"]["common"]["edit_type"],
+        jacusa2_call1_filter=config.get("params", {}).get("jacusa2", {}).get("call1_filter", "edit_type")
     shell:
         r"""
         set -euo pipefail
@@ -231,33 +237,46 @@ rule compare_all_tools:
             --aligners {params.aligners} \
             --conditions {params.conditions} \
             --samples {params.samples} \
+            --edit-type {params.edit_type} \
+            --jacusa2-call1-filter {params.jacusa2_call1_filter} \
             1> {log.stdout} 2> {log.stderr}
         """
 
 
 # ---------------------------------------------------------------------------
-# Rule: tool_correlation
+# Rule: compare_outputs
 # ---------------------------------------------------------------------------
-rule tool_correlation:
-    """Pairwise Spearman correlation among tools (one matrix per aligner)."""
+# Replaces the old mixed tool_correlation heatmap. Produces, per aligner:
+#   - intersect/  : co-called edit table + all-tool Jaccard / overlap counts
+#   - by_output_type/ : one intersection-Spearman heatmap per OUTPUT TYPE,
+#                       comparing only tools that produce that quantity.
+rule compare_outputs:
+    """Intersection co-call table + per-output-type correlation plots."""
     input:
-        "results/compare_all_tools/edit_fraction_matrix.tsv"
+        fraction="results/compare_all_tools/edit_fraction_matrix.tsv",
+        score="results/compare_all_tools/tool_score_matrix.tsv",
+        coverage="results/compare_all_tools/edit_coverage_matrix.tsv"
     output:
-        expand(
-            "results/correlation/tool_correlation_{aligner}.tsv",
-            aligner=_ALIGNERS
-        )
+        expand("results/correlation/intersect/edits_intersect_{aligner}.tsv", aligner=_ALIGNERS),
+        expand("results/correlation/intersect/tool_jaccard_{aligner}.tsv", aligner=_ALIGNERS),
+        expand("results/correlation/by_output_type/per-site-fraction-correlation_{aligner}.tsv", aligner=_ALIGNERS),
+        expand("results/correlation/by_output_type/per-gene-fraction-correlation_{aligner}.tsv", aligner=_ALIGNERS),
+        expand("results/correlation/by_output_type/qual-or-score-correlation_{aligner}.tsv", aligner=_ALIGNERS),
+        expand("results/correlation/by_output_type/read-count-correlation_{aligner}.tsv", aligner=_ALIGNERS)
     threads: 1
     resources:
-        mem_mb=lambda wildcards, attempt: 8000 * (1.5 ** (attempt - 1)),
-        runtime=lambda wildcards, attempt: 30 * (2 ** (attempt - 1))
+        mem_mb=lambda wildcards, attempt: 12000 * (1.5 ** (attempt - 1)),
+        runtime=lambda wildcards, attempt: 90 * (2 ** (attempt - 1))
     log:
-        stdout="results/logs/tool_correlation.out",
-        stderr="results/logs/tool_correlation.err"
+        stdout="results/logs/compare_outputs.out",
+        stderr="results/logs/compare_outputs.err"
     params:
-        script=os.path.join(_VIZ_SCRIPTS, "tool_correlation.py"),
+        script=os.path.join(_VIZ_SCRIPTS, "compare_outputs.py"),
         outdir="results/correlation",
-        aligners=" ".join(_ALIGNERS)
+        aligners=" ".join(_ALIGNERS),
+        gtf=config["references"]["gtf"],
+        edit_type=config.get("params", {}).get("common", {}).get("edit_type", "AG"),
+        min_tools=config.get("params", {}).get("common", {}).get("min_tools", 2)
     shell:
         r"""
         set -euo pipefail
@@ -266,6 +285,9 @@ rule tool_correlation:
             --matrix-dir results/compare_all_tools \
             --outdir {params.outdir} \
             --aligners {params.aligners} \
+            --gtf {params.gtf} \
+            --edit-type {params.edit_type} \
+            --min-tools {params.min_tools} \
             1> {log.stdout} 2> {log.stderr}
         """
 
