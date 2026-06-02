@@ -55,6 +55,7 @@ containers:
   jacusa2: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/jacusa2.sif"
   morales_downstream: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/morales_downstream.sif"
   redinet: "/tscc/nfs/home/bay001/projects/codebase/rna-editing/singularity/redinet.sif"
+  marine: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/marine.sif"
   # Pulled directly from Docker Hub (no local Dockerfile):
   #   module load singularitypro
   #   singularity pull -F singularity/bedtools.sif docker://biocontainers/bedtools:v2.28.0_cv2
@@ -90,12 +91,11 @@ tmpdir: "/tscc/lustre/ddn/scratch/bay001/"
 # ==========================================
 params:
   # Single source of truth for filters shared across edit callers. Applied via each
-  # tool's own CLI flag where exposed (see docs/edit_calling_parameters.md).
-  # Production data: base_quality 30, min_coverage 10. This is the small example config,
-  # so min_coverage is lowered to 5.
+  # tool's own CLI flag where exposed (see docs/specs/edit_calling_parameters.md).
+  # Production data: base_quality 30, min_coverage 10.
   common:
     base_quality: 30
-    min_coverage: 5
+    min_coverage: 10
     edit_type: "AG"        # A->I; reverse-strand complement "TC" derived in code
     min_tools: 2           # co-call threshold for compare_outputs
   fastx_trimmer:
@@ -122,12 +122,15 @@ params:
   redinet:
     reditools_strand: 0    # REDItoolDnaRna.py -s: 0=no strand inference, 1=infer
     map_quality: 20
-    cov_threshold: 5       # REDInet_Inference.py --C: min coverage (default 50)
+    cov_threshold: 50      # REDInet_Inference.py --C: min coverage (default 50)
     agfreq_threshold: 0.01
-    min_ag_subs: 1         # min AG substitutions (default 3; lowered for small test)
+    min_ag_subs: 3         # min AG substitutions (default 3)
   marine:
-    strandedness: 0      # 0=unstranded, 1=stranded, 2=reverse-stranded
-    paired_end: true
+    strandedness: 2        # 0=unstranded, 1=stranded, 2=reverse-stranded
+    min_read_quality: 20   # MARINE --min_read_quality (MAPQ filter). --min_base_quality uses params.common.base_quality.
+                           # --paired_end is set per-sample from the samplesheet (is_paired), not configured here.
+                           # NOTE: reditools3/redinet are set to strand 0 (unstranded) on this data;
+                           # set strandedness to 0 here if you want a strand-consistent cross-tool benchmark.
 
 visualization:
   tools:
@@ -137,10 +140,11 @@ visualization:
     - red_ml
     - bcftools
     - redinet
+    - marine
     - jacusa2_call1
   bigwig_binsize: 10
   bigbed_min_cov: 0
   bigbed_min_score: 0
   ucsc_assembly: hg38
-  hub_name: "Morales_et_al_small RNA Editing"
+  hub_name: "Morales_et_al RNA Editing"
   hub_email: "user@example.com"
