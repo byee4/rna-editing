@@ -111,6 +111,11 @@ params:
     p_value: 0.5
   jacusa2:
     pileup_filter: "D"
+    # JACUSA2 call-1 (per-sample variants vs reference) site filtering in the
+    # cross-tool comparison and BigBed tracks:
+    #   edit_type  reditools-style — keep only edit_type sites (params.common.edit_type, e.g. A->I)
+    #   unfiltered JACUSA2-style   — keep every site JACUSA2 call-1 reported
+    call1_filter: "edit_type"
   reditools3:
     strand: 0       # 0=unstranded, 1=stranded, 2=reverse-stranded
     map_quality: 20

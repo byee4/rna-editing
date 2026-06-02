@@ -37,6 +37,11 @@ def edit_type_set(edit_type):
 
 EDIT_TYPES = edit_type_set("AG")
 
+# How JACUSA2 call-1 sites are filtered (set from --jacusa2-call1-filter in main()):
+#   "edit_type"  reditools-style — keep only sites whose ref->alt is in EDIT_TYPES
+#   "unfiltered" JACUSA2-style   — keep every site JACUSA2 call-1 reported
+JACUSA2_CALL1_FILTER = "edit_type"
+
 
 # ---------------------------------------------------------------------------
 # Per-tool parsers
@@ -264,7 +269,9 @@ def parse_jacusa2_call1(filepath):
     ref bases11 ... where bases11 holds comma-separated A,C,G,T counts for the
     single sample. Unlike call-2 (group contrast), this yields per-site coverage
     (sum of counts) and editing fraction (alt/coverage), so call-1 is comparable
-    to the other per-sample tools. Keeps only sites whose ref->alt is in EDIT_TYPES.
+    to the other per-sample tools. When JACUSA2_CALL1_FILTER == "edit_type" only
+    sites whose ref->alt is in EDIT_TYPES are kept (reditools-style); "unfiltered"
+    keeps every site JACUSA2 reported (JACUSA2-style).
     """
     base_index = {"A": 0, "C": 1, "G": 2, "T": 3}
     sites = {}
@@ -297,7 +304,7 @@ def parse_jacusa2_call1(filepath):
                 continue
             ref_i = base_index[ref]
             alt_i = max((i for i in range(4) if i != ref_i), key=lambda i: counts[i])
-            if (ref + "ACGT"[alt_i]) not in EDIT_TYPES:
+            if JACUSA2_CALL1_FILTER == "edit_type" and (ref + "ACGT"[alt_i]) not in EDIT_TYPES:
                 continue
             frac = counts[alt_i] / cov
             try:
@@ -580,10 +587,15 @@ def main():
     ap.add_argument("--samples", nargs="+", required=True)
     ap.add_argument("--edit-type", default="AG",
                     help="Substitution to keep (plus its reverse complement). Default AG (A->I).")
+    ap.add_argument("--jacusa2-call1-filter", default="edit_type",
+                    choices=["edit_type", "unfiltered"],
+                    help="JACUSA2 call-1 site filtering: 'edit_type' (reditools-style, "
+                         "keep only --edit-type sites) or 'unfiltered' (JACUSA2-style, keep all).")
     args = ap.parse_args()
 
-    global EDIT_TYPES
+    global EDIT_TYPES, JACUSA2_CALL1_FILTER
     EDIT_TYPES = edit_type_set(args.edit_type)
+    JACUSA2_CALL1_FILTER = args.jacusa2_call1_filter
 
     os.makedirs(args.outdir, exist_ok=True)
 

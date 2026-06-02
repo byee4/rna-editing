@@ -129,7 +129,8 @@ rule tool_output_to_bed:
     params:
         script=os.path.join(_VIZ_SCRIPTS, "tool_output_to_bed.py"),
         min_cov=config.get("visualization", {}).get("bigbed_min_cov", 0),
-        min_score=config.get("visualization", {}).get("bigbed_min_score", 0)
+        min_score=config.get("visualization", {}).get("bigbed_min_score", 0),
+        jacusa2_call1_filter=config.get("params", {}).get("jacusa2", {}).get("call1_filter", "edit_type")
     shell:
         r"""
         set -euo pipefail
@@ -141,6 +142,7 @@ rule tool_output_to_bed:
             --output {output} \
             --min-cov {params.min_cov} \
             --min-score {params.min_score} \
+            --jacusa2-call1-filter {params.jacusa2_call1_filter} \
             2> {log.stderr}
         """
 
@@ -222,7 +224,8 @@ rule compare_all_tools:
         aligners=" ".join(_ALIGNERS),
         conditions=" ".join(config["conditions"]),
         samples=" ".join(config["samples"]),
-        edit_type=config["params"]["common"]["edit_type"]
+        edit_type=config["params"]["common"]["edit_type"],
+        jacusa2_call1_filter=config.get("params", {}).get("jacusa2", {}).get("call1_filter", "edit_type")
     shell:
         r"""
         set -euo pipefail
@@ -235,6 +238,7 @@ rule compare_all_tools:
             --conditions {params.conditions} \
             --samples {params.samples} \
             --edit-type {params.edit_type} \
+            --jacusa2-call1-filter {params.jacusa2_call1_filter} \
             1> {log.stdout} 2> {log.stderr}
         """
 
