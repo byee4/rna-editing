@@ -628,10 +628,16 @@ rule marine_by_chrom:
         strandedness=config["params"]["marine"]["strandedness"],
         min_read_quality=config["params"]["marine"]["min_read_quality"],
         min_base_quality=config["params"]["common"]["base_quality"],
+        tmpdir=config.get("tmpdir", "/tmp"),
         paired_end_flag=lambda wildcards: "--paired_end" if is_paired(wildcards.condition, wildcards.sample) else ""
     shell:
         r"""
         set -euo pipefail
+        # MARINE's internal `sort` and our mktemp need a container-visible writable
+        # tmp dir. Under SLURM, $TMPDIR points at node-local /scratch which the
+        # apptainer binds do not mount, so force it to the bound lustre tmpdir.
+        export TMPDIR={params.tmpdir}
+        mkdir -p "$TMPDIR"
         # MARINE imports numba/matplotlib, which need writable cache dirs.
         export NUMBA_CACHE_DIR="$(mktemp -d)"
         export MPLCONFIGDIR="$(mktemp -d)"

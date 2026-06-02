@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - `containers/marine/validate.sh` pointed at a non-existent `marine.py` path and used `conda run`; corrected to call `/opt/marine/marine.py` via the env's Python with writable `NUMBA_CACHE_DIR`/`MPLCONFIGDIR`.
 - `parse_marine` (`scripts/compare_all_tools.py`) and `to_bed_marine` (`scripts/tool_output_to_bed.py`) read non-existent `editing_type`/`edit_frequency` columns; updated to MARINE's actual `strand_conversion`/`count`/`coverage` columns, computing edit fraction as `count / coverage`.
+- `marine_by_chrom` now exports `TMPDIR` to the bound `config.tmpdir` (lustre). Under SLURM, `$TMPDIR` defaults to node-local `/scratch/...` which the apptainer binds do not mount, so MARINE's internal `sort` failed (`cannot create temporary file`) on contigs whose edit set spilled to disk.
 
 ## [0.2.0] - 2026-05-07
 
