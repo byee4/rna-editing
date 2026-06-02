@@ -1,0 +1,7 @@
+conditions,samples,fastq_1,fastq_2,strandedness
+WT,clone1,/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/HEK293T_RNA/SRR5564274_1.fastq.gz,/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/HEK293T_RNA/SRR5564274_2.fastq.gz,auto
+WT,clone2,/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/HEK293T_RNA/SRR5564275_1.fastq.gz,/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/HEK293T_RNA/SRR5564275_2.fastq.gz,auto
+WT,clone3,/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/HEK293T_RNA/SRR5564276_1.fastq.gz,/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/HEK293T_RNA/SRR5564276_2.fastq.gz,auto
+ADAR1KO,clone1,/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/HEK293T_RNA/SRR5564272_1.fastq.gz,/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/HEK293T_RNA/SRR5564272_2.fastq.gz,auto
+ADAR1KO,clone2,/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/HEK293T_RNA/SRR5564273_1.fastq.gz,/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/HEK293T_RNA/SRR5564273_2.fastq.gz,auto
+ADAR1KO,clone3,/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/HEK293T_RNA/SRR5564268_1.fastq.gz,/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/HEK293T_RNA/SRR5564268_2.fastq.gz,auto
