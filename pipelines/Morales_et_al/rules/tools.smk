@@ -68,7 +68,7 @@ rule reditools_by_chrom:
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: 8000 * (1.5 ** (attempt - 1)),
-        runtime=lambda wildcards, attempt: 120 * (1.5 ** (attempt - 1))
+        runtime=lambda wildcards, attempt: 240 * (1.5 ** (attempt - 1))
     container: container_for("reditools")
     log:
         stdout="results/logs/{aligner}_{condition}_{sample}_{chrom}.reditools.out",
@@ -301,13 +301,15 @@ rule add_md_tag:
 rule jacusa2:
     input:
         wt_bams=lambda wildcards: expand(
-            "results/mapped/{aligner}/WT_{sample}.rmdup_MD.bam",
+            "results/mapped/{aligner}/{cond}_{sample}.rmdup_MD.bam",
             aligner=wildcards.aligner,
+            cond=config["jacusa2_comparison"]["condition1"],
             sample=config["samples"]
         ),
         ko_bams=lambda wildcards: expand(
-            "results/mapped/{aligner}/ADAR1KO_{sample}.rmdup_MD.bam",
+            "results/mapped/{aligner}/{cond}_{sample}.rmdup_MD.bam",
             aligner=wildcards.aligner,
+            cond=config["jacusa2_comparison"]["condition2"],
             sample=config["samples"]
         )
     output:
@@ -388,7 +390,7 @@ rule reditools_redinet_by_chrom:
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: 36000 * (1.5 ** (attempt - 1)),
-        runtime=lambda wildcards, attempt: 120 * (1.5 ** (attempt - 1))
+        runtime=lambda wildcards, attempt: 240 * (1.5 ** (attempt - 1))
     container: container_for("reditools")
     log:
         stdout="results/logs/{aligner}_{condition}_{sample}_{chrom}.reditools_redinet.out",

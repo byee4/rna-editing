@@ -56,6 +56,22 @@ config["samples"] = sorted(set(k[1] for k in SAMPLESHEET))
 # Aligners to run — consumed by rule all and downstream rules.
 _ALIGNERS = config.get("aligners", ["star"])
 
+# JACUSA2 differential comparison (optional). When `jacusa2_comparison` names two
+# condition groups, JACUSA2 runs a call-2 contrast between them and its outputs are
+# produced/parsed/plotted. When the key is absent, JACUSA2 is skipped everywhere.
+# The two groups map to JACUSA2's bases1*/bases2* columns and, cosmetically, to the
+# "WT"/"ADAR1KO" labels in the downstream figures (condition1 → left, condition2 → right).
+JACUSA2_COMPARISON = config.get("jacusa2_comparison")
+_RUN_JACUSA2 = bool(JACUSA2_COMPARISON)
+if _RUN_JACUSA2:
+    _jac_conds = (JACUSA2_COMPARISON.get("condition1"), JACUSA2_COMPARISON.get("condition2"))
+    _missing = [c for c in _jac_conds if c not in config["conditions"]]
+    if None in _jac_conds or _missing:
+        raise ValueError(
+            "jacusa2_comparison requires condition1/condition2 present in samplesheet "
+            "conditions {}; got {}".format(config["conditions"], _jac_conds)
+        )
+
 # Per-sample tools included in BigBed and comparison matrices (JACUSA2 excluded
 # because it produces one comparison file per aligner, not per sample).
 _BED_TOOLS = [t for t in config.get("visualization", {}).get("tools", [
@@ -130,7 +146,7 @@ rule all:
                aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),
         expand("results/tools/{aligner}/bcftools/{condition}_{sample}.bcf",
                aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),
-        expand("results/tools/{aligner}/jacusa2/Jacusa.out", aligner=_ALIGNERS),
+        expand("results/tools/{aligner}/jacusa2/Jacusa.out", aligner=_ALIGNERS) if _RUN_JACUSA2 else [],
         # Reference databases — built from WGS alignment when wgs_samples is configured
         _WGS_DB_FILES,
         # Downstream analysis — single run that processes all aligners together
@@ -140,7 +156,7 @@ rule all:
         "results/downstream/Data_SPRINT.json",
         "results/downstream/Data_REDML.json",
         "results/downstream/Data_BCFTools.json",
-        "results/downstream/Data_JACUSA2.json",
+        (["results/downstream/Data_JACUSA2.json"] if _RUN_JACUSA2 else []),
         "results/downstream/Data_REDItools2-Multiple.json",
         "results/downstream/Data_SPRINT-Multiple.json",
         "results/downstream/Data_BCFTools-Multiple.json",
@@ -152,7 +168,7 @@ rule all:
         "results/downstream/Downstream/BCFTools_Table.csv",
         "results/downstream/Downstream/REDItools2-Multiple_Table.csv",
         "results/downstream/Downstream/BCFTools-Multiple_Table.csv",
-        "results/downstream/Downstream/JACUSA2_Table.csv",
+        (["results/downstream/Downstream/JACUSA2_Table.csv"] if _RUN_JACUSA2 else []),
         # REDItools3 outputs (one per aligner per sample)
         expand("results/tools/{aligner}/reditools3/{condition}_{sample}.txt",
                aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),

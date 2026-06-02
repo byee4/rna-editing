@@ -123,6 +123,8 @@ rule prepare_editing_filters:
     resources:
         mem_mb=lambda wildcards, attempt: 8000 * (1.5 ** (attempt - 1)),
         runtime=lambda wildcards, attempt: 30 * (2 ** (attempt - 1))
+    params:
+        tmpdir=config.get("tmpdir", "/tmp")
     container: container_for("bedtools")
     log:
         stdout="results/logs/prepare_editing_filters.out",
@@ -130,16 +132,20 @@ rule prepare_editing_filters:
     shell:
         r"""
         set -euo pipefail
+        export TMPDIR={params.tmpdir}
         mkdir -p "$(dirname {output})"
-        tmp="$(mktemp)"
+        tmp="$(mktemp -p {params.tmpdir})"
         zcat {input.dbsnp} | awk 'BEGIN{{OFS="\t"}} {{print $2,$3,$4}}' > "$tmp"
         cat {input.simple_repeat} >> "$tmp"
         # Keep only contigs present in the reference .fai; `bedtools sort -faidx`
         # aborts on the alt/random contigs the UCSC dbSNP table carries.
-        awk 'NR==FNR{{ok[$1]=1; next}} ($1 in ok)' {input.fai} "$tmp" > "$tmp.flt"
-        bedtools sort -i "$tmp.flt" | bedtools merge | bedtools sort -faidx {input.fai} \
+        # unix sort spills to TMPDIR rather than loading the full file into RAM.
+        awk 'NR==FNR{{ok[$1]=1; next}} ($1 in ok)' {input.fai} "$tmp" \
+            | sort -k1,1 -k2,2n \
+            | bedtools merge \
+            | bedtools sort -faidx {input.fai} \
             > {output} 2> {log.stderr}
-        rm -f "$tmp" "$tmp.flt"
+        rm -f "$tmp"
         echo "done" > {log.stdout}
         """
 
