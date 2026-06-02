@@ -8,6 +8,7 @@ Rules defined here:
   sort_and_bigbed           sort BED + bedToBigBed → .bb
   compare_all_tools         build coverage/fraction/score matrices
   compare_outputs           intersection co-call table + per-output-type correlation
+  consensus_characteristics intersection-vs-outersection characteristics + anticorrelation
   aligner_correlation       Spearman correlation among aligners (per tool)
   make_trackhub             assemble UCSC trackhub from BigWig + BigBed
 
@@ -292,6 +293,51 @@ rule compare_outputs:
             --gtf {params.gtf} \
             --edit-type {params.edit_type} \
             --min-tools {params.min_tools} \
+            1> {log.stdout} 2> {log.stderr}
+        """
+
+
+# ---------------------------------------------------------------------------
+# Rule: consensus_characteristics
+# ---------------------------------------------------------------------------
+# Stratifies edit characteristics (coverage, fraction, score/p-value) by how
+# many tools called each site/gene: outersection (=1 tool) vs intersection
+# (>=2, >=3, ... all). Also emits a gene-level anticorrelation diagnostic that
+# explains pairs like red_ml vs MARINE (disjoint sites within shared genes).
+rule consensus_characteristics:
+    """Intersection-vs-outersection characteristic comparison + anticorrelation diagnostic."""
+    input:
+        fraction="results/compare_all_tools/edit_fraction_matrix.tsv",
+        score="results/compare_all_tools/tool_score_matrix.tsv",
+        coverage="results/compare_all_tools/edit_coverage_matrix.tsv"
+    output:
+        expand("results/consensus/site_characteristics_{aligner}.tsv", aligner=_ALIGNERS),
+        expand("results/consensus/gene_characteristics_{aligner}.tsv", aligner=_ALIGNERS),
+        expand("results/consensus/anticorrelation_gene_fraction_{aligner}.tsv", aligner=_ALIGNERS),
+        expand("results/consensus/consensus_report_{aligner}.md", aligner=_ALIGNERS)
+    threads: 1
+    resources:
+        mem_mb=lambda wildcards, attempt: 12000 * (1.5 ** (attempt - 1)),
+        runtime=lambda wildcards, attempt: 90 * (2 ** (attempt - 1))
+    log:
+        stdout="results/logs/consensus_characteristics.out",
+        stderr="results/logs/consensus_characteristics.err"
+    params:
+        script=os.path.join(_VIZ_SCRIPTS, "consensus_characteristics.py"),
+        outdir="results/consensus",
+        aligners=" ".join(_ALIGNERS),
+        gtf=config["references"]["gtf"],
+        edit_type=config.get("params", {}).get("common", {}).get("edit_type", "AG")
+    shell:
+        r"""
+        set -euo pipefail
+        module load python3essential
+        python3 {params.script} \
+            --matrix-dir results/compare_all_tools \
+            --outdir {params.outdir} \
+            --aligners {params.aligners} \
+            --gtf {params.gtf} \
+            --edit-type {params.edit_type} \
             1> {log.stdout} 2> {log.stderr}
         """
 

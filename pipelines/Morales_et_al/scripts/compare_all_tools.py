@@ -160,7 +160,10 @@ def parse_sprint(dirpath):
 def parse_red_ml(dirpath):
     """
     RED-ML output directory; reads RNA_editing.sites.txt.
-    Cols: #Chr Pos Strand Ref Coverage Alt Freq P_edit
+    Cols: #Chromosome Position Read_depth Reference Reference_support_reads
+          Alternative Alternative_support_reads P_edit
+    Coverage is Read_depth; RED-ML emits no fraction column, so it is computed
+    as Alternative_support_reads / Read_depth. Score is P_edit.
     """
     sites = {}
     txt = os.path.join(dirpath, "RNA_editing.sites.txt")
@@ -178,11 +181,12 @@ def parse_red_ml(dirpath):
             if edit_type not in EDIT_TYPES:
                 continue
             try:
-                cov = float(c[4])
-                frac = float(c[6])
+                cov = float(c[2])
+                alt_support = float(c[6])
                 score = float(c[7])
             except ValueError:
                 continue
+            frac = alt_support / cov if cov else 0.0
             sites[(c[0], c[1])] = (cov, frac, score)
     return sites
 
