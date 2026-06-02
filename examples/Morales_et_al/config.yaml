@@ -132,6 +132,7 @@ visualization:
     - red_ml
     - bcftools
     - redinet
+    - jacusa2_call1
   bigwig_binsize: 10
   bigbed_min_cov: 0
   bigbed_min_score: 0

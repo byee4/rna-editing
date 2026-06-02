@@ -38,6 +38,7 @@ _TOOL_DIR = {
     "redml":      "red_ml",
     "bcftools":   "bcftools",
     "redinet":    "redinet",
+    "jacusa2_call1": "jacusa2_call1",
 }
 
 # Tool-output filename/dir relative to results/tools/{aligner}/{tool_dir}/
@@ -50,6 +51,7 @@ _TOOL_OUTPUT = {
     "redml":      "{condition}_{sample}_output",
     "bcftools":   "{condition}_{sample}.bcf",
     "redinet":    "{condition}_{sample}.predictions.tsv",
+    "jacusa2_call1": "{condition}_{sample}.out",
 }
 
 

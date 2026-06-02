@@ -336,6 +336,37 @@ rule jacusa2:
         """
 
 
+# JACUSA2 call-1 identifies variants against the reference genome from a single
+# condition (one BAM), giving a per-sample edit set comparable to the other
+# per-sample tools. Unlike call-2 (WT-vs-KO group contrast), it needs no second
+# condition. Reuses the MD-tagged, indexed BAM produced by add_md_tag.
+# Source: https://github.com/dieterich-lab/JACUSA2#call-1
+rule jacusa2_call1:
+    input:
+        bam="results/mapped/{aligner}/{condition}_{sample}.rmdup_MD.bam",
+        bai="results/mapped/{aligner}/{condition}_{sample}.rmdup_MD.bam.bai"
+    output:
+        "results/tools/{aligner}/jacusa2_call1/{condition}_{sample}.out"
+    threads: 5
+    resources:
+        mem_mb=lambda wildcards, attempt: 48000 * (1.5 ** (attempt - 1)),
+        runtime=lambda wildcards, attempt: 240 * (2 ** (attempt - 1))
+    container: container_for("jacusa2")
+    log:
+        stdout="results/logs/{aligner}_{condition}_{sample}.jacusa2_call1.out",
+        stderr="results/logs/{aligner}_{condition}_{sample}.jacusa2_call1.err"
+    params:
+        pileup=config["params"]["jacusa2"]["pileup_filter"],
+        base_quality=config["params"]["common"]["base_quality"],
+        min_coverage=config["params"]["common"]["min_coverage"]
+    shell:
+        r"""
+        set -euo pipefail
+        java -jar /opt/jacusa2/jacusa2.jar call-1 -a {params.pileup} -q {params.base_quality} -c {params.min_coverage} -p {threads} -r {output} {input.bam} \
+            1> {log.stdout} 2> {log.stderr}
+        """
+
+
 # ---------------------------------------------------------
 # REDItools3 / REDInet Rules
 # ---------------------------------------------------------

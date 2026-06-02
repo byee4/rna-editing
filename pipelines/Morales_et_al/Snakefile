@@ -77,11 +77,13 @@ if _RUN_JACUSA2:
             "conditions {}; got {}".format(config["conditions"], (_JAC_C1, _JAC_C2))
         )
 
-# Per-sample tools included in BigBed and comparison matrices (JACUSA2 excluded
-# because it produces one comparison file per aligner, not per sample).
+# Per-sample tools included in BigBed and comparison matrices. The call-2 JACUSA2
+# contrast ("jacusa2") is excluded because it produces one comparison file per
+# aligner, not per sample; JACUSA2 call-1 ("jacusa2_call1") is per-sample and is
+# kept so its reference-genome edit set is compared against the other tools.
 _BED_TOOLS = [t for t in config.get("visualization", {}).get("tools", [
     "reditools", "reditools3", "sprint", "red_ml",
-    "bcftools", "redinet",
+    "bcftools", "redinet", "jacusa2_call1",
 ]) if t not in ("jacusa2", "marine")]
 
 

@@ -257,6 +257,61 @@ def parse_jacusa2(filepath):
     return sites
 
 
+def parse_jacusa2_call1(filepath):
+    """
+    JACUSA2 call-1 output (one condition vs the reference genome): BED6 plus
+    method-specific columns. Relevant columns: contig start end name score strand
+    ref bases11 ... where bases11 holds comma-separated A,C,G,T counts for the
+    single sample. Unlike call-2 (group contrast), this yields per-site coverage
+    (sum of counts) and editing fraction (alt/coverage), so call-1 is comparable
+    to the other per-sample tools. Keeps only sites whose ref->alt is in EDIT_TYPES.
+    """
+    base_index = {"A": 0, "C": 1, "G": 2, "T": 3}
+    sites = {}
+    if not os.path.exists(filepath) or os.path.getsize(filepath) == 0:
+        return sites
+    header = None
+    with _open(filepath) as fh:
+        for line in fh:
+            if line.startswith("##"):
+                continue
+            if line.startswith("#"):
+                header = line.lstrip("#").rstrip("\n").split("\t")
+                continue
+            if header is None:
+                continue
+            c = line.rstrip("\n").split("\t")
+            row = dict(zip(header, c))
+            ref = row.get("ref", "").upper()
+            bases = row.get("bases11", "")
+            if ref not in base_index or "," not in bases:
+                continue
+            try:
+                counts = [float(x) for x in bases.split(",")]
+            except ValueError:
+                continue
+            if len(counts) < 4:
+                continue
+            cov = sum(counts[:4])
+            if cov <= 0:
+                continue
+            ref_i = base_index[ref]
+            alt_i = max((i for i in range(4) if i != ref_i), key=lambda i: counts[i])
+            if (ref + "ACGT"[alt_i]) not in EDIT_TYPES:
+                continue
+            frac = counts[alt_i] / cov
+            try:
+                score = float(row.get("score", c[4] if len(c) > 4 else 0))
+            except ValueError:
+                score = 0.0
+            try:
+                pos = str(int(row.get("start", c[1])) + 1)
+            except (ValueError, IndexError):
+                continue
+            sites[(row.get("contig", c[0] if c else ""), pos)] = (cov, frac, score)
+    return sites
+
+
 def parse_redinet(filepath):
     """
     REDInet predictions TSV.
@@ -337,6 +392,7 @@ TOOL_PARSERS = {
     "redml":      ("red_ml",    parse_red_ml),
     "bcftools":   ("bcftools",  parse_bcftools),
     "jacusa2":    ("jacusa2",   parse_jacusa2),
+    "jacusa2_call1": ("jacusa2_call1", parse_jacusa2_call1),
     "redinet":    ("redinet",   parse_redinet),
     "marine":     ("marine",    parse_marine),
 }
@@ -361,6 +417,8 @@ def locate_tool_output(results_dir, tool_dir, aligner, condition, sample):
         os.path.join(base, f"{condition}_{sample}.bcf"),
         # jacusa2 (single file for all samples)
         os.path.join(base, "Jacusa.out"),
+        # jacusa2_call1 (per-sample, one condition vs reference)
+        os.path.join(base, f"{condition}_{sample}.out"),
         # redinet
         os.path.join(base, f"{condition}_{sample}.predictions.tsv"),
         # marine
@@ -513,7 +571,8 @@ def main():
                     help="Output directory for matrix TSVs")
     ap.add_argument("--tools", nargs="+",
                     default=["reditools", "sprint", "red_ml", "bcftools",
-                             "jacusa2", "reditools3", "redinet", "marine"],
+                             "jacusa2", "jacusa2_call1", "reditools3",
+                             "redinet", "marine"],
                     help="Tools to include")
     ap.add_argument("--aligners", nargs="+", default=["star"],
                     help="Aligners to include")

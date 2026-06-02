@@ -50,10 +50,12 @@ TOOL_OUTPUT_TYPES = {
     "sprint":     {"read_count"},
     "bcftools":   {"quality_score"},
     "jacusa2":    {"group_score"},
+    # call-1 reports per-site coverage, editing fraction, and the JACUSA2 score.
+    "jacusa2_call1": {"site_fraction", "gene_fraction", "read_count", "quality_score"},
 }
 
 # Tools that report a true editing fraction (0-1).
-FRACTION_TOOLS = {"reditools", "reditools3", "red_ml", "redinet"}
+FRACTION_TOOLS = {"reditools", "reditools3", "red_ml", "redinet", "jacusa2_call1"}
 
 # Output type -> output file stem.
 TYPE_PLOT = {
@@ -258,7 +260,7 @@ def value_for(tool, output_type, record):
     if output_type in ("quality_score", "group_score"):
         return score
     if output_type == "read_count":
-        return frac * cov if tool in ("reditools", "reditools3") else score
+        return frac * cov if tool in ("reditools", "reditools3", "jacusa2_call1") else score
     return frac  # unused for gene_fraction (handled separately)
 
 
