@@ -15,8 +15,9 @@ aligners:
 
 # Optional: enable the JACUSA2 differential-editing (call-2) comparison.
 # condition1/condition2 must match `conditions` derived from the samplesheet; they
-# map to JACUSA2's bases1*/bases2* groups (and, cosmetically, to the "WT"/"ADAR1KO"
-# labels in the downstream figures: condition1 → left panel, condition2 → right).
+# map to JACUSA2's bases1*/bases2* groups and label the downstream JSON keys, table
+# rows, and figure panels (condition1 → left panel, condition2 → right) with the real
+# names, so any ordering is labeled truthfully.
 # Omit this entire block to skip JACUSA2 everywhere (caller, parsing, and figures).
 jacusa2_comparison:
   condition1: WT

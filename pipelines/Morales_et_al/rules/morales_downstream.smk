@@ -31,6 +31,8 @@ rule run_downstream_parsers:
         aligners=",".join(_ALIGNERS),
         tmpdir=config.get("tmpdir", "/tmp"),
         run_jacusa2=("1" if _RUN_JACUSA2 else "0"),
+        jac_cond1=_JAC_C1,
+        jac_cond2=_JAC_C2,
         parser_scripts=("REDItools2.py SPRINT.py REDML.py BCFtools.py JACUSA2.py"
                         if _RUN_JACUSA2 else "REDItools2.py SPRINT.py REDML.py BCFtools.py")
     shell:
@@ -40,6 +42,8 @@ rule run_downstream_parsers:
         export DB_PATH={params.db_path}
         export TMPDIR={params.tmpdir}
         export RUN_JACUSA2={params.run_jacusa2}
+        export JAC_COND1={params.jac_cond1}
+        export JAC_COND2={params.jac_cond2}
         BENCH_DIR="$WORKDIR/results/downstream"
         export BENCH_DIR
         PATCHDIR=$(mktemp -d)
@@ -72,6 +76,18 @@ code = code.replace(
     "    df_filt = df_filt.dropna(subset=['wt', 'adarko'], how='all')\n"
     "    df_filt['wt'] = df_filt['wt'].fillna('')\n"
     "    df_filt['adarko'] = df_filt['adarko'].fillna('')")
+# rna-editing-51k: re-key the JACUSA2 export to the real condition names. The 'wt'
+# column is bases1* (= condition1) and 'adarko' is bases2* (= condition2), so the
+# positional keys map condition1 -> 'WT' slot and condition2 -> 'ADAR1KO' slot.
+_c1 = os.environ.get('JAC_COND1', 'WT')
+_c2 = os.environ.get('JAC_COND2', 'ADAR1KO')
+code = code.replace("conditions = ['WT', 'ADAR1KO']",
+                    "conditions = [%r, %r]" % (_c1, _c2))
+# Swap-safe via sentinels (condition names may be the reverse of WT/ADAR1KO).
+code = code.replace("export_data[align]['WT'][cutoff]", "export_data[align]['__JC1__'][cutoff]")
+code = code.replace("export_data[align]['ADAR1KO'][cutoff]", "export_data[align]['__JC2__'][cutoff]")
+code = code.replace("export_data[align]['__JC1__'][cutoff]", "export_data[align][%r][cutoff]" % _c1)
+code = code.replace("export_data[align]['__JC2__'][cutoff]", "export_data[align][%r][cutoff]" % _c2)
 with open(o, 'w') as f:
     f.write(code)
 PATCHER
@@ -312,13 +328,17 @@ rule multiple_analysis:
         downstream_dir=config["downstream_scripts_dir"],
         aligners=",".join(_ALIGNERS),
         tmpdir=config.get("tmpdir", "/tmp"),
-        run_jacusa2=("1" if _RUN_JACUSA2 else "0")
+        run_jacusa2=("1" if _RUN_JACUSA2 else "0"),
+        jac_cond1=_JAC_C1,
+        jac_cond2=_JAC_C2
     shell:
         r"""
         set -euo pipefail
         WORKDIR=$(pwd)
         export TMPDIR={params.tmpdir}
         export RUN_JACUSA2={params.run_jacusa2}
+        export JAC_COND1={params.jac_cond1}
+        export JAC_COND2={params.jac_cond2}
         export DOWNSTREAM_WORKDIR="$WORKDIR/results/downstream/"
         export DOWNSTREAM_OUTDIR="$WORKDIR/results/downstream/Downstream/"
         mkdir -p "$DOWNSTREAM_OUTDIR"
@@ -364,6 +384,21 @@ if os.environ.get('RUN_JACUSA2', '1') != '1':
         "           'REDItools2':reditoolsTable,\n            'JACUSA2':jacusaTable}}",
         "           'REDItools2':reditoolsTable}}")
     code = code.replace("np.arange(5)", "np.arange(len(tools))")
+else:
+    # rna-editing-51k: JACUSA2 enabled -> label conditions list, figure panels, and
+    # the panel assignment with the real condition1/condition2 names so any ordering
+    # reads truthfully (condition1 -> left panel, condition2 -> right panel).
+    _c1 = os.environ.get('JAC_COND1', 'WT')
+    _c2 = os.environ.get('JAC_COND2', 'ADAR1KO')
+    code = code.replace("conditions = ['WT', 'ADAR1KO']",
+                        "conditions = [%r, %r]" % (_c1, _c2))
+    # Swap-safe relabel of the two panel titles via sentinels.
+    code = code.replace("'WT condition'", "'__JAC_C1_LABEL__'")
+    code = code.replace("'ADAR1KO condition'", "'__JAC_C2_LABEL__'")
+    code = code.replace("'__JAC_C1_LABEL__'", "%r" % (_c1 + ' condition'))
+    code = code.replace("'__JAC_C2_LABEL__'", "%r" % (_c2 + ' condition'))
+    # condition2 occupies the right panel (posy=1); condition1 stays on the left.
+    code = code.replace("if condition == 'ADAR1KO':", "if condition == %r:" % _c2)
 with open(o, 'w') as f:
     f.write(code)
 PATCHER

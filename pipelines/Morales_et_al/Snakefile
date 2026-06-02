@@ -59,17 +59,22 @@ _ALIGNERS = config.get("aligners", ["star"])
 # JACUSA2 differential comparison (optional). When `jacusa2_comparison` names two
 # condition groups, JACUSA2 runs a call-2 contrast between them and its outputs are
 # produced/parsed/plotted. When the key is absent, JACUSA2 is skipped everywhere.
-# The two groups map to JACUSA2's bases1*/bases2* columns and, cosmetically, to the
-# "WT"/"ADAR1KO" labels in the downstream figures (condition1 → left, condition2 → right).
+# condition1 → JACUSA2 bases1* group (left figure panel); condition2 → bases2* (right).
+# The downstream JSON keys, table rows, and figure panels are labeled with the real
+# condition1/condition2 names, so any ordering is labeled truthfully.
 JACUSA2_COMPARISON = config.get("jacusa2_comparison")
 _RUN_JACUSA2 = bool(JACUSA2_COMPARISON)
+# Defaults are only used as harmless placeholders when JACUSA2 is disabled (JACUSA2.py
+# does not run, and Multiple-Analysis.py keeps its hard-coded conditions in that path).
+_JAC_C1, _JAC_C2 = "WT", "ADAR1KO"
 if _RUN_JACUSA2:
-    _jac_conds = (JACUSA2_COMPARISON.get("condition1"), JACUSA2_COMPARISON.get("condition2"))
-    _missing = [c for c in _jac_conds if c not in config["conditions"]]
-    if None in _jac_conds or _missing:
+    _JAC_C1 = JACUSA2_COMPARISON.get("condition1")
+    _JAC_C2 = JACUSA2_COMPARISON.get("condition2")
+    _missing = [c for c in (_JAC_C1, _JAC_C2) if c not in config["conditions"]]
+    if None in (_JAC_C1, _JAC_C2) or _missing:
         raise ValueError(
             "jacusa2_comparison requires condition1/condition2 present in samplesheet "
-            "conditions {}; got {}".format(config["conditions"], _jac_conds)
+            "conditions {}; got {}".format(config["conditions"], (_JAC_C1, _JAC_C2))
         )
 
 # Per-sample tools included in BigBed and comparison matrices (JACUSA2 excluded
