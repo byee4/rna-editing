@@ -76,12 +76,13 @@ rule reditools_by_chrom:
     params:
         ref=config["references"]["fasta"],
         base_quality=config["params"]["common"]["base_quality"],
-        min_coverage=config["params"]["common"]["min_coverage"]
+        min_coverage=config["params"]["common"]["min_coverage"],
+        strand=config["strand_flags"]["reditools"]
     shell:
         r"""
         set -euo pipefail
         mkdir -p "$(dirname {output})"
-        reditools.py -S -C -bq {params.base_quality} -q 20 -l {params.min_coverage} \
+        reditools.py -S -C -s {params.strand} -bq {params.base_quality} -q 20 -l {params.min_coverage} \
             -f {input.bam} -r {params.ref} \
             -g {wildcards.chrom} -o {output} \
             1> {log.stdout} 2> {log.stderr}
@@ -156,8 +157,8 @@ rule sprint_mapq_bam:
         bam="results/mapped/{aligner}/{condition}_{sample}.rmdup.bam",
         bai="results/mapped/{aligner}/{condition}_{sample}.rmdup.bam.bai"
     output:
-        bam="results/mapped/{aligner}/{condition}_{sample}.rmdup_mapq30.bam",
-        bai="results/mapped/{aligner}/{condition}_{sample}.rmdup_mapq30.bam.bai"
+        bam=temp("results/mapped/{aligner}/{condition}_{sample}.rmdup_mapq30.bam"),
+        bai=temp("results/mapped/{aligner}/{condition}_{sample}.rmdup_mapq30.bam.bai")
     wildcard_constraints:
         aligner="star|hisat2"
     threads: 1
@@ -277,8 +278,8 @@ rule add_md_tag:
         bam="results/mapped/{aligner}/{condition}_{sample}.rmdup.bam",
         bai="results/mapped/{aligner}/{condition}_{sample}.rmdup.bam.bai"
     output:
-        bam="results/mapped/{aligner}/{condition}_{sample}.rmdup_MD.bam",
-        bai="results/mapped/{aligner}/{condition}_{sample}.rmdup_MD.bam.bai"
+        bam=temp("results/mapped/{aligner}/{condition}_{sample}.rmdup_MD.bam"),
+        bai=temp("results/mapped/{aligner}/{condition}_{sample}.rmdup_MD.bam.bai")
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: 16000 * (1.5 ** (attempt - 1)),
@@ -325,13 +326,14 @@ rule jacusa2:
     params:
         pileup=config["params"]["jacusa2"]["pileup_filter"],
         base_quality=config["params"]["common"]["base_quality"],
-        min_coverage=config["params"]["common"]["min_coverage"]
+        min_coverage=config["params"]["common"]["min_coverage"],
+        lib_type=config["strand_flags"]["jacusa2"]
     shell:
         r"""
         set -euo pipefail
         wt_list=$(echo {input.wt_bams} | tr ' ' ',')
         ko_list=$(echo {input.ko_bams} | tr ' ' ',')
-        java -jar /opt/jacusa2/jacusa2.jar call-2 -a {params.pileup} -q {params.base_quality} -c {params.min_coverage} -p {threads} -r {output} $wt_list $ko_list \
+        java -jar /opt/jacusa2/jacusa2.jar call-2 -a {params.pileup} -P {params.lib_type} -q {params.base_quality} -c {params.min_coverage} -p {threads} -r {output} $wt_list $ko_list \
             1> {log.stdout} 2> {log.stderr}
         """
 
@@ -358,11 +360,12 @@ rule jacusa2_call1:
     params:
         pileup=config["params"]["jacusa2"]["pileup_filter"],
         base_quality=config["params"]["common"]["base_quality"],
-        min_coverage=config["params"]["common"]["min_coverage"]
+        min_coverage=config["params"]["common"]["min_coverage"],
+        lib_type=config["strand_flags"]["jacusa2"]
     shell:
         r"""
         set -euo pipefail
-        java -jar /opt/jacusa2/jacusa2.jar call-1 -a {params.pileup} -q {params.base_quality} -c {params.min_coverage} -p {threads} -r {output} {input.bam} \
+        java -jar /opt/jacusa2/jacusa2.jar call-1 -a {params.pileup} -P {params.lib_type} -q {params.base_quality} -c {params.min_coverage} -p {threads} -r {output} {input.bam} \
             1> {log.stdout} 2> {log.stderr}
         """
 
@@ -387,7 +390,7 @@ rule reditools3:
         stdout="results/logs/{aligner}_{condition}_{sample}.reditools3.out",
         stderr="results/logs/{aligner}_{condition}_{sample}.reditools3.err"
     params:
-        strand=config["params"]["reditools3"]["strand"],
+        strand=config["strand_flags"]["reditools"],
         map_quality=config["params"]["reditools3"]["map_quality"],
         base_quality=config["params"]["common"]["base_quality"],
         min_coverage=config["params"]["common"]["min_coverage"]
@@ -428,7 +431,7 @@ rule reditools_redinet_by_chrom:
         stderr="results/logs/{aligner}_{condition}_{sample}_{chrom}.reditools_redinet.err"
     params:
         ref=config["references"]["fasta"],
-        strand=config["params"]["redinet"]["reditools_strand"],
+        strand=config["strand_flags"]["reditools"],
         map_quality=config["params"]["redinet"]["map_quality"],
         base_quality=config["params"]["common"]["base_quality"],
         min_cov=config["params"]["common"]["min_coverage"]
@@ -625,7 +628,7 @@ rule marine_by_chrom:
         stdout="results/logs/{aligner}_{condition}_{sample}_{chrom}.marine.out",
         stderr="results/logs/{aligner}_{condition}_{sample}_{chrom}.marine.err"
     params:
-        strandedness=config["params"]["marine"]["strandedness"],
+        strandedness=config["strand_flags"]["marine"],
         min_read_quality=config["params"]["marine"]["min_read_quality"],
         min_base_quality=config["params"]["common"]["base_quality"],
         tmpdir=config.get("tmpdir", "/tmp"),

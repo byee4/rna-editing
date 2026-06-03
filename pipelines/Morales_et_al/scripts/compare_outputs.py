@@ -32,6 +32,7 @@ Run via:
 
 import argparse
 import bisect
+import gzip
 import os
 import sys
 from collections import defaultdict
@@ -45,6 +46,8 @@ from scipy.stats import spearmanr
 TOOL_OUTPUT_TYPES = {
     "reditools":  {"site_fraction", "gene_fraction", "read_count"},
     "reditools3": {"site_fraction", "gene_fraction", "read_count"},
+    # MARINE reports per-site count + coverage; fraction = count/coverage (no native score).
+    "marine":     {"site_fraction", "gene_fraction", "read_count"},
     "red_ml":     {"site_fraction", "gene_fraction", "quality_score"},
     "redinet":    {"site_fraction", "gene_fraction", "quality_score"},
     "sprint":     {"read_count"},
@@ -55,7 +58,7 @@ TOOL_OUTPUT_TYPES = {
 }
 
 # Tools that report a true editing fraction (0-1).
-FRACTION_TOOLS = {"reditools", "reditools3", "red_ml", "redinet", "jacusa2_call1"}
+FRACTION_TOOLS = {"reditools", "reditools3", "red_ml", "redinet", "jacusa2_call1", "marine"}
 
 # Output type -> output file stem.
 TYPE_PLOT = {
@@ -78,9 +81,9 @@ def stream_records(matrix_dir, aligners, chunksize=100_000):
     keeping only positions the tool actually called (score > 0 in >=1 sample).
     """
     paths = {
-        "frac":  os.path.join(matrix_dir, "edit_fraction_matrix.tsv"),
-        "score": os.path.join(matrix_dir, "tool_score_matrix.tsv"),
-        "cov":   os.path.join(matrix_dir, "edit_coverage_matrix.tsv"),
+        "frac":  os.path.join(matrix_dir, "edit_fraction_matrix.tsv.gz"),
+        "score": os.path.join(matrix_dir, "tool_score_matrix.tsv.gz"),
+        "cov":   os.path.join(matrix_dir, "edit_coverage_matrix.tsv.gz"),
     }
     for name, p in paths.items():
         if not os.path.exists(p):
@@ -260,7 +263,7 @@ def value_for(tool, output_type, record):
     if output_type in ("quality_score", "group_score"):
         return score
     if output_type == "read_count":
-        return frac * cov if tool in ("reditools", "reditools3", "jacusa2_call1") else score
+        return frac * cov if tool in ("reditools", "reditools3", "jacusa2_call1", "marine") else score
     return frac  # unused for gene_fraction (handled separately)
 
 
@@ -282,8 +285,8 @@ def process_aligner(aligner, data, gene_index, outdir, min_tools):
 
     # --- All-tool Jaccard / overlap ---
     jac, cnt = jaccard_matrix(site_sets, tools)
-    jac.to_csv(os.path.join(inter_dir, f"tool_jaccard_{aligner}.tsv"), sep="\t")
-    cnt.to_csv(os.path.join(inter_dir, f"tool_overlap_counts_{aligner}.tsv"), sep="\t")
+    jac.to_csv(os.path.join(inter_dir, f"tool_jaccard_{aligner}.tsv.gz"), sep="\t")
+    cnt.to_csv(os.path.join(inter_dir, f"tool_overlap_counts_{aligner}.tsv.gz"), sep="\t")
     plot_heatmap(jac, f"Site Jaccard ({aligner})",
                  os.path.join(inter_dir, f"tool_jaccard_{aligner}.png"), vmin=0, vmax=1)
 
@@ -300,23 +303,32 @@ def process_aligner(aligner, data, gene_index, outdir, min_tools):
         row = {"chrom": chrom, "pos": pos, "n_tools": len(callers),
                "tools": ",".join(sorted(callers))}
         for t in tools:
-            row[t] = (data[(aligner, t)][p][0]
-                      if (t in FRACTION_TOOLS and p in data[(aligner, t)])
-                      else np.nan)
+            if p in data[(aligner, t)]:
+                frac, cov, score = data[(aligner, t)][p]
+                # Fraction tools report a 0-1 editing fraction. Non-fraction tools
+                # (jacusa2 call-2, bcftools, sprint) have no per-site editing
+                # fraction, so fall back to their native statistic/score —
+                # otherwise the column is always blank even when the tool is
+                # listed in `tools` as having called the site. Note this mixes
+                # units across columns: fraction for fraction tools, the tool's
+                # own score otherwise.
+                row[t] = frac if t in FRACTION_TOOLS else score
+            else:
+                row[t] = np.nan
         rows.append(row)
     cols = ["chrom", "pos", "n_tools", "tools"] + tools
     table = pd.DataFrame(rows, columns=cols)
     if not table.empty:
         table = table.sort_values(["chrom", "pos"])
-    table.to_csv(os.path.join(inter_dir, f"edits_intersect_{aligner}.tsv"),
+    table.to_csv(os.path.join(inter_dir, f"edits_intersect_{aligner}.tsv.gz"),
                  sep="\t", index=False)
 
     # --- Per-output-type correlation ---
     for output_type, stem in TYPE_PLOT.items():
         members = [t for t in tools if output_type in TOOL_OUTPUT_TYPES.get(t, set())]
-        corr_path = os.path.join(type_dir, f"{stem}_{aligner}.tsv")
+        corr_path = os.path.join(type_dir, f"{stem}_{aligner}.tsv.gz")
         if len(members) < 2:
-            with open(corr_path, "w") as fh:
+            with gzip.open(corr_path, "wt") as fh:
                 only = members[0] if members else "(none)"
                 fh.write(f"# {output_type}: only {len(members)} tool(s) ({only}); "
                          f"no pairwise correlation possible.\n")
@@ -326,7 +338,7 @@ def process_aligner(aligner, data, gene_index, outdir, min_tools):
 
         if output_type == "gene_fraction":
             if gene_index is None:
-                with open(corr_path, "w") as fh:
+                with gzip.open(corr_path, "wt") as fh:
                     fh.write("# gene_fraction skipped: no GTF provided.\n")
                 continue
             value_maps = {}
@@ -348,7 +360,7 @@ def process_aligner(aligner, data, gene_index, outdir, min_tools):
 
         corr, nov = intersect_spearman(value_maps, members)
         corr.to_csv(corr_path, sep="\t")
-        nov.to_csv(os.path.join(type_dir, f"{stem}_noverlap_{aligner}.tsv"), sep="\t")
+        nov.to_csv(os.path.join(type_dir, f"{stem}_noverlap_{aligner}.tsv.gz"), sep="\t")
         plot_heatmap(corr, f"{stem} ({aligner})",
                      os.path.join(type_dir, f"{stem}_{aligner}.png"))
         print(f"  {aligner} {output_type}: {len(members)} tools", file=sys.stderr)

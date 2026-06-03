@@ -59,6 +59,7 @@ Run via:
 """
 
 import argparse
+import gzip
 import os
 import sys
 from collections import defaultdict
@@ -174,7 +175,7 @@ def site_characteristics(aligner, data, tools, outdir):
                              tool="consensus_mean", characteristic=ch, **s))
 
     df = pd.DataFrame(rows)
-    path = os.path.join(outdir, f"site_characteristics_{aligner}.tsv")
+    path = os.path.join(outdir, f"site_characteristics_{aligner}.tsv.gz")
     df.to_csv(path, sep="\t", index=False, float_format="%.6g")
     return df, n_called
 
@@ -239,7 +240,7 @@ def gene_characteristics(aligner, gene_val, tools, outdir):
             rows.append(dict(aligner=aligner, scope="gene", stratum=label,
                              tool=t, characteristic="n_sites_per_gene", **s))
     df = pd.DataFrame(rows)
-    path = os.path.join(outdir, f"gene_characteristics_{aligner}.tsv")
+    path = os.path.join(outdir, f"gene_characteristics_{aligner}.tsv.gz")
     df.to_csv(path, sep="\t", index=False, float_format="%.6g")
     return df, n_called
 
@@ -286,7 +287,7 @@ def anticorrelation(aligner, gene_val, gene_sites, tools, outdir):
             })
 
     df = pd.DataFrame(rows).sort_values("spearman", na_position="last")
-    df.to_csv(os.path.join(outdir, f"anticorrelation_gene_fraction_{aligner}.tsv"),
+    df.to_csv(os.path.join(outdir, f"anticorrelation_gene_fraction_{aligner}.tsv.gz"),
               sep="\t", index=False, float_format="%.6g")
 
     # Per-gene detail for the most anticorrelated pair with usable n.
@@ -296,7 +297,7 @@ def anticorrelation(aligner, gene_val, gene_sites, tools, outdir):
         r = usable.iloc[0]
         worst = (r["tool_a"], r["tool_b"])
         pair_detail[worst].to_csv(
-            os.path.join(outdir, f"anticorrelation_detail_{aligner}.tsv"),
+            os.path.join(outdir, f"anticorrelation_detail_{aligner}.tsv.gz"),
             sep="\t", index=False, float_format="%.6g")
     return df, worst, pair_detail
 
@@ -451,7 +452,7 @@ def process_aligner(aligner, data, gene_index, outdir):
         # Emit empty stubs so Snakemake outputs exist.
         for stem in ("site_characteristics", "gene_characteristics",
                      "anticorrelation_gene_fraction"):
-            open(os.path.join(outdir, f"{stem}_{aligner}.tsv"), "w").close()
+            gzip.open(os.path.join(outdir, f"{stem}_{aligner}.tsv.gz"), "wt").close()
         open(os.path.join(outdir, f"consensus_report_{aligner}.md"), "w").close()
         return
 
@@ -460,7 +461,7 @@ def process_aligner(aligner, data, gene_index, outdir):
     if gene_index is None:
         # Gene-level analysis needs a GTF; write stubs and a note.
         for stem in ("gene_characteristics", "anticorrelation_gene_fraction"):
-            with open(os.path.join(outdir, f"{stem}_{aligner}.tsv"), "w") as fh:
+            with gzip.open(os.path.join(outdir, f"{stem}_{aligner}.tsv.gz"), "wt") as fh:
                 fh.write("# gene-level analysis skipped: no GTF provided.\n")
         gene_n, anti_df, worst = {}, None, None
     else:

@@ -6,13 +6,15 @@ localrules: prepare_fastq
 
 
 rule prepare_fastq:
-    """Decompress samplesheet FASTQ.GZ paths to data/fastq/{condition}_{sample}_{read}.fastq."""
+    """Stage samplesheet FASTQ.GZ paths to data/fastq/{condition}_{sample}_{read}.fastq.gz
+    under canonical names. The samplesheet paths are already gzipped, so this is a
+    plain copy; the staged file is temporary (consumed only by trim_reads)."""
     input:
         samplesheet_fastq_path
     output:
-        temp("data/fastq/{condition}_{sample}_{read}.fastq")
+        temp("data/fastq/{condition}_{sample}_{read}.fastq.gz")
     shell:
-        "zcat {input} > {output}"
+        "cp -f {input} {output}"
 
 
 rule trim_reads:
@@ -20,7 +22,7 @@ rule trim_reads:
     # without filtering, so R1 and R2 always retain the same read count and order
     # when trimmed separately — paired-end synchronization is guaranteed.
     input:
-        reads="data/fastq/{condition}_{sample}_{read}.fastq"
+        reads="data/fastq/{condition}_{sample}_{read}.fastq.gz"
     output:
         "results/trimmed/{condition}_{sample}_{read}_trimmed.fastq.gz"
     threads: 1
@@ -37,7 +39,7 @@ rule trim_reads:
     shell:
         r"""
         set -euo pipefail
-        fastx_trimmer -Q{params.q} -l {params.l} -z -i {input.reads} -o {output} \
+        zcat {input.reads} | fastx_trimmer -Q{params.q} -l {params.l} -z -o {output} \
             1> {log.stdout} 2> {log.stderr}
         """
 
@@ -55,8 +57,8 @@ rule star_mapping:
             else []
         )
     output:
-        bam="results/mapped/star/{condition}_{sample}.bam",
-        bai="results/mapped/star/{condition}_{sample}.bam.bai"
+        bam=temp("results/mapped/star/{condition}_{sample}.bam"),
+        bai=temp("results/mapped/star/{condition}_{sample}.bam.bai")
     threads: config["threads"]
     resources:
         mem_mb=lambda wildcards, attempt: 36000 * (1.5 ** (attempt - 1)),
@@ -109,8 +111,8 @@ rule bwa_mapping:
         ),
         idx=multiext(config["references"]["fasta"], ".amb", ".ann", ".bwt", ".pac", ".sa"),
     output:
-        bam="results/mapped/bwa/{condition}_{sample}.bam",
-        bai="results/mapped/bwa/{condition}_{sample}.bam.bai"
+        bam=temp("results/mapped/bwa/{condition}_{sample}.bam"),
+        bai=temp("results/mapped/bwa/{condition}_{sample}.bam.bai")
     threads: config["threads"]
     resources:
         mem_mb=lambda wildcards, attempt: 36000 * (1.5 ** (attempt - 1)),
@@ -167,8 +169,8 @@ rule hisat2_mapping:
                      ".1.ht2", ".2.ht2", ".3.ht2", ".4.ht2",
                      ".5.ht2", ".6.ht2", ".7.ht2", ".8.ht2"),
     output:
-        bam="results/mapped/hisat2/{condition}_{sample}.bam",
-        bai="results/mapped/hisat2/{condition}_{sample}.bam.bai"
+        bam=temp("results/mapped/hisat2/{condition}_{sample}.bam"),
+        bai=temp("results/mapped/hisat2/{condition}_{sample}.bam.bai")
     threads: config["threads"]
     resources:
         mem_mb=lambda wildcards, attempt: 36000 * (1.5 ** (attempt - 1)),
@@ -214,7 +216,7 @@ rule mark_duplicates:
     input:
         bam="results/mapped/{aligner}/{condition}_{sample}.bam"
     output:
-        rmdup_bam="results/mapped/{aligner}/{condition}_{sample}.rmdup.bam",
+        rmdup_bam=temp("results/mapped/{aligner}/{condition}_{sample}.rmdup.bam"),
         metrics="results/mapped/{aligner}/{condition}_{sample}.duplication.info"
     threads: 1
     resources:
@@ -241,7 +243,7 @@ rule index_rmdup_bam:
     input:
         bam="results/mapped/{aligner}/{condition}_{sample}.rmdup.bam"
     output:
-        bai="results/mapped/{aligner}/{condition}_{sample}.rmdup.bam.bai"
+        bai=temp("results/mapped/{aligner}/{condition}_{sample}.rmdup.bam.bai")
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: 8000 * (2 ** (attempt - 1)),

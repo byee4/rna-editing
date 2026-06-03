@@ -172,9 +172,11 @@ _WGS_DB_FILES = (
 
 rule all:
     input:
-        # Preprocessing outputs (one BAM per aligner per sample)
-        expand("results/mapped/{aligner}/{condition}_{sample}.rmdup.bam",
-               aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),
+        # NOTE: rmdup.bam is intentionally NOT a target here. All BAMs are marked
+        # temp() (see preprocessing.smk / tools.smk) so they are deleted once the
+        # callers and BigWig/BigBed steps that consume them have run. The retained
+        # outputs are the edit calls, comparison matrices, correlation/consensus
+        # tables, BigWig/BigBed, and the trackhub.
         # Tool outputs (one result per aligner per sample / per aligner for JACUSA2)
         expand("results/tools/{aligner}/reditools/{condition}_{sample}.output",
                aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),
@@ -215,26 +217,26 @@ rule all:
         # REDInet step 3: predictions per aligner per sample
         expand("results/tools/{aligner}/redinet/{condition}_{sample}.predictions.tsv",
                aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),
-        # Cross-tool comparison matrices
-        "results/compare_all_tools/edit_coverage_matrix.tsv",
-        "results/compare_all_tools/edit_fraction_matrix.tsv",
-        "results/compare_all_tools/tool_score_matrix.tsv",
+        # Cross-tool comparison matrices (gzip-compressed)
+        "results/compare_all_tools/edit_coverage_matrix.tsv.gz",
+        "results/compare_all_tools/edit_fraction_matrix.tsv.gz",
+        "results/compare_all_tools/tool_score_matrix.tsv.gz",
         # Intersection co-call table + per-output-type correlation (replaces the
         # old mixed tool_correlation heatmap)
-        expand("results/correlation/intersect/edits_intersect_{aligner}.tsv", aligner=_ALIGNERS),
-        expand("results/correlation/intersect/tool_jaccard_{aligner}.tsv", aligner=_ALIGNERS),
-        expand("results/correlation/by_output_type/per-site-fraction-correlation_{aligner}.tsv", aligner=_ALIGNERS),
-        expand("results/correlation/by_output_type/per-gene-fraction-correlation_{aligner}.tsv", aligner=_ALIGNERS),
-        expand("results/correlation/by_output_type/qual-or-score-correlation_{aligner}.tsv", aligner=_ALIGNERS),
-        expand("results/correlation/by_output_type/read-count-correlation_{aligner}.tsv", aligner=_ALIGNERS),
+        expand("results/correlation/intersect/edits_intersect_{aligner}.tsv.gz", aligner=_ALIGNERS),
+        expand("results/correlation/intersect/tool_jaccard_{aligner}.tsv.gz", aligner=_ALIGNERS),
+        expand("results/correlation/by_output_type/per-site-fraction-correlation_{aligner}.tsv.gz", aligner=_ALIGNERS),
+        expand("results/correlation/by_output_type/per-gene-fraction-correlation_{aligner}.tsv.gz", aligner=_ALIGNERS),
+        expand("results/correlation/by_output_type/qual-or-score-correlation_{aligner}.tsv.gz", aligner=_ALIGNERS),
+        expand("results/correlation/by_output_type/read-count-correlation_{aligner}.tsv.gz", aligner=_ALIGNERS),
         # Consensus characteristics — intersection (>=2,>=3,...) vs outersection (=1)
         # per-site and per-gene, plus the gene-fraction anticorrelation diagnostic.
-        expand("results/consensus/site_characteristics_{aligner}.tsv", aligner=_ALIGNERS),
-        expand("results/consensus/gene_characteristics_{aligner}.tsv", aligner=_ALIGNERS),
-        expand("results/consensus/anticorrelation_gene_fraction_{aligner}.tsv", aligner=_ALIGNERS),
+        expand("results/consensus/site_characteristics_{aligner}.tsv.gz", aligner=_ALIGNERS),
+        expand("results/consensus/gene_characteristics_{aligner}.tsv.gz", aligner=_ALIGNERS),
+        expand("results/consensus/anticorrelation_gene_fraction_{aligner}.tsv.gz", aligner=_ALIGNERS),
         expand("results/consensus/consensus_report_{aligner}.md", aligner=_ALIGNERS),
-        # Aligner correlation (per-tool, across aligners) — unchanged
-        expand("results/correlation/aligner_correlation_{tool}.tsv", tool=_BED_TOOLS),
+        # Aligner correlation (per-tool, across aligners)
+        expand("results/correlation/aligner_correlation_{tool}.tsv.gz", tool=_BED_TOOLS),
         # Coverage BigWig (one per BAM)
         expand("results/bigwig/{aligner}/{condition}_{sample}.bw",
                aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),

@@ -16,7 +16,7 @@ rule mask_iupac_in_reference:
     input:
         config["references"]["fasta"]
     output:
-        fasta="results/references/ref_iupac_masked.fasta",
+        fasta=temp("results/references/ref_iupac_masked.fasta"),
         fai="results/references/ref_iupac_masked.fasta.fai"
     threads: 1
     resources:

@@ -2,10 +2,10 @@
 """
 compare_all_tools.py — Build position × sample matrices from all RNA editing tools.
 
-Outputs (in --outdir):
-  edit_coverage_matrix.tsv   read depth at each edited position per sample/tool
-  edit_fraction_matrix.tsv   editing fraction (0–1) at each position
-  tool_score_matrix.tsv      tool-internal confidence score at each position
+Outputs (in --outdir, gzip-compressed):
+  edit_coverage_matrix.tsv.gz   read depth at each edited position per sample/tool
+  edit_fraction_matrix.tsv.gz   editing fraction (0–1) at each position
+  tool_score_matrix.tsv.gz      tool-internal confidence score at each position
 
 Columns are named  {tool}.{aligner}.{condition}_{sample}.
 Rows are genomic positions  {chrom}:{pos}  (1-based, as reported by each tool).
@@ -529,6 +529,7 @@ def write_matrices_streaming(cov_data, frac_data, score_data, outdir, chunk=50_0
     chunk rows at a time across all three output files simultaneously.
     """
     import gc
+    import gzip
 
     cols = list(cov_data.keys())
 
@@ -548,13 +549,13 @@ def write_matrices_streaming(cov_data, frac_data, score_data, outdir, chunk=50_0
     header = "\t" + "\t".join(cols) + "\n"
 
     paths = [
-        os.path.join(outdir, "edit_coverage_matrix.tsv"),
-        os.path.join(outdir, "edit_fraction_matrix.tsv"),
-        os.path.join(outdir, "tool_score_matrix.tsv"),
+        os.path.join(outdir, "edit_coverage_matrix.tsv.gz"),
+        os.path.join(outdir, "edit_fraction_matrix.tsv.gz"),
+        os.path.join(outdir, "tool_score_matrix.tsv.gz"),
     ]
     data_dicts = [cov_data, frac_data, score_data]
 
-    with open(paths[0], "w") as f0, open(paths[1], "w") as f1, open(paths[2], "w") as f2:
+    with gzip.open(paths[0], "wt") as f0, gzip.open(paths[1], "wt") as f1, gzip.open(paths[2], "wt") as f2:
         handles = [f0, f1, f2]
         for fh in handles:
             fh.write(header)

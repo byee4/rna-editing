@@ -58,9 +58,9 @@ GTF = (
 def _write_fixture(tmp):
     mdir = os.path.join(tmp, "matrices")
     os.makedirs(mdir, exist_ok=True)
-    for name, vals in [("edit_fraction_matrix.tsv", FRAC),
-                       ("tool_score_matrix.tsv", SCORE),
-                       ("edit_coverage_matrix.tsv", COV)]:
+    for name, vals in [("edit_fraction_matrix.tsv.gz", FRAC),
+                       ("tool_score_matrix.tsv.gz", SCORE),
+                       ("edit_coverage_matrix.tsv.gz", COV)]:
         df = pd.DataFrame(vals, index=POSITIONS, columns=COLS)
         df.to_csv(os.path.join(mdir, name), sep="\t")
     gtf = os.path.join(tmp, "genes.gtf")
@@ -122,37 +122,44 @@ class EndToEndTest(unittest.TestCase):
         return pd.read_csv(os.path.join(self.out, sub, name), sep="\t", index_col=0)
 
     def test_jaccard(self):
-        jac = self._read("intersect", "tool_jaccard_star.tsv")
+        jac = self._read("intersect", "tool_jaccard_star.tsv.gz")
         self.assertAlmostEqual(jac.loc["reditools", "reditools3"], 1.0)
-        cnt = self._read("intersect", "tool_overlap_counts_star.tsv")
+        cnt = self._read("intersect", "tool_overlap_counts_star.tsv.gz")
         self.assertEqual(int(cnt.loc["reditools", "sprint"]), 2)
 
     def test_cocall_table(self):
-        t = pd.read_csv(os.path.join(self.out, "intersect", "edits_intersect_star.tsv"),
+        t = pd.read_csv(os.path.join(self.out, "intersect", "edits_intersect_star.tsv.gz"),
                         sep="\t")
         self.assertEqual(len(t), 4)  # all four positions called by >=2 tools
         r200 = t[t["pos"] == 200].iloc[0]
         self.assertEqual(int(r200["n_tools"]), 4)
         r100 = t[t["pos"] == 100].iloc[0]
         self.assertAlmostEqual(float(r100["reditools"]), 0.2)
-        self.assertTrue(np.isnan(float(r100["sprint"])))  # no fraction for sprint
+        # Non-fraction tools fall back to their native score so the column is
+        # populated (was previously always NaN). sprint score at chr1:100 = 5.0.
+        self.assertAlmostEqual(float(r100["sprint"]), 5.0)
+        # jacusa2 (call-2, group_score) is populated with its score where called.
+        r300 = t[t["pos"] == 300].iloc[0]
+        self.assertIn("jacusa2", r300["tools"])
+        self.assertAlmostEqual(float(r300["jacusa2"]), 10.0)
 
     def test_site_fraction_correlation(self):
-        corr = self._read("by_output_type", "per-site-fraction-correlation_star.tsv")
+        corr = self._read("by_output_type", "per-site-fraction-correlation_star.tsv.gz")
         self.assertAlmostEqual(corr.loc["reditools", "reditools3"], 1.0)
         # red_ml shares only 1 frac>0 site with reditools -> NaN
         self.assertTrue(np.isnan(corr.loc["reditools", "red_ml"]))
-        nov = self._read("by_output_type", "per-site-fraction-correlation_noverlap_star.tsv")
+        nov = self._read("by_output_type", "per-site-fraction-correlation_noverlap_star.tsv.gz")
         self.assertEqual(int(nov.loc["reditools", "reditools3"]), 3)
 
     def test_read_count_correlation(self):
-        corr = self._read("by_output_type", "read-count-correlation_star.tsv")
+        corr = self._read("by_output_type", "read-count-correlation_star.tsv.gz")
         self.assertAlmostEqual(corr.loc["reditools", "reditools3"], 1.0)
 
     def test_group_score_is_stub(self):
         path = os.path.join(self.out, "by_output_type",
-                            "group-or-comparison-score_star.tsv")
-        with open(path) as fh:
+                            "group-or-comparison-score_star.tsv.gz")
+        import gzip
+        with gzip.open(path, "rt") as fh:
             first = fh.readline()
         self.assertTrue(first.startswith("#"))  # single-member stub, not a crash
 

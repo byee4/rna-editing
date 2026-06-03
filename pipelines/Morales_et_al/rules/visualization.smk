@@ -75,7 +75,7 @@ rule get_chrom_sizes:
     input:
         fai=config["references"]["fasta"] + ".fai"
     output:
-        "results/reference/chrom.sizes"
+        "results/references/chrom.sizes"
     localrule: True
     shell:
         "cut -f1,2 {input.fai} > {output}"
@@ -169,7 +169,7 @@ rule sort_and_bigbed:
     """Convert sorted BED6 to BigBed using bedToBigBed."""
     input:
         bed="results/bigbed/{tool}/{aligner}/{condition}_{sample}.sorted.bed",
-        sizes="results/reference/chrom.sizes"
+        sizes="results/references/chrom.sizes"
     output:
         "results/bigbed/{tool}/{aligner}/{condition}_{sample}.bb"
     resources:
@@ -212,9 +212,9 @@ rule compare_all_tools:
     input:
         _all_tool_outputs
     output:
-        coverage="results/compare_all_tools/edit_coverage_matrix.tsv",
-        fraction="results/compare_all_tools/edit_fraction_matrix.tsv",
-        score="results/compare_all_tools/tool_score_matrix.tsv"
+        coverage="results/compare_all_tools/edit_coverage_matrix.tsv.gz",
+        fraction="results/compare_all_tools/edit_fraction_matrix.tsv.gz",
+        score="results/compare_all_tools/tool_score_matrix.tsv.gz"
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: 16000 * (1.5 ** (attempt - 1)),
@@ -258,16 +258,16 @@ rule compare_all_tools:
 rule compare_outputs:
     """Intersection co-call table + per-output-type correlation plots."""
     input:
-        fraction="results/compare_all_tools/edit_fraction_matrix.tsv",
-        score="results/compare_all_tools/tool_score_matrix.tsv",
-        coverage="results/compare_all_tools/edit_coverage_matrix.tsv"
+        fraction="results/compare_all_tools/edit_fraction_matrix.tsv.gz",
+        score="results/compare_all_tools/tool_score_matrix.tsv.gz",
+        coverage="results/compare_all_tools/edit_coverage_matrix.tsv.gz"
     output:
-        expand("results/correlation/intersect/edits_intersect_{aligner}.tsv", aligner=_ALIGNERS),
-        expand("results/correlation/intersect/tool_jaccard_{aligner}.tsv", aligner=_ALIGNERS),
-        expand("results/correlation/by_output_type/per-site-fraction-correlation_{aligner}.tsv", aligner=_ALIGNERS),
-        expand("results/correlation/by_output_type/per-gene-fraction-correlation_{aligner}.tsv", aligner=_ALIGNERS),
-        expand("results/correlation/by_output_type/qual-or-score-correlation_{aligner}.tsv", aligner=_ALIGNERS),
-        expand("results/correlation/by_output_type/read-count-correlation_{aligner}.tsv", aligner=_ALIGNERS)
+        expand("results/correlation/intersect/edits_intersect_{aligner}.tsv.gz", aligner=_ALIGNERS),
+        expand("results/correlation/intersect/tool_jaccard_{aligner}.tsv.gz", aligner=_ALIGNERS),
+        expand("results/correlation/by_output_type/per-site-fraction-correlation_{aligner}.tsv.gz", aligner=_ALIGNERS),
+        expand("results/correlation/by_output_type/per-gene-fraction-correlation_{aligner}.tsv.gz", aligner=_ALIGNERS),
+        expand("results/correlation/by_output_type/qual-or-score-correlation_{aligner}.tsv.gz", aligner=_ALIGNERS),
+        expand("results/correlation/by_output_type/read-count-correlation_{aligner}.tsv.gz", aligner=_ALIGNERS)
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: 12000 * (1.5 ** (attempt - 1)),
@@ -307,13 +307,13 @@ rule compare_outputs:
 rule consensus_characteristics:
     """Intersection-vs-outersection characteristic comparison + anticorrelation diagnostic."""
     input:
-        fraction="results/compare_all_tools/edit_fraction_matrix.tsv",
-        score="results/compare_all_tools/tool_score_matrix.tsv",
-        coverage="results/compare_all_tools/edit_coverage_matrix.tsv"
+        fraction="results/compare_all_tools/edit_fraction_matrix.tsv.gz",
+        score="results/compare_all_tools/tool_score_matrix.tsv.gz",
+        coverage="results/compare_all_tools/edit_coverage_matrix.tsv.gz"
     output:
-        expand("results/consensus/site_characteristics_{aligner}.tsv", aligner=_ALIGNERS),
-        expand("results/consensus/gene_characteristics_{aligner}.tsv", aligner=_ALIGNERS),
-        expand("results/consensus/anticorrelation_gene_fraction_{aligner}.tsv", aligner=_ALIGNERS),
+        expand("results/consensus/site_characteristics_{aligner}.tsv.gz", aligner=_ALIGNERS),
+        expand("results/consensus/gene_characteristics_{aligner}.tsv.gz", aligner=_ALIGNERS),
+        expand("results/consensus/anticorrelation_gene_fraction_{aligner}.tsv.gz", aligner=_ALIGNERS),
         expand("results/consensus/consensus_report_{aligner}.md", aligner=_ALIGNERS)
     threads: 1
     resources:
@@ -348,10 +348,10 @@ rule consensus_characteristics:
 rule aligner_correlation:
     """Pairwise Spearman correlation among aligners (one matrix per tool)."""
     input:
-        "results/compare_all_tools/edit_fraction_matrix.tsv"
+        "results/compare_all_tools/edit_fraction_matrix.tsv.gz"
     output:
         expand(
-            "results/correlation/aligner_correlation_{tool}.tsv",
+            "results/correlation/aligner_correlation_{tool}.tsv.gz",
             tool=_BED_TOOLS
         )
     threads: 1
