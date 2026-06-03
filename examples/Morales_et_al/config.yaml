@@ -133,6 +133,9 @@ params:
     min_read_quality: 20   # MARINE --min_read_quality (MAPQ filter). --min_base_quality uses params.common.base_quality.
                            # --paired_end is set per-sample from the samplesheet (is_paired), not configured here.
                            # Strandedness comes from params.common.strandedness (shared across all tools).
+    min_coverage: 5        # post-hoc filter on MARINE's `coverage` column: rows with
+                           # coverage < this are dropped from final_filtered_site_info.<EDIT_TYPE>.tsv.gz.
+                           # Separate from params.common.min_coverage (call-time gate for the other tools).
 
 visualization:
   tools:

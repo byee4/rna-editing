@@ -93,6 +93,10 @@ params:
     min_coverage: 5
     edit_type: "AG"        # A->I; reverse-strand complement "TC" derived in code
     min_tools: 2           # co-call threshold for compare_outputs
+    # Single source of truth for library strandedness, applied consistently to every
+    # caller (reditools, reditools3, redinet's REDItoolDnaRna, MARINE, JACUSA2 call-1/2).
+    # One of: "unstranded" | "stranded" | "reverse_stranded".
+    strandedness: "reverse_stranded"
   fastx_trimmer:
     quality: 33
     length: 130
@@ -112,18 +116,17 @@ params:
     #   unfiltered JACUSA2-style   — keep every site JACUSA2 call-1 reported
     call1_filter: "edit_type"
   reditools3:
-    strand: 0       # 0=unstranded, 1=stranded, 2=reverse-stranded
     map_quality: 20
   redinet:
-    reditools_strand: 0    # REDItoolDnaRna.py -s: 0=no strand inference, 1=infer
     map_quality: 20
     cov_threshold: 5       # REDInet_Inference.py --C: min coverage (default 50)
     agfreq_threshold: 0.01
     min_ag_subs: 1         # min AG substitutions (default 3; lowered for small test)
   marine:
-    strandedness: 2        # 0=unstranded, 1=stranded, 2=reverse-stranded
     min_read_quality: 20   # MARINE --min_read_quality (MAPQ filter). --min_base_quality uses params.common.base_quality.
                            # --paired_end is set per-sample from the samplesheet (is_paired), not configured here.
+    min_coverage: 5        # post-hoc filter on MARINE's `coverage` column: rows with
+                           # coverage < this are dropped from final_filtered_site_info.<EDIT_TYPE>.tsv.gz.
 
 visualization:
   tools:

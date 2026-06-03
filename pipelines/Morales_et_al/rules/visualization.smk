@@ -197,7 +197,7 @@ rule sort_and_bigbed:
 def _all_tool_outputs(wildcards):
     """Collect all tool outputs that feed into the comparison matrices."""
     inputs = []
-    for tool in _BED_TOOLS:
+    for tool in _COMPARE_TOOLS:
         for aligner in _ALIGNERS:
             for condition in config["conditions"]:
                 for sample in config["samples"]:
@@ -212,9 +212,9 @@ rule compare_all_tools:
     input:
         _all_tool_outputs
     output:
-        coverage="results/compare_all_tools/edit_coverage_matrix.tsv.gz",
-        fraction="results/compare_all_tools/edit_fraction_matrix.tsv.gz",
-        score="results/compare_all_tools/tool_score_matrix.tsv.gz"
+        coverage="results/tool_comparison/compare_all_tools/edit_coverage_matrix.tsv.gz",
+        fraction="results/tool_comparison/compare_all_tools/edit_fraction_matrix.tsv.gz",
+        score="results/tool_comparison/compare_all_tools/tool_score_matrix.tsv.gz"
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: 16000 * (1.5 ** (attempt - 1)),
@@ -224,8 +224,8 @@ rule compare_all_tools:
         stderr="results/logs/compare_all_tools.err"
     params:
         script=os.path.join(_VIZ_SCRIPTS, "compare_all_tools.py"),
-        outdir="results/compare_all_tools",
-        tools=" ".join(_BED_TOOLS + ["jacusa2"]),
+        outdir="results/tool_comparison/compare_all_tools",
+        tools=" ".join(_COMPARE_TOOLS + ["jacusa2"]),
         aligners=" ".join(_ALIGNERS),
         conditions=" ".join(config["conditions"]),
         samples=" ".join(config["samples"]),
@@ -258,16 +258,16 @@ rule compare_all_tools:
 rule compare_outputs:
     """Intersection co-call table + per-output-type correlation plots."""
     input:
-        fraction="results/compare_all_tools/edit_fraction_matrix.tsv.gz",
-        score="results/compare_all_tools/tool_score_matrix.tsv.gz",
-        coverage="results/compare_all_tools/edit_coverage_matrix.tsv.gz"
+        fraction="results/tool_comparison/compare_all_tools/edit_fraction_matrix.tsv.gz",
+        score="results/tool_comparison/compare_all_tools/tool_score_matrix.tsv.gz",
+        coverage="results/tool_comparison/compare_all_tools/edit_coverage_matrix.tsv.gz"
     output:
-        expand("results/correlation/intersect/edits_intersect_{aligner}.tsv.gz", aligner=_ALIGNERS),
-        expand("results/correlation/intersect/tool_jaccard_{aligner}.tsv.gz", aligner=_ALIGNERS),
-        expand("results/correlation/by_output_type/per-site-fraction-correlation_{aligner}.tsv.gz", aligner=_ALIGNERS),
-        expand("results/correlation/by_output_type/per-gene-fraction-correlation_{aligner}.tsv.gz", aligner=_ALIGNERS),
-        expand("results/correlation/by_output_type/qual-or-score-correlation_{aligner}.tsv.gz", aligner=_ALIGNERS),
-        expand("results/correlation/by_output_type/read-count-correlation_{aligner}.tsv.gz", aligner=_ALIGNERS)
+        expand("results/tool_comparison/correlation/intersect/edits_intersect_{aligner}.tsv.gz", aligner=_ALIGNERS),
+        expand("results/tool_comparison/correlation/intersect/tool_jaccard_{aligner}.tsv.gz", aligner=_ALIGNERS),
+        expand("results/tool_comparison/correlation/by_output_type/per-site-fraction-correlation_{aligner}.tsv.gz", aligner=_ALIGNERS),
+        expand("results/tool_comparison/correlation/by_output_type/per-gene-fraction-correlation_{aligner}.tsv.gz", aligner=_ALIGNERS),
+        expand("results/tool_comparison/correlation/by_output_type/qual-or-score-correlation_{aligner}.tsv.gz", aligner=_ALIGNERS),
+        expand("results/tool_comparison/correlation/by_output_type/read-count-correlation_{aligner}.tsv.gz", aligner=_ALIGNERS)
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: 12000 * (1.5 ** (attempt - 1)),
@@ -277,7 +277,7 @@ rule compare_outputs:
         stderr="results/logs/compare_outputs.err"
     params:
         script=os.path.join(_VIZ_SCRIPTS, "compare_outputs.py"),
-        outdir="results/correlation",
+        outdir="results/tool_comparison/correlation",
         aligners=" ".join(_ALIGNERS),
         gtf=config["references"]["gtf"],
         edit_type=config.get("params", {}).get("common", {}).get("edit_type", "AG"),
@@ -287,7 +287,7 @@ rule compare_outputs:
         set -euo pipefail
         module load python3essential
         python3 {params.script} \
-            --matrix-dir results/compare_all_tools \
+            --matrix-dir results/tool_comparison/compare_all_tools \
             --outdir {params.outdir} \
             --aligners {params.aligners} \
             --gtf {params.gtf} \
@@ -307,14 +307,14 @@ rule compare_outputs:
 rule consensus_characteristics:
     """Intersection-vs-outersection characteristic comparison + anticorrelation diagnostic."""
     input:
-        fraction="results/compare_all_tools/edit_fraction_matrix.tsv.gz",
-        score="results/compare_all_tools/tool_score_matrix.tsv.gz",
-        coverage="results/compare_all_tools/edit_coverage_matrix.tsv.gz"
+        fraction="results/tool_comparison/compare_all_tools/edit_fraction_matrix.tsv.gz",
+        score="results/tool_comparison/compare_all_tools/tool_score_matrix.tsv.gz",
+        coverage="results/tool_comparison/compare_all_tools/edit_coverage_matrix.tsv.gz"
     output:
-        expand("results/consensus/site_characteristics_{aligner}.tsv.gz", aligner=_ALIGNERS),
-        expand("results/consensus/gene_characteristics_{aligner}.tsv.gz", aligner=_ALIGNERS),
-        expand("results/consensus/anticorrelation_gene_fraction_{aligner}.tsv.gz", aligner=_ALIGNERS),
-        expand("results/consensus/consensus_report_{aligner}.md", aligner=_ALIGNERS)
+        expand("results/tool_comparison/consensus/site_characteristics_{aligner}.tsv.gz", aligner=_ALIGNERS),
+        expand("results/tool_comparison/consensus/gene_characteristics_{aligner}.tsv.gz", aligner=_ALIGNERS),
+        expand("results/tool_comparison/consensus/anticorrelation_gene_fraction_{aligner}.tsv.gz", aligner=_ALIGNERS),
+        expand("results/tool_comparison/consensus/consensus_report_{aligner}.md", aligner=_ALIGNERS)
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: 12000 * (1.5 ** (attempt - 1)),
@@ -324,7 +324,7 @@ rule consensus_characteristics:
         stderr="results/logs/consensus_characteristics.err"
     params:
         script=os.path.join(_VIZ_SCRIPTS, "consensus_characteristics.py"),
-        outdir="results/consensus",
+        outdir="results/tool_comparison/consensus",
         aligners=" ".join(_ALIGNERS),
         gtf=config["references"]["gtf"],
         edit_type=config.get("params", {}).get("common", {}).get("edit_type", "AG")
@@ -333,7 +333,7 @@ rule consensus_characteristics:
         set -euo pipefail
         module load python3essential
         python3 {params.script} \
-            --matrix-dir results/compare_all_tools \
+            --matrix-dir results/tool_comparison/compare_all_tools \
             --outdir {params.outdir} \
             --aligners {params.aligners} \
             --gtf {params.gtf} \
@@ -348,11 +348,11 @@ rule consensus_characteristics:
 rule aligner_correlation:
     """Pairwise Spearman correlation among aligners (one matrix per tool)."""
     input:
-        "results/compare_all_tools/edit_fraction_matrix.tsv.gz"
+        "results/tool_comparison/compare_all_tools/edit_fraction_matrix.tsv.gz"
     output:
         expand(
-            "results/correlation/aligner_correlation_{tool}.tsv.gz",
-            tool=_BED_TOOLS
+            "results/tool_comparison/correlation/aligner_correlation_{tool}.tsv.gz",
+            tool=_COMPARE_TOOLS
         )
     threads: 1
     resources:
@@ -363,15 +363,15 @@ rule aligner_correlation:
         stderr="results/logs/aligner_correlation.err"
     params:
         script=os.path.join(_VIZ_SCRIPTS, "aligner_correlation.py"),
-        outdir="results/correlation",
+        outdir="results/tool_comparison/correlation",
         aligners=" ".join(_ALIGNERS),
-        tools=" ".join(_BED_TOOLS)
+        tools=" ".join(_COMPARE_TOOLS)
     shell:
         r"""
         set -euo pipefail
         module load python3essential
         python3 {params.script} \
-            --matrix-dir results/compare_all_tools \
+            --matrix-dir results/tool_comparison/compare_all_tools \
             --outdir {params.outdir} \
             --aligners {params.aligners} \
             --tools {params.tools} \

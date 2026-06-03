@@ -721,19 +721,24 @@ rule join_marine_output:
 
 rule filter_marine_by_edit_type:
     """Keep only MARINE sites whose strand_conversion matches the configured edit
-    type (e.g. "AG" -> "A>G"). The edit type is in the output filename so a change
-    to params.common.edit_type regenerates this file without rerunning MARINE."""
+    type (e.g. "AG" -> "A>G") AND whose coverage is >= params.marine.min_coverage.
+    The coverage gate makes MARINE comparable to the other callers (which apply
+    params.common.min_coverage at call time); it is a separate, MARINE-specific
+    post-hoc filter (default 5). The edit type is in the output filename so a change
+    to params.common.edit_type regenerates this file without rerunning MARINE;
+    min_coverage is a rule param, so changing it also triggers a regeneration."""
     input:
         "results/tools/{aligner}/marine/{condition}_{sample}/final_filtered_site_info.tsv.gz"
     output:
         f"results/tools/{{aligner}}/marine/{{condition}}_{{sample}}/final_filtered_site_info.{_MARINE_EDIT_TYPE}.tsv.gz"
     params:
-        conversion=_MARINE_CONVERSION
+        conversion=_MARINE_CONVERSION,
+        min_cov=config["params"]["marine"].get("min_coverage", 5)
     localrule: True
     shell:
         r"""
         set -euo pipefail
-        zcat {input} | awk -v conv='{params.conversion}' 'BEGIN{{FS=OFS="\t"}}
-            NR==1 {{ for(i=1;i<=NF;i++) if($i=="strand_conversion") col=i; print; next }}
-            col>0 && $col==conv' | gzip > {output}
+        zcat {input} | awk -v conv='{params.conversion}' -v mincov='{params.min_cov}' 'BEGIN{{FS=OFS="\t"}}
+            NR==1 {{ for(i=1;i<=NF;i++){{ if($i=="strand_conversion") cc=i; if($i=="coverage") cov=i }} print; next }}
+            cc>0 && $cc==conv && cov>0 && ($cov+0)>=mincov' | gzip > {output}
         """

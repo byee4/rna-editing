@@ -3,7 +3,7 @@
 **Scope:** MARINE, REDItools3, SPRINT, and JACUSA2 *call-1* as wired in
 `pipelines/Morales_et_al/Snakefile` (rules in `rules/tools.smk`).
 **Evidence:** `examples/Morales_et_al_small/` (`star` aligner, 6 clones), drawn from
-`results/compare_all_tools/{edit_fraction,edit_coverage,tool_score}_matrix.tsv.gz`
+`results/tool_comparison/compare_all_tools/{edit_fraction,edit_coverage,tool_score}_matrix.tsv.gz`
 and the raw per-tool outputs under `results/tools/star/`.
 
 ---
@@ -226,7 +226,7 @@ edit itself — drives most of the fraction spread between MARINE and the pileup
 ## Summary table — edit characteristics (star aligner, all 6 clones)
 
 Computed over every site each tool scores `> 0` in
-`results/compare_all_tools/*_matrix.tsv.gz`.
+`results/tool_comparison/compare_all_tools/*_matrix.tsv.gz`.
 
 | Tool | # sites | Median coverage | Median fraction | Mean fraction | % sites cov < 5 | Coverage floor | Fraction floor | Reported quantity |
 |---|---|---|---|---|---|---|---|---|
