@@ -26,6 +26,12 @@ MIN_SCORE = 0
 JACUSA2_CALL1_FILTER = "edit_type"
 
 
+def _open(path):
+    """Open a tool output, transparently decompressing .gz."""
+    import gzip
+    return gzip.open(path, "rt") if path.endswith(".gz") else open(path)
+
+
 def _score1000(frac):
     """Map editing fraction [0,1] to UCSC BED score [0,1000]."""
     try:
@@ -63,7 +69,7 @@ def to_bed_reditools2(path, out_fh):
 def to_bed_reditools3(path, out_fh):
     if not os.path.exists(path) or os.path.getsize(path) == 0:
         return
-    with open(path) as f:
+    with _open(path) as f:
         header = None
         for line in f:
             if line.startswith("#") or not line.strip():
@@ -183,7 +189,7 @@ def to_bed_bcftools(bcf_path, out_fh):
 def to_bed_redinet(path, out_fh):
     if not os.path.exists(path) or os.path.getsize(path) == 0:
         return
-    with open(path) as f:
+    with _open(path) as f:
         header = None
         for line in f:
             if not line.strip():
@@ -217,7 +223,7 @@ def to_bed_marine(path, out_fh):
              conversion strand_conversion. No fraction column; compute count/coverage."""
     if not os.path.exists(path) or os.path.getsize(path) == 0:
         return
-    with open(path) as f:
+    with _open(path) as f:
         header = None
         for line in f:
             if not line.strip():
@@ -255,7 +261,7 @@ def to_bed_jacusa2_call1(path, out_fh):
     if not os.path.exists(path) or os.path.getsize(path) == 0:
         return
     base_index = {"A": 0, "C": 1, "G": 2, "T": 3}
-    with open(path) as f:
+    with _open(path) as f:
         header = None
         for line in f:
             if line.startswith("##"):

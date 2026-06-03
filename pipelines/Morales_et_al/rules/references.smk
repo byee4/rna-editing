@@ -118,7 +118,7 @@ rule prepare_editing_filters:
         simple_repeat=config["references"]["simple_repeat"],
         fai=config["references"]["fasta"] + ".fai"
     output:
-        "results/references/editing_exclude.bed"
+        temp("results/references/editing_exclude.bed")
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: 8000 * (1.5 ** (attempt - 1)),

@@ -47,16 +47,16 @@ _TOOL_DIR = {
 _TOOL_OUTPUT = {
     "reditools":  "{condition}_{sample}.output",
     "reditools2": "{condition}_{sample}.output",
-    "reditools3": "{condition}_{sample}.txt",
+    "reditools3": "{condition}_{sample}.txt.gz",
     "sprint":     "{condition}_{sample}_output",
     "red_ml":     "{condition}_{sample}_output",
     "redml":      "{condition}_{sample}_output",
     "bcftools":   "{condition}_{sample}.bcf",
-    "redinet":    "{condition}_{sample}.predictions.tsv",
-    "jacusa2_call1": "{condition}_{sample}.out",
-    # MARINE: edit-type-filtered TSV; edit type baked into the filename (see
-    # filter_marine_by_edit_type in rules/tools.smk).
-    "marine":     "{condition}_{sample}/final_filtered_site_info." + config["params"]["common"]["edit_type"] + ".tsv",
+    "redinet":    "{condition}_{sample}.predictions.tsv.gz",
+    "jacusa2_call1": "{condition}_{sample}.out.gz",
+    # MARINE: edit-type-filtered TSV (gzipped); edit type baked into the filename
+    # (see filter_marine_by_edit_type in rules/tools.smk).
+    "marine":     "{condition}_{sample}/final_filtered_site_info." + config["params"]["common"]["edit_type"] + ".tsv.gz",
 }
 
 

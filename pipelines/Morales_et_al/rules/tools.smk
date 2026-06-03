@@ -130,7 +130,7 @@ rule unzip_rmsk:
     params:
         rmsk=config["references"]["rmsk"]
     output:
-        rmsk="data/rmsk.txt"
+        rmsk=temp("data/rmsk.txt")
     resources:
         mem_mb=lambda wildcards, attempt: 24000 * (1.5 ** (attempt - 1)),
         runtime=lambda wildcards, attempt: 10 * (2 ** (attempt - 1))
@@ -348,7 +348,7 @@ rule jacusa2_call1:
         bam="results/mapped/{aligner}/{condition}_{sample}.rmdup_MD.bam",
         bai="results/mapped/{aligner}/{condition}_{sample}.rmdup_MD.bam.bai"
     output:
-        "results/tools/{aligner}/jacusa2_call1/{condition}_{sample}.out"
+        "results/tools/{aligner}/jacusa2_call1/{condition}_{sample}.out.gz"
     threads: 5
     resources:
         mem_mb=lambda wildcards, attempt: 48000 * (1.5 ** (attempt - 1)),
@@ -365,8 +365,11 @@ rule jacusa2_call1:
     shell:
         r"""
         set -euo pipefail
-        java -jar /opt/jacusa2/jacusa2.jar call-1 -a {params.pileup} -P {params.lib_type} -q {params.base_quality} -c {params.min_coverage} -p {threads} -r {output} {input.bam} \
+        out="{output}"; tmp="${{out%.gz}}"
+        java -jar /opt/jacusa2/jacusa2.jar call-1 -a {params.pileup} -P {params.lib_type} -q {params.base_quality} -c {params.min_coverage} -p {threads} -r "$tmp" {input.bam} \
             1> {log.stdout} 2> {log.stderr}
+        gzip -c "$tmp" > "$out"
+        rm -f "$tmp"
         """
 
 
@@ -380,7 +383,7 @@ rule reditools3:
         ref="results/references/ref_iupac_masked.fasta",
         ref_fai="results/references/ref_iupac_masked.fasta.fai"
     output:
-        "results/tools/{aligner}/reditools3/{condition}_{sample}.txt"
+        "results/tools/{aligner}/reditools3/{condition}_{sample}.txt.gz"
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: 36000 * (1.5 ** (attempt - 1)),
@@ -398,15 +401,18 @@ rule reditools3:
         r"""
         set -euo pipefail
         mkdir -p "$(dirname {output})"
+        out="{output}"; tmp="${{out%.gz}}"
         /opt/conda/envs/REDInet/bin/python3.10 -m reditools analyze \
             {input.bam} \
             -r {input.ref} \
-            -o {output} \
+            -o "$tmp" \
             -s {params.strand} \
             -q {params.map_quality} \
             -bq {params.base_quality} \
             -l {params.min_coverage} \
             1> {log.stdout} 2> {log.stderr}
+        gzip -c "$tmp" > "$out"
+        rm -f "$tmp"
         """
 
 
@@ -474,7 +480,7 @@ rule join_reditools_redinet_output:
     input:
         _reditools_redinet_chrom_dirs
     output:
-        directory("results/tools/{aligner}/reditools_redinet/{condition}_{sample}_raw/")
+        temp(directory("results/tools/{aligner}/reditools_redinet/{condition}_{sample}_raw/"))
     localrule: True
     shell:
         r"""
@@ -530,9 +536,9 @@ rule redinet:
         gz="results/tools/{aligner}/reditools_redinet/{condition}_{sample}/{condition}_{sample}.output.gz",
         tbi="results/tools/{aligner}/reditools_redinet/{condition}_{sample}/{condition}_{sample}.output.gz.tbi"
     output:
-        predictions="results/tools/{aligner}/redinet/{condition}_{sample}.predictions.tsv",
-        features="results/tools/{aligner}/redinet/{condition}_{sample}.feature_vectors.tsv",
-        params_tsv="results/tools/{aligner}/redinet/{condition}_{sample}.REDInet_ligth_ver_parameters.tsv"
+        predictions="results/tools/{aligner}/redinet/{condition}_{sample}.predictions.tsv.gz",
+        features="results/tools/{aligner}/redinet/{condition}_{sample}.feature_vectors.tsv.gz",
+        params_tsv="results/tools/{aligner}/redinet/{condition}_{sample}.REDInet_ligth_ver_parameters.tsv.gz"
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: 16000 * (1.5 ** (attempt - 1)),
@@ -550,18 +556,28 @@ rule redinet:
         r"""
         set -euo pipefail
         mkdir -p "$(dirname {output.predictions})"
-        /opt/conda/envs/REDInet/bin/python \
+        # REDInet writes plain TSVs at the prefix path; gzip each into the .gz
+        # outputs. On EmptyDataError (no candidates) it exits non-zero -> write
+        # empty gzip files so the outputs still exist.
+        if /opt/conda/envs/REDInet/bin/python \
             /app/REDInet/Package/Utilities/REDInet_Inference_light_ver.py \
             -r {input.gz} \
             -o {params.prefix} \
             -c {params.cov} \
             -f {params.agfreq} \
             -s {params.min_ag} \
-            1> {log.stdout} 2> {log.stderr} || \
-        {{
+            1> {log.stdout} 2> {log.stderr}; then
+            gzip -c {params.prefix}.predictions.tsv > {output.predictions}
+            gzip -c {params.prefix}.feature_vectors.tsv > {output.features}
+            gzip -c {params.prefix}.REDInet_ligth_ver_parameters.tsv > {output.params_tsv}
+            rm -f {params.prefix}.predictions.tsv {params.prefix}.feature_vectors.tsv \
+                  {params.prefix}.REDInet_ligth_ver_parameters.tsv
+        else
             echo "REDInet produced no candidates (EmptyDataError); creating empty outputs" >> {log.stdout}
-            touch {output.predictions} {output.features} {output.params_tsv}
-        }}
+            : | gzip > {output.predictions}
+            : | gzip > {output.features}
+            : | gzip > {output.params_tsv}
+        fi
         """
 
 
@@ -710,7 +726,7 @@ rule filter_marine_by_edit_type:
     input:
         "results/tools/{aligner}/marine/{condition}_{sample}/final_filtered_site_info.tsv.gz"
     output:
-        f"results/tools/{{aligner}}/marine/{{condition}}_{{sample}}/final_filtered_site_info.{_MARINE_EDIT_TYPE}.tsv"
+        f"results/tools/{{aligner}}/marine/{{condition}}_{{sample}}/final_filtered_site_info.{_MARINE_EDIT_TYPE}.tsv.gz"
     params:
         conversion=_MARINE_CONVERSION
     localrule: True
@@ -719,5 +735,5 @@ rule filter_marine_by_edit_type:
         set -euo pipefail
         zcat {input} | awk -v conv='{params.conversion}' 'BEGIN{{FS=OFS="\t"}}
             NR==1 {{ for(i=1;i<=NF;i++) if($i=="strand_conversion") col=i; print; next }}
-            col>0 && $col==conv' > {output}
+            col>0 && $col==conv' | gzip > {output}
         """

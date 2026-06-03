@@ -24,7 +24,7 @@ rule trim_reads:
     input:
         reads="data/fastq/{condition}_{sample}_{read}.fastq.gz"
     output:
-        "results/trimmed/{condition}_{sample}_{read}_trimmed.fastq.gz"
+        temp("results/trimmed/{condition}_{sample}_{read}_trimmed.fastq.gz")
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: 32000 * (1.5 ** (attempt - 1)),

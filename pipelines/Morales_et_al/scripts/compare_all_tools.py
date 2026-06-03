@@ -422,8 +422,10 @@ def locate_tool_output(results_dir, tool_dir, aligner, condition, sample):
     base = os.path.join(results_dir, "tools", aligner, tool_dir)
 
     candidates = [
-        # reditools2 / reditools3
+        # reditools2 (plain; consumed by the vendored downstream parsers)
         os.path.join(base, f"{condition}_{sample}.output"),
+        # reditools3 (gzipped)
+        os.path.join(base, f"{condition}_{sample}.txt.gz"),
         os.path.join(base, f"{condition}_{sample}.txt"),
         # sprint (directory)
         os.path.join(base, f"{condition}_{sample}_output"),
@@ -431,20 +433,23 @@ def locate_tool_output(results_dir, tool_dir, aligner, condition, sample):
         os.path.join(base, f"{condition}_{sample}_output"),
         # bcftools
         os.path.join(base, f"{condition}_{sample}.bcf"),
-        # jacusa2 (single file for all samples)
+        # jacusa2 (single file for all samples; plain, downstream-consumed)
         os.path.join(base, "Jacusa.out"),
-        # jacusa2_call1 (per-sample, one condition vs reference)
+        # jacusa2_call1 (per-sample, one condition vs reference; gzipped)
+        os.path.join(base, f"{condition}_{sample}.out.gz"),
         os.path.join(base, f"{condition}_{sample}.out"),
-        # redinet
+        # redinet (gzipped)
+        os.path.join(base, f"{condition}_{sample}.predictions.tsv.gz"),
         os.path.join(base, f"{condition}_{sample}.predictions.tsv"),
     ]
     for p in candidates:
         if os.path.exists(p):
             return p
     # marine: edit-type-filtered TSV (edit type baked into filename); match the
-    # filtered variant only, never the raw final_filtered_site_info.tsv.gz.
+    # filtered variant only (final_filtered_site_info.<EDIT>.tsv.gz), never the
+    # raw final_filtered_site_info.tsv.gz.
     marine_hits = glob.glob(
-        os.path.join(base, f"{condition}_{sample}", "final_filtered_site_info.*.tsv")
+        os.path.join(base, f"{condition}_{sample}", "final_filtered_site_info.*.tsv.gz")
     )
     if marine_hits:
         return marine_hits[0]
