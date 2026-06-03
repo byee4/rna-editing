@@ -16,10 +16,13 @@ things**, in this order of impact:
 1. **What counts as the denominator (coverage).** Each tool applies its own read/base
    filters and overlap handling, so the *same locus* yields a *different depth*. Same
    numerator ÷ different denominator = different fraction.
-2. **Whether a site is reported at all (the detection floor).** A coverage floor
-   (`min_coverage=5`) and an edit-fraction floor decide which sites even appear. MARINE
-   has neither floor; JACUSA2 *call-1* has a coverage floor but no fraction floor;
-   REDItools3 effectively has both; SPRINT ignores pileup depth entirely.
+2. **Whether a site is reported at all (the detection floor).** A coverage floor and an
+   edit-fraction floor decide which sites even appear. MARINE *natively* has neither, but
+   the pipeline now applies a **post-hoc coverage floor** (`marine.min_coverage`, default
+   **5**) to MARINE's output, so by default MARINE is coverage-floored on par with
+   REDItools3 (`-l 5`) and JACUSA2 *call-1* (`-c 5`); none of the three has a fraction
+   floor (REDItools3's two-decimal rounding acts as a soft one). SPRINT ignores pileup
+   depth entirely.
 3. **What the reported number even means.** REDItools3 and MARINE report a true
    `edited/coverage` fraction; JACUSA2 reports a likelihood-ratio **score** and a
    fraction; SPRINT reports **supporting reads** and *no fraction at all* (its fraction
@@ -41,15 +44,19 @@ use the MD-tagged `*.rmdup_MD.bam`). Shared config knobs
 | Knob | Value (small example) | Applies to |
 |---|---|---|
 | `common.base_quality` | 30 | all four (base-quality floor) |
-| `common.min_coverage` | 5 | REDItools3 (`-l`), JACUSA2 (`-c`); **not** MARINE or SPRINT |
+| `common.min_coverage` | 5 | REDItools3 (`-l`), JACUSA2 (`-c`) at **call time**; not SPRINT |
+| `marine.min_coverage` | 5 | MARINE **post-hoc** (`filter_marine_by_edit_type` drops rows with `coverage < 5`) |
 | `common.strandedness` | `reverse_stranded` | all four (mapped to each tool's flag) |
 | `common.edit_type` | `AG` | MARINE post-filter; comparison filter |
 | `reditools3.map_quality` | 20 | REDItools3 (`-q`) |
 | `marine.min_read_quality` | 20 | MARINE (`--min_read_quality`, a MAPQ floor) |
 
-Note the asymmetry already visible here: `min_coverage=5` is wired into REDItools3 and
-JACUSA2 but **not** MARINE or SPRINT. That one line of config explains a large fraction of
-the disagreement (see Example 1).
+The coverage floor reaches each tool by a **different route**: REDItools3 and JACUSA2 apply
+`common.min_coverage=5` *at call time* (sites below it are never pileup-tested), while MARINE
+is filtered *after the fact* by a separate `marine.min_coverage` knob (default 5; it natively
+reports every site). SPRINT has no coverage floor at all. The two MARINE knobs differ on
+purpose: `common.min_coverage` is the call-time gate for the pileup tools, and
+`marine.min_coverage` lets you tune MARINE's post-hoc gate independently (see Example 1).
 
 ---
 
@@ -66,18 +73,20 @@ for each position with >= 1 recorded conversion:
     coverage = reads spanning the position (after the same quality filters)
     emit (position, ref, alt, strand, count, coverage, conversion=ref>alt)
 # Downstream (filter_marine_by_edit_type rule):
-keep only rows where strand_conversion == "A>G"
+keep only rows where strand_conversion == "A>G" AND coverage >= marine.min_coverage (=5)
 # Fraction is NOT emitted by MARINE; the comparison computes count / coverage.
 ```
 
 ### Plain English
 MARINE walks every read and tallies **every** mismatch type genome-wide, then reports any
-position where at least **one** read shows a mismatch. There is **no coverage floor and no
-edit-fraction floor** — a single edited read in a depth-1 pileup is a valid site. The
-pipeline keeps only the `A>G` rows afterward. Because MARINE has no `min_coverage`, it is
-the only one of the four that recovers low-depth, hyper-edited clusters; because it has no
-fraction floor, it also reports 1-in-thousands sites at deep loci. MARINE counts coverage
-with its own read filters, which generally yields a *slightly larger* denominator than
+position where at least **one** read shows a mismatch — natively it has **no coverage floor
+and no edit-fraction floor**, so a single edited read in a depth-1 pileup is a valid site.
+The pipeline then post-filters MARINE's output to the `A>G` rows **and** to
+`coverage >= marine.min_coverage` (default 5). That post-hoc floor is what makes MARINE
+comparable to REDItools3/JACUSA2: by default it no longer keeps the depth-1–4 hyper-edited
+clusters it natively finds (lower the knob to recover them). It still has **no fraction
+floor**, so it reports 1-in-thousands sites at deep loci. MARINE counts coverage with its
+own read filters, which generally yields a *slightly larger* denominator than
 REDItools3/JACUSA2 — so for shared sites its fraction tends to be a touch lower.
 
 ---
@@ -163,20 +172,25 @@ sites that REDItools3 rounds away.
 
 ## Three (+1) worked examples from `Morales_et_al_small` (star aligner)
 
-### Example 1 — MARINE-only, low coverage: `chr12:6344580` (A>G, +)
-Below the `min_coverage=5` floor, so REDItools3 and JACUSA2 never see it.
+### Example 1 — low-coverage hyper-edit, now filtered for all: `chr12:6344580` (A>G, +)
+A depth-4 pileup. REDItools3 and JACUSA2 never see it (below their call-time `min_coverage=5`).
+MARINE *natively* finds it, but the post-hoc `marine.min_coverage=5` filter now drops it too —
+so under the default config **no tool reports it**.
 
-| Tool | Reported? | count / coverage | Fraction | Why |
-|---|---|---|---|---|
-| MARINE (ADAR1KO_clone1) | ✅ | 3 / 4 | 0.75 | no coverage floor |
-| MARINE (WT_clone3) | ✅ | 4 / 4 | 1.00 | no coverage floor |
-| REDItools3 | ❌ | — | — | coverage 4 < `min_coverage=5` |
-| JACUSA2 call-1 | ❌ | — | — | coverage 4 < `min_coverage=5` |
-| SPRINT | ❌ | — | — | not in its cluster list |
+| Tool | Native call | After default filters | count / coverage | Fraction | Why |
+|---|---|---|---|---|---|
+| MARINE (ADAR1KO_clone1) | ✅ | ❌ dropped | 3 / 4 | 0.75 | coverage 4 < `marine.min_coverage=5` |
+| MARINE (WT_clone3) | ✅ | ❌ dropped | 4 / 4 | 1.00 | coverage 4 < `marine.min_coverage=5` |
+| REDItools3 | ❌ | ❌ | — | — | coverage 4 < `min_coverage=5` |
+| JACUSA2 call-1 | ❌ | ❌ | — | — | coverage 4 < `min_coverage=5` |
+| SPRINT | ❌ | ❌ | — | — | not in its cluster list |
 
-**Lesson:** the `min_coverage=5` config line alone removes this site for two of four tools.
-MARINE recovers a class of low-depth (often hyper-edited) sites the others structurally
-cannot. 23.6% of MARINE's sites here have coverage < 5.
+**Lesson:** this is exactly the site class the new `marine.min_coverage` filter targets.
+Previously MARINE alone recovered these low-depth (often high-fraction) hyper-edits, which
+made its call set and fraction distribution incomparable to the pileup tools. With the
+default `marine.min_coverage=5` the depth-1–4 tail is removed (it no longer appears in the
+`tool_comparison` matrices), aligning MARINE's coverage floor with REDItools3/JACUSA2. To
+deliberately recover this site class, lower `marine.min_coverage` to ≤ 4.
 
 ### Example 2 — JACUSA2-only, high coverage / ultra-low fraction: `chr21:25982458` (T>C on –, i.e. A>G)
 Same pileup seen by REDItools3, but the two tools *disagree on whether it is an edit*.
@@ -194,6 +208,12 @@ comparison drops it. This is *philosophy*, not depth.
 
 ### Example 3 — SPRINT-only, support-read logic: `chr21:26076073` (TC, –)
 SPRINT's `.res` row is `chr21  26076072  26076073  TC  1  -  1:2`.
+
+> **Note (2026 refactor):** SPRINT is now **excluded from the `tool_comparison` matrices**
+> and the correlation/consensus analyses, precisely because its support-read "coverage" and
+> absent fraction are not comparable on a pileup axis (this section is the rationale). SPRINT
+> still runs and its calls remain in `results/tools/{aligner}/sprint/` and the BigBed/trackhub
+> tracks — so this site is still produced, just no longer mixed into the cross-tool tables.
 
 | Tool | Reported? | "coverage" | Fraction | Why |
 |---|---|---|---|---|
@@ -226,22 +246,32 @@ edit itself — drives most of the fraction spread between MARINE and the pileup
 ## Summary table — edit characteristics (star aligner, all 6 clones)
 
 Computed over every site each tool scores `> 0` in
-`results/tool_comparison/compare_all_tools/*_matrix.tsv.gz`.
+`results/tool_comparison/compare_all_tools/*_matrix.tsv.gz`. **MARINE reflects the post-hoc
+`marine.min_coverage=5` filter; SPRINT is no longer in these matrices** (its row below is
+from its raw `.res` output, retained here only to characterize the tool).
 
 | Tool | # sites | Median coverage | Median fraction | Mean fraction | % sites cov < 5 | Coverage floor | Fraction floor | Reported quantity |
 |---|---|---|---|---|---|---|---|---|
-| **MARINE** | 849 | 4668 | 0.0004 | 0.209 | **23.6%** | none | none | `count / coverage` |
+| **MARINE** | 597 | 6621 | 0.0003 | 0.023 | **0.0%** | `marine.min_coverage` (post-hoc, 5) | none | `count / coverage` |
 | **REDItools3** | 200 | 27 | **0.0500** | 0.268 | 0.0% | `-l 5` | ~0.005 (rounding) | `Frequency` |
-| **SPRINT** | 14 | 1 | 0.0000 | 0.000 | 100% | none | none | supporting reads (no fraction) |
+| **SPRINT** *(not in matrices)* | 14 | 1 | 0.0000 | 0.000 | 100% | none | none | supporting reads (no fraction) |
 | **JACUSA2 call-1** | 1163 | 3484 | 0.0010 | 0.039 | 0.0% | `-c 5` | none | LLR score + `alt/coverage` |
+
+> **Effect of the MARINE filter.** Before `marine.min_coverage=5`, MARINE reported ~849
+> sites with **23.6%** below depth-5 and a **mean fraction of 0.209** — the high mean came
+> almost entirely from those low-depth hyper-edits (e.g. 3/4, 4/4). Removing the sub-5 tail
+> drops the count to ~597, pushes `% cov < 5` to **0%**, and collapses the mean fraction to
+> **0.023**, putting MARINE on the same coverage footing as REDItools3/JACUSA2.
 
 Reading the table:
 - **JACUSA2 call-1** = most sites, lowest median fraction → permissive *statistical* caller.
-- **MARINE** = many sites incl. 23.6% below depth-5; bimodal fraction (low-depth/high-frac
-  hyper-edits **and** deep/ultra-low-frac) → no floors at all.
+- **MARINE** = deep, ultra-low-fraction sites; with the default coverage filter its
+  low-depth/high-fraction hyper-edit tail is removed, so it is now coverage-floored like the
+  pileup tools and only its absent fraction floor distinguishes it.
 - **REDItools3** = fewest depth-based sites, **highest median fraction**, nothing below
   depth 5 → conservative middle ground; every site is co-called.
-- **SPRINT** = tiny, support-read-only, fraction not defined → orthogonal cluster caller.
+- **SPRINT** = tiny, support-read-only, fraction not defined → orthogonal cluster caller,
+  now scored on its own axis outside the comparison matrices.
 
 ---
 
@@ -251,9 +281,14 @@ Reading the table:
   MARINE vs REDItools3/JACUSA2 fraction gaps are largely a coverage-definition artifact
   (Example 4).
 - **SPRINT belongs on a separate axis** (supporting reads / presence), not the fraction
-  axis — it has no fraction and a non-pileup coverage.
+  axis — it has no fraction and a non-pileup coverage. It is therefore **excluded from the
+  `tool_comparison` matrices** by design; read it from `results/tools/*/sprint/` and the
+  BigBed tracks instead.
 - **Low-fraction disagreement (REDItools3 vs JACUSA2)** is expected and informative:
   REDItools3 favors precision (rounds away 1-in-hundreds), JACUSA2 favors statistical
   sensitivity. Use the consensus (`min_tools`) layer to require corroboration.
-- **The `min_coverage` config line is a high-leverage knob**: raising it culls MARINE's
-  low-depth tail and narrows the cross-tool gap; lowering it widens it.
+- **`marine.min_coverage` is the high-leverage knob for MARINE** (default 5): raising it
+  culls more of MARINE's low-depth tail and tightens the cross-tool gap; lowering it (≤ 4)
+  re-admits the low-depth hyper-edits MARINE uniquely finds. It is intentionally separate
+  from `common.min_coverage` (the call-time floor for REDItools3/JACUSA2), so MARINE can be
+  tuned without touching the pileup tools.
