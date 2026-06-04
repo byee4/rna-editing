@@ -60,7 +60,9 @@ rule reditools_by_chrom:
     """Run REDItools on a single-chromosome BAM using the -g region flag."""
     input:
         bam="results/mapped/{aligner}/{condition}_{sample}.split/{chrom}.bam",
-        bai="results/mapped/{aligner}/{condition}_{sample}.split/{chrom}.bam.bai"
+        bai="results/mapped/{aligner}/{condition}_{sample}.split/{chrom}.bam.bai",
+        ref="results/references/ref_iupac_masked.fasta",
+        ref_fai="results/references/ref_iupac_masked.fasta.fai"
     output:
         temp("results/tools/{aligner}/reditools_split/{condition}_{sample}/{chrom}.output")
     wildcard_constraints:
@@ -74,7 +76,6 @@ rule reditools_by_chrom:
         stdout="results/logs/{aligner}_{condition}_{sample}_{chrom}.reditools.out",
         stderr="results/logs/{aligner}_{condition}_{sample}_{chrom}.reditools.err"
     params:
-        ref=config["references"]["fasta"],
         base_quality=config["params"]["common"]["base_quality"],
         min_coverage=config["params"]["common"]["min_coverage"],
         strand=config["strand_flags"]["reditools"]
@@ -83,7 +84,7 @@ rule reditools_by_chrom:
         set -euo pipefail
         mkdir -p "$(dirname {output})"
         reditools.py -S -C -s {params.strand} -bq {params.base_quality} -q 20 -l {params.min_coverage} \
-            -f {input.bam} -r {params.ref} \
+            -f {input.bam} -r {input.ref} \
             -g {wildcards.chrom} -o {output} \
             1> {log.stdout} 2> {log.stderr}
         """
