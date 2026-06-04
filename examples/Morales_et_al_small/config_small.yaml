@@ -98,6 +98,11 @@ params:
     # caller (reditools, reditools3, redinet's REDItoolDnaRna, MARINE, JACUSA2 call-1/2).
     # One of: "unstranded" | "stranded" | "reverse_stranded".
     strandedness: "reverse_stranded"
+  # Shared candidate-site pipeline (GIREMI + EditPredict). min_coverage/base_quality
+  # come from params.common; min_alt_reads is the per-site editing-substitution support
+  # floor that bounds candidate-set size (spec DD1c). Lower to 1 for maximum sensitivity.
+  candidates:
+    min_alt_reads: 2
   fastx_trimmer:
     quality: 33
     length: 130

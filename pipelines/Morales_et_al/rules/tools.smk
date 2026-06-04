@@ -127,6 +127,164 @@ rule join_reditools_output:
         """
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Shared candidate-site pipeline (spec DD1) — feeds GIREMI and EditPredict.
+# Only the mpileup step fans out per chromosome; the intersect and finalize steps
+# run once per sample. All substitution types are kept (GIREMI's MI needs SNP
+# anchors); the A>I subset is taken for the EditPredict view in finalize.
+# ─────────────────────────────────────────────────────────────────────────────
+_TOOL_SCRIPTS = os.path.join(workflow.basedir, "scripts")
+
+
+rule candidate_sites_by_chrom:
+    """Stage 1: samtools mpileup on one chromosome -> provisional candidate table.
+
+    Base-quality filtering and the coverage / min_alt_reads floors (DD1c) are
+    applied by mpileup_to_candidates.py from the pileup base+quality strings.
+    """
+    input:
+        bam="results/mapped/{aligner}/{condition}_{sample}.split/{chrom}.bam",
+        bai="results/mapped/{aligner}/{condition}_{sample}.split/{chrom}.bam.bai",
+        ref="results/references/ref_iupac_masked.fasta",
+        ref_fai="results/references/ref_iupac_masked.fasta.fai"
+    output:
+        temp("results/tools/{aligner}/candidates_split/{condition}_{sample}/{chrom}.tsv")
+    wildcard_constraints:
+        chrom="[^/]+"
+    threads: 1
+    resources:
+        mem_mb=lambda wildcards, attempt: 6000 * (1.5 ** (attempt - 1)),
+        runtime=lambda wildcards, attempt: 120 * (1.5 ** (attempt - 1))
+    container: container_for("reditools")
+    params:
+        adapter=os.path.join(_TOOL_SCRIPTS, "mpileup_to_candidates.py"),
+        base_quality=config["params"]["common"]["base_quality"],
+        min_coverage=config["params"]["common"]["min_coverage"],
+        min_alt_reads=config["params"].get("candidates", {}).get("min_alt_reads", 2),
+        map_quality=config["params"].get("bcftools", {}).get("map_quality", 20),
+        max_depth=config["params"].get("bcftools", {}).get("max_depth", 10000)
+    log:
+        stdout="results/logs/{aligner}_{condition}_{sample}_{chrom}.candidates.out",
+        stderr="results/logs/{aligner}_{condition}_{sample}_{chrom}.candidates.err"
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p "$(dirname {output})"
+        samtools mpileup -B -d {params.max_depth} -q {params.map_quality} -Q 0 \
+            -f {input.ref} {input.bam} 2> {log.stderr} \
+          | python3 {params.adapter} \
+                --min-coverage {params.min_coverage} \
+                --min-alt-reads {params.min_alt_reads} \
+                --base-quality {params.base_quality} \
+                --output {output} 2>> {log.stderr}
+        echo done > {log.stdout}
+        """
+
+
+def _candidate_chrom_outputs(wildcards):
+    chrom_file = checkpoints.get_chrom_list.get(
+        aligner=wildcards.aligner,
+        condition=wildcards.condition,
+        sample=wildcards.sample,
+    ).output[0]
+    chroms = [c for c in open(chrom_file).read().strip().split("\n") if c]
+    return [
+        f"results/tools/{wildcards.aligner}/candidates_split/"
+        f"{wildcards.condition}_{wildcards.sample}/{chrom}.tsv"
+        for chrom in chroms
+    ]
+
+
+rule join_candidate_sites:
+    """Stage 2a: newline-safe awk merge of per-chrom candidate tables (DD1b).
+
+    `awk 'FNR==1{next}'` drops each file's header and re-emits every record with a
+    trailing newline, so a per-chrom file missing its final newline cannot fuse the
+    last row of one chromosome into the first row of the next. The merged, headerless
+    candidate BED is gzipped and retained for routine inspection (DD1d).
+    """
+    input:
+        _candidate_chrom_outputs
+    output:
+        "results/tools/{aligner}/candidates/{condition}_{sample}.candidates.bed.gz"
+    localrule: True
+    log:
+        stderr="results/logs/{aligner}_{condition}_{sample}.join_candidates.err"
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p "$(dirname {output})"
+        awk 'FNR==1 {{next}} {{print}}' {input} 2> {log.stderr} | gzip -c > {output}
+        """
+
+
+rule annotate_candidate_strand:
+    """Stage 2b: gene-strand and dbSNP membership via separate bedtools intersects
+    (DD1a) — kept as its own inspectable rule rather than embedded in the adapter."""
+    input:
+        candidates="results/tools/{aligner}/candidates/{condition}_{sample}.candidates.bed.gz",
+        gene_bed=config["references"]["marine_annotation_bed"],
+        dbsnp_bed="results/references/dbsnp.bed"
+    output:
+        gene=temp("results/tools/{aligner}/candidates/{condition}_{sample}.gene_isect.tsv"),
+        dbsnp=temp("results/tools/{aligner}/candidates/{condition}_{sample}.dbsnp_isect.tsv")
+    threads: 1
+    resources:
+        mem_mb=lambda wildcards, attempt: 8000 * (1.5 ** (attempt - 1)),
+        runtime=lambda wildcards, attempt: 30 * (2 ** (attempt - 1))
+    params:
+        tmpdir=config.get("tmpdir", "/tmp")
+    container: container_for("bedtools")
+    log:
+        stdout="results/logs/{aligner}_{condition}_{sample}.annotate_candidates.out",
+        stderr="results/logs/{aligner}_{condition}_{sample}.annotate_candidates.err"
+    shell:
+        r"""
+        set -euo pipefail
+        export TMPDIR={params.tmpdir}
+        tmp="$(mktemp -p {params.tmpdir})"
+        zcat {input.candidates} > "$tmp"
+        bedtools intersect -a "$tmp" -b {input.gene_bed} -loj > {output.gene} 2> {log.stderr}
+        bedtools intersect -a "$tmp" -b {input.dbsnp_bed} -c > {output.dbsnp} 2>> {log.stderr}
+        rm -f "$tmp"
+        echo done > {log.stdout}
+        """
+
+
+rule finalize_candidate_sites:
+    """Stage 3: reconcile strand (DD1a) + dbSNP and emit the GIREMI 6-col SNV list
+    and the EditPredict positions TSV (A>I subset), both gzipped and retained."""
+    input:
+        candidates="results/tools/{aligner}/candidates/{condition}_{sample}.candidates.bed.gz",
+        gene="results/tools/{aligner}/candidates/{condition}_{sample}.gene_isect.tsv",
+        dbsnp="results/tools/{aligner}/candidates/{condition}_{sample}.dbsnp_isect.tsv"
+    output:
+        giremi="results/tools/{aligner}/candidates/{condition}_{sample}.giremi_snv.tsv.gz",
+        editpredict="results/tools/{aligner}/candidates/{condition}_{sample}.editpredict_pos.tsv.gz"
+    threads: 1
+    resources:
+        mem_mb=lambda wildcards, attempt: 4000 * (1.5 ** (attempt - 1)),
+        runtime=lambda wildcards, attempt: 30 * (2 ** (attempt - 1))
+    container: container_for("reditools")
+    params:
+        script=os.path.join(_TOOL_SCRIPTS, "finalize_candidates.py")
+    log:
+        stdout="results/logs/{aligner}_{condition}_{sample}.finalize_candidates.out",
+        stderr="results/logs/{aligner}_{condition}_{sample}.finalize_candidates.err"
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p "$(dirname {output.giremi})"
+        python3 {params.script} \
+            --candidates {input.candidates} \
+            --gene-intersect {input.gene} \
+            --dbsnp-intersect {input.dbsnp} \
+            --giremi-out {output.giremi} \
+            --editpredict-out {output.editpredict} \
+            1> {log.stdout} 2> {log.stderr}
+        """
+
+
 rule unzip_rmsk:
     params:
         rmsk=config["references"]["rmsk"]

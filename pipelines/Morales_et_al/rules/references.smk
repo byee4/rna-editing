@@ -150,6 +150,43 @@ rule prepare_editing_filters:
         """
 
 
+rule generate_dbsnp_bed:
+    """
+    Convert the UCSC dbSNP table to a sorted, merged BED for candidate dbSNP-membership
+    annotation (spec DD1a). UCSC table cols: bin, chrom, chromStart, chromEnd, ...
+    Rows are filtered to contigs present in the reference .fai before merging.
+    """
+    input:
+        dbsnp=config["references"]["dbsnp"],
+        fai=config["references"]["fasta"] + ".fai"
+    output:
+        "results/references/dbsnp.bed"
+    threads: 1
+    resources:
+        mem_mb=lambda wildcards, attempt: 8000 * (1.5 ** (attempt - 1)),
+        runtime=lambda wildcards, attempt: 30 * (2 ** (attempt - 1))
+    params:
+        tmpdir=config.get("tmpdir", "/tmp")
+    container: container_for("bedtools")
+    log:
+        stdout="results/logs/generate_dbsnp_bed.out",
+        stderr="results/logs/generate_dbsnp_bed.err"
+    shell:
+        r"""
+        set -euo pipefail
+        export TMPDIR={params.tmpdir}
+        mkdir -p "$(dirname {output})"
+        tmp="$(mktemp -p {params.tmpdir})"
+        zcat {input.dbsnp} | awk 'BEGIN{{OFS="\t"}} {{print $2,$3,$4}}' > "$tmp"
+        awk 'NR==FNR{{ok[$1]=1; next}} ($1 in ok)' {input.fai} "$tmp" \
+            | sort -k1,1 -k2,2n \
+            | bedtools merge \
+            > {output} 2> {log.stderr}
+        rm -f "$tmp"
+        echo "done" > {log.stdout}
+        """
+
+
 if config.get("references", {}).get("hisat2_index"):
     _HISAT2_IDX = config["references"]["hisat2_index"]
 
