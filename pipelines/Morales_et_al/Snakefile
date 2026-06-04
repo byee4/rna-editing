@@ -96,6 +96,25 @@ _COMPARE_TOOLS = [t for t in _BED_TOOLS if t != "sprint"]
 # in rules/tools.smk). e.g. "AG".
 _MARINE_EDIT_TYPE = config["params"]["common"]["edit_type"]
 
+# ── Differential (two-condition) tools — LoDEI and REDITs (rules/differential.smk) ──
+# REDITs reuses the jacusa2_comparison condition1/condition2 groups and runs whenever
+# that comparison is configured. LoDEI is enabled by a separate optional
+# `lodei_comparison` block so it can be toggled independently (spec DD2).
+_REDITS_CALLER = config.get("params", {}).get("redits", {}).get("caller", "reditools")
+_RUN_REDITS = _RUN_JACUSA2
+
+LODEI_COMPARISON = config.get("lodei_comparison")
+_RUN_LODEI = bool(LODEI_COMPARISON)
+_LODEI_C1 = LODEI_COMPARISON.get("condition1") if _RUN_LODEI else None
+_LODEI_C2 = LODEI_COMPARISON.get("condition2") if _RUN_LODEI else None
+if _RUN_LODEI:
+    _missing = [c for c in (_LODEI_C1, _LODEI_C2) if c not in config["conditions"]]
+    if None in (_LODEI_C1, _LODEI_C2) or _missing:
+        raise ValueError(
+            "lodei_comparison requires condition1/condition2 present in samplesheet "
+            "conditions {}; got {}".format(config["conditions"], (_LODEI_C1, _LODEI_C2))
+        )
+
 # Strandedness — single source of truth. params.common.strandedness is one of
 # "unstranded" | "stranded" | "reverse_stranded" and is translated to each tool's
 # own flag encoding here, so every caller is configured consistently from one key.
@@ -229,6 +248,14 @@ rule all:
         # EditPredict per-sample scores (gzipped) — scores the shared A>I candidates
         expand("results/tools/{aligner}/editpredict/{condition}_{sample}_scores.txt.gz",
                aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),
+        # REDITs differential per-site p-values (gzipped), per aligner — when a
+        # two-condition comparison is configured (reuses jacusa2_comparison groups).
+        (expand("results/differential_editing/redits/{aligner}/redit_llr_" + _REDITS_CALLER + ".tsv.gz",
+                aligner=_ALIGNERS) if _RUN_REDITS else []),
+        # LoDEI differential-editing regions (directory per aligner) — when
+        # lodei_comparison is configured.
+        (expand("results/tools/{aligner}/lodei/" + (_LODEI_C1 or "") + "_vs_" + (_LODEI_C2 or ""),
+                aligner=_ALIGNERS) if _RUN_LODEI else []),
         # Cross-tool comparison matrices (gzip-compressed)
         "results/tool_comparison/compare_all_tools/edit_coverage_matrix.tsv.gz",
         "results/tool_comparison/compare_all_tools/edit_fraction_matrix.tsv.gz",

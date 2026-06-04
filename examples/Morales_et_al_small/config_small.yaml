@@ -23,6 +23,12 @@ jacusa2_comparison:
   condition1: WT
   condition2: ADAR1KO
 
+# Optional: enable LoDEI 'find' differential editing (condition1 vs condition2 BAM
+# groups). Omit this block to skip LoDEI everywhere (spec DD2). Uncomment to enable:
+# lodei_comparison:
+#   condition1: WT
+#   condition2: ADAR1KO
+
 # ==========================================
 # References and Annotations
 # ==========================================
@@ -58,6 +64,8 @@ containers:
   marine: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/marine.sif"
   giremi: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/giremi.sif"
   editpredict: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/editpredict.sif"
+  redits: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/redits.sif"
+  lodei: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/lodei.sif"
 
 # ==========================================
 # WGS Samples for HEK293T SNP Database
@@ -105,6 +113,16 @@ params:
   # floor that bounds candidate-set size (spec DD1c). Lower to 1 for maximum sensitivity.
   candidates:
     min_alt_reads: 2
+  # REDITs differential test (REDIT-LLR). Runs when jacusa2_comparison is set,
+  # reusing its condition1/condition2 groups. `caller` selects whose native integer
+  # counts feed the test (spec DD3a); currently 'reditools'.
+  redits:
+    caller: reditools
+  # LoDEI 'find' (windowed two-group differential editing). Only runs when the
+  # top-level `lodei_comparison` block is set.
+  lodei:
+    window_size: 25     # half-window (10-50); full window = 2*w+1
+    library: SR
   fastx_trimmer:
     quality: 33
     length: 130

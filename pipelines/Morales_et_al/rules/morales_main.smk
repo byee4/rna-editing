@@ -3,6 +3,7 @@
 # Snakemake 9 uses rule all as the default target.
 include: "preprocessing.smk"
 include: "tools.smk"
+include: "differential.smk"
 include: "morales_downstream.smk"
 include: "references.smk"
 include: "wgs.smk"
