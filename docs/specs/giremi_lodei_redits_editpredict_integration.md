@@ -210,9 +210,11 @@ REDITs is a statistic, not a caller. Two coherent placements:
 - **A (recommended): downstream differential stage.** New rule `redits_llr` that takes the
   per-site edited/coverage counts for **one chosen caller** (default REDItools2) across the
   two `*_comparison` conditions, runs REDIT-LLR in R, and writes
-  `results/tool_comparison/redits/{aligner}/redit_llr_{caller}.tsv.gz`
+  `results/differential_editing/redits/{aligner}/redit_llr_{caller}.tsv.gz`
   (`chrom pos ... p_value`). It is **not** added to `_BED_TOOLS`/`_COMPARE_TOOLS`; it is a
-  new downstream output. Optionally feed multiple callers' matrices.
+  new downstream output under `results/differential_editing/` (distinct from the per-sample
+  overlap outputs under `results/tool_comparison/`). Optionally feed multiple callers'
+  matrices.
 - **B: skip as a caller, document as out-of-scope.** If a differential-stats layer is not
   wanted in this benchmark, REDITs is the weakest "integration" fit and could be deferred.
 
