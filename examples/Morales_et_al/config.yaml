@@ -75,8 +75,8 @@ containers:
 # downstream scripts try to load those files.
 wgs_samples:
   HEK293T:
-    - "/tscc/nfs/home/bay001/projects/codebase/rna-editing/data/small_examples/gene_APP_GAPDH/HEK293_WGS_SRR10129632_R1.fastq.gz"
-    - "/tscc/nfs/home/bay001/projects/codebase/rna-editing/data/small_examples/gene_APP_GAPDH/HEK293_WGS_SRR10129632_R2.fastq.gz"
+    - "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/HEK293_WGS/SRR10129632_1.fastq.gz"
+    - "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/data/HEK293_WGS/SRR10129632_2.fastq.gz"
 
 # Path to the Benchmark-of-RNA-Editing-Detection-Tools/Downstream directory.
 # Requires git submodule init && git submodule update to populate:
@@ -96,8 +96,15 @@ params:
   common:
     base_quality: 30
     min_coverage: 10
+    remove_duplicates: true  # false = bypass Picard, feed callers the un-deduplicated BAM
     edit_type: "AG"        # A->I; reverse-strand complement "TC" derived in code
     min_tools: 2           # co-call threshold for compare_outputs
+    # Single source of truth for library strandedness, applied consistently to every
+    # caller (reditools, reditools3, redinet's REDItoolDnaRna, MARINE, JACUSA2 call-1/2).
+    # One of: "unstranded" | "stranded" | "reverse_stranded".
+    #   stranded         = read1 forward    (FR second-strand)
+    #   reverse_stranded = read1 reverse    (FR first-strand / dUTP — most Illumina stranded kits)
+    strandedness: "reverse_stranded"
   fastx_trimmer:
     quality: 33
     length: 130
@@ -117,20 +124,19 @@ params:
     #   unfiltered JACUSA2-style   — keep every site JACUSA2 call-1 reported
     call1_filter: "edit_type"
   reditools3:
-    strand: 0       # 0=unstranded, 1=stranded, 2=reverse-stranded
     map_quality: 20
   redinet:
-    reditools_strand: 0    # REDItoolDnaRna.py -s: 0=no strand inference, 1=infer
     map_quality: 20
     cov_threshold: 50      # REDInet_Inference.py --C: min coverage (default 50)
     agfreq_threshold: 0.01
     min_ag_subs: 3         # min AG substitutions (default 3)
   marine:
-    strandedness: 2        # 0=unstranded, 1=stranded, 2=reverse-stranded
     min_read_quality: 20   # MARINE --min_read_quality (MAPQ filter). --min_base_quality uses params.common.base_quality.
                            # --paired_end is set per-sample from the samplesheet (is_paired), not configured here.
-                           # NOTE: reditools3/redinet are set to strand 0 (unstranded) on this data;
-                           # set strandedness to 0 here if you want a strand-consistent cross-tool benchmark.
+                           # Strandedness comes from params.common.strandedness (shared across all tools).
+    min_coverage: 5        # post-hoc filter on MARINE's `coverage` column: rows with
+                           # coverage < this are dropped from final_filtered_site_info.<EDIT_TYPE>.tsv.gz.
+                           # Separate from params.common.min_coverage (call-time gate for the other tools).
 
 visualization:
   tools:

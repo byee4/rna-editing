@@ -74,8 +74,8 @@ rule wgs_md_tags:
         bam="results/wgs/{wgs_sample}.dedup.bam",
         ref=_WGS_REF
     output:
-        bam="results/wgs/{wgs_sample}.md.bam",
-        bai="results/wgs/{wgs_sample}.md.bam.bai"
+        bam=temp("results/wgs/{wgs_sample}.md.bam"),
+        bai=temp("results/wgs/{wgs_sample}.md.bam.bai")
     resources:
         mem_mb=lambda wildcards, attempt: 8000 * (1.5 ** (attempt - 1)),
         runtime=lambda wildcards, attempt: 120 * (2 ** (attempt - 1))

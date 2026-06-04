@@ -60,7 +60,9 @@ rule reditools_by_chrom:
     """Run REDItools on a single-chromosome BAM using the -g region flag."""
     input:
         bam="results/mapped/{aligner}/{condition}_{sample}.split/{chrom}.bam",
-        bai="results/mapped/{aligner}/{condition}_{sample}.split/{chrom}.bam.bai"
+        bai="results/mapped/{aligner}/{condition}_{sample}.split/{chrom}.bam.bai",
+        ref="results/references/ref_iupac_masked.fasta",
+        ref_fai="results/references/ref_iupac_masked.fasta.fai"
     output:
         temp("results/tools/{aligner}/reditools_split/{condition}_{sample}/{chrom}.output")
     wildcard_constraints:
@@ -74,15 +76,15 @@ rule reditools_by_chrom:
         stdout="results/logs/{aligner}_{condition}_{sample}_{chrom}.reditools.out",
         stderr="results/logs/{aligner}_{condition}_{sample}_{chrom}.reditools.err"
     params:
-        ref=config["references"]["fasta"],
         base_quality=config["params"]["common"]["base_quality"],
-        min_coverage=config["params"]["common"]["min_coverage"]
+        min_coverage=config["params"]["common"]["min_coverage"],
+        strand=config["strand_flags"]["reditools"]
     shell:
         r"""
         set -euo pipefail
         mkdir -p "$(dirname {output})"
-        reditools.py -S -C -bq {params.base_quality} -q 20 -l {params.min_coverage} \
-            -f {input.bam} -r {params.ref} \
+        reditools.py -S -C -s {params.strand} -bq {params.base_quality} -q 20 -l {params.min_coverage} \
+            -f {input.bam} -r {input.ref} \
             -g {wildcards.chrom} -o {output} \
             1> {log.stdout} 2> {log.stderr}
         """
@@ -129,7 +131,7 @@ rule unzip_rmsk:
     params:
         rmsk=config["references"]["rmsk"]
     output:
-        rmsk="data/rmsk.txt"
+        rmsk=temp("data/rmsk.txt")
     resources:
         mem_mb=lambda wildcards, attempt: 24000 * (1.5 ** (attempt - 1)),
         runtime=lambda wildcards, attempt: 10 * (2 ** (attempt - 1))
@@ -156,8 +158,8 @@ rule sprint_mapq_bam:
         bam="results/mapped/{aligner}/{condition}_{sample}.rmdup.bam",
         bai="results/mapped/{aligner}/{condition}_{sample}.rmdup.bam.bai"
     output:
-        bam="results/mapped/{aligner}/{condition}_{sample}.rmdup_mapq30.bam",
-        bai="results/mapped/{aligner}/{condition}_{sample}.rmdup_mapq30.bam.bai"
+        bam=temp("results/mapped/{aligner}/{condition}_{sample}.rmdup_mapq30.bam"),
+        bai=temp("results/mapped/{aligner}/{condition}_{sample}.rmdup_mapq30.bam.bai")
     wildcard_constraints:
         aligner="star|hisat2"
     threads: 1
@@ -277,8 +279,8 @@ rule add_md_tag:
         bam="results/mapped/{aligner}/{condition}_{sample}.rmdup.bam",
         bai="results/mapped/{aligner}/{condition}_{sample}.rmdup.bam.bai"
     output:
-        bam="results/mapped/{aligner}/{condition}_{sample}.rmdup_MD.bam",
-        bai="results/mapped/{aligner}/{condition}_{sample}.rmdup_MD.bam.bai"
+        bam=temp("results/mapped/{aligner}/{condition}_{sample}.rmdup_MD.bam"),
+        bai=temp("results/mapped/{aligner}/{condition}_{sample}.rmdup_MD.bam.bai")
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: 16000 * (1.5 ** (attempt - 1)),
@@ -325,13 +327,14 @@ rule jacusa2:
     params:
         pileup=config["params"]["jacusa2"]["pileup_filter"],
         base_quality=config["params"]["common"]["base_quality"],
-        min_coverage=config["params"]["common"]["min_coverage"]
+        min_coverage=config["params"]["common"]["min_coverage"],
+        lib_type=config["strand_flags"]["jacusa2"]
     shell:
         r"""
         set -euo pipefail
         wt_list=$(echo {input.wt_bams} | tr ' ' ',')
         ko_list=$(echo {input.ko_bams} | tr ' ' ',')
-        java -jar /opt/jacusa2/jacusa2.jar call-2 -a {params.pileup} -q {params.base_quality} -c {params.min_coverage} -p {threads} -r {output} $wt_list $ko_list \
+        java -jar /opt/jacusa2/jacusa2.jar call-2 -a {params.pileup} -P {params.lib_type} -q {params.base_quality} -c {params.min_coverage} -p {threads} -r {output} $wt_list $ko_list \
             1> {log.stdout} 2> {log.stderr}
         """
 
@@ -346,7 +349,7 @@ rule jacusa2_call1:
         bam="results/mapped/{aligner}/{condition}_{sample}.rmdup_MD.bam",
         bai="results/mapped/{aligner}/{condition}_{sample}.rmdup_MD.bam.bai"
     output:
-        "results/tools/{aligner}/jacusa2_call1/{condition}_{sample}.out"
+        "results/tools/{aligner}/jacusa2_call1/{condition}_{sample}.out.gz"
     threads: 5
     resources:
         mem_mb=lambda wildcards, attempt: 48000 * (1.5 ** (attempt - 1)),
@@ -358,12 +361,16 @@ rule jacusa2_call1:
     params:
         pileup=config["params"]["jacusa2"]["pileup_filter"],
         base_quality=config["params"]["common"]["base_quality"],
-        min_coverage=config["params"]["common"]["min_coverage"]
+        min_coverage=config["params"]["common"]["min_coverage"],
+        lib_type=config["strand_flags"]["jacusa2"]
     shell:
         r"""
         set -euo pipefail
-        java -jar /opt/jacusa2/jacusa2.jar call-1 -a {params.pileup} -q {params.base_quality} -c {params.min_coverage} -p {threads} -r {output} {input.bam} \
+        out="{output}"; tmp="${{out%.gz}}"
+        java -jar /opt/jacusa2/jacusa2.jar call-1 -a {params.pileup} -P {params.lib_type} -q {params.base_quality} -c {params.min_coverage} -p {threads} -r "$tmp" {input.bam} \
             1> {log.stdout} 2> {log.stderr}
+        gzip -c "$tmp" > "$out"
+        rm -f "$tmp"
         """
 
 
@@ -377,7 +384,7 @@ rule reditools3:
         ref="results/references/ref_iupac_masked.fasta",
         ref_fai="results/references/ref_iupac_masked.fasta.fai"
     output:
-        "results/tools/{aligner}/reditools3/{condition}_{sample}.txt"
+        "results/tools/{aligner}/reditools3/{condition}_{sample}.txt.gz"
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: 36000 * (1.5 ** (attempt - 1)),
@@ -387,7 +394,7 @@ rule reditools3:
         stdout="results/logs/{aligner}_{condition}_{sample}.reditools3.out",
         stderr="results/logs/{aligner}_{condition}_{sample}.reditools3.err"
     params:
-        strand=config["params"]["reditools3"]["strand"],
+        strand=config["strand_flags"]["reditools"],
         map_quality=config["params"]["reditools3"]["map_quality"],
         base_quality=config["params"]["common"]["base_quality"],
         min_coverage=config["params"]["common"]["min_coverage"]
@@ -395,15 +402,18 @@ rule reditools3:
         r"""
         set -euo pipefail
         mkdir -p "$(dirname {output})"
+        out="{output}"; tmp="${{out%.gz}}"
         /opt/conda/envs/REDInet/bin/python3.10 -m reditools analyze \
             {input.bam} \
             -r {input.ref} \
-            -o {output} \
+            -o "$tmp" \
             -s {params.strand} \
             -q {params.map_quality} \
             -bq {params.base_quality} \
             -l {params.min_coverage} \
             1> {log.stdout} 2> {log.stderr}
+        gzip -c "$tmp" > "$out"
+        rm -f "$tmp"
         """
 
 
@@ -428,7 +438,7 @@ rule reditools_redinet_by_chrom:
         stderr="results/logs/{aligner}_{condition}_{sample}_{chrom}.reditools_redinet.err"
     params:
         ref=config["references"]["fasta"],
-        strand=config["params"]["redinet"]["reditools_strand"],
+        strand=config["strand_flags"]["reditools"],
         map_quality=config["params"]["redinet"]["map_quality"],
         base_quality=config["params"]["common"]["base_quality"],
         min_cov=config["params"]["common"]["min_coverage"]
@@ -471,7 +481,7 @@ rule join_reditools_redinet_output:
     input:
         _reditools_redinet_chrom_dirs
     output:
-        directory("results/tools/{aligner}/reditools_redinet/{condition}_{sample}_raw/")
+        temp(directory("results/tools/{aligner}/reditools_redinet/{condition}_{sample}_raw/"))
     localrule: True
     shell:
         r"""
@@ -527,9 +537,9 @@ rule redinet:
         gz="results/tools/{aligner}/reditools_redinet/{condition}_{sample}/{condition}_{sample}.output.gz",
         tbi="results/tools/{aligner}/reditools_redinet/{condition}_{sample}/{condition}_{sample}.output.gz.tbi"
     output:
-        predictions="results/tools/{aligner}/redinet/{condition}_{sample}.predictions.tsv",
-        features="results/tools/{aligner}/redinet/{condition}_{sample}.feature_vectors.tsv",
-        params_tsv="results/tools/{aligner}/redinet/{condition}_{sample}.REDInet_ligth_ver_parameters.tsv"
+        predictions="results/tools/{aligner}/redinet/{condition}_{sample}.predictions.tsv.gz",
+        features="results/tools/{aligner}/redinet/{condition}_{sample}.feature_vectors.tsv.gz",
+        params_tsv="results/tools/{aligner}/redinet/{condition}_{sample}.REDInet_ligth_ver_parameters.tsv.gz"
     threads: 1
     resources:
         mem_mb=lambda wildcards, attempt: 16000 * (1.5 ** (attempt - 1)),
@@ -547,18 +557,28 @@ rule redinet:
         r"""
         set -euo pipefail
         mkdir -p "$(dirname {output.predictions})"
-        /opt/conda/envs/REDInet/bin/python \
+        # REDInet writes plain TSVs at the prefix path; gzip each into the .gz
+        # outputs. On EmptyDataError (no candidates) it exits non-zero -> write
+        # empty gzip files so the outputs still exist.
+        if /opt/conda/envs/REDInet/bin/python \
             /app/REDInet/Package/Utilities/REDInet_Inference_light_ver.py \
             -r {input.gz} \
             -o {params.prefix} \
             -c {params.cov} \
             -f {params.agfreq} \
             -s {params.min_ag} \
-            1> {log.stdout} 2> {log.stderr} || \
-        {{
+            1> {log.stdout} 2> {log.stderr}; then
+            gzip -c {params.prefix}.predictions.tsv > {output.predictions}
+            gzip -c {params.prefix}.feature_vectors.tsv > {output.features}
+            gzip -c {params.prefix}.REDInet_ligth_ver_parameters.tsv > {output.params_tsv}
+            rm -f {params.prefix}.predictions.tsv {params.prefix}.feature_vectors.tsv \
+                  {params.prefix}.REDInet_ligth_ver_parameters.tsv
+        else
             echo "REDInet produced no candidates (EmptyDataError); creating empty outputs" >> {log.stdout}
-            touch {output.predictions} {output.features} {output.params_tsv}
-        }}
+            : | gzip > {output.predictions}
+            : | gzip > {output.features}
+            : | gzip > {output.params_tsv}
+        fi
         """
 
 
@@ -625,7 +645,7 @@ rule marine_by_chrom:
         stdout="results/logs/{aligner}_{condition}_{sample}_{chrom}.marine.out",
         stderr="results/logs/{aligner}_{condition}_{sample}_{chrom}.marine.err"
     params:
-        strandedness=config["params"]["marine"]["strandedness"],
+        strandedness=config["strand_flags"]["marine"],
         min_read_quality=config["params"]["marine"]["min_read_quality"],
         min_base_quality=config["params"]["common"]["base_quality"],
         tmpdir=config.get("tmpdir", "/tmp"),
@@ -702,19 +722,24 @@ rule join_marine_output:
 
 rule filter_marine_by_edit_type:
     """Keep only MARINE sites whose strand_conversion matches the configured edit
-    type (e.g. "AG" -> "A>G"). The edit type is in the output filename so a change
-    to params.common.edit_type regenerates this file without rerunning MARINE."""
+    type (e.g. "AG" -> "A>G") AND whose coverage is >= params.marine.min_coverage.
+    The coverage gate makes MARINE comparable to the other callers (which apply
+    params.common.min_coverage at call time); it is a separate, MARINE-specific
+    post-hoc filter (default 5). The edit type is in the output filename so a change
+    to params.common.edit_type regenerates this file without rerunning MARINE;
+    min_coverage is a rule param, so changing it also triggers a regeneration."""
     input:
         "results/tools/{aligner}/marine/{condition}_{sample}/final_filtered_site_info.tsv.gz"
     output:
-        f"results/tools/{{aligner}}/marine/{{condition}}_{{sample}}/final_filtered_site_info.{_MARINE_EDIT_TYPE}.tsv"
+        f"results/tools/{{aligner}}/marine/{{condition}}_{{sample}}/final_filtered_site_info.{_MARINE_EDIT_TYPE}.tsv.gz"
     params:
-        conversion=_MARINE_CONVERSION
+        conversion=_MARINE_CONVERSION,
+        min_cov=config["params"]["marine"].get("min_coverage", 5)
     localrule: True
     shell:
         r"""
         set -euo pipefail
-        zcat {input} | awk -v conv='{params.conversion}' 'BEGIN{{FS=OFS="\t"}}
-            NR==1 {{ for(i=1;i<=NF;i++) if($i=="strand_conversion") col=i; print; next }}
-            col>0 && $col==conv' > {output}
+        zcat {input} | awk -v conv='{params.conversion}' -v mincov='{params.min_cov}' 'BEGIN{{FS=OFS="\t"}}
+            NR==1 {{ for(i=1;i<=NF;i++){{ if($i=="strand_conversion") cc=i; if($i=="coverage") cov=i }} print; next }}
+            cc>0 && $cc==conv && cov>0 && ($cov+0)>=mincov' | gzip > {output}
         """

@@ -86,9 +86,38 @@ _BED_TOOLS = [t for t in config.get("visualization", {}).get("tools", [
     "bcftools", "redinet", "jacusa2_call1",
 ]) if t not in ("jacusa2",)]
 
+# Tools included in the cross-tool comparison/correlation/consensus matrices.
+# SPRINT is intentionally excluded here (it remains a caller and keeps its
+# BigBed/trackhub track via _BED_TOOLS) because its de-novo SNV-cluster calls
+# are orthogonal to the candidate-based callers and distort the matrices.
+_COMPARE_TOOLS = [t for t in _BED_TOOLS if t != "sprint"]
+
 # Edit type baked into the MARINE filtered-output filename (see filter_marine_by_edit_type
 # in rules/tools.smk). e.g. "AG".
 _MARINE_EDIT_TYPE = config["params"]["common"]["edit_type"]
+
+# Strandedness — single source of truth. params.common.strandedness is one of
+# "unstranded" | "stranded" | "reverse_stranded" and is translated to each tool's
+# own flag encoding here, so every caller is configured consistently from one key.
+# Semantics verified against each tool's CLI help/source:
+#   reditools.py / reditools3 / REDItoolDnaRna.py  -s 0/1/2
+#       0=unstranded, 1=second-strand (read1 forward), 2=first-strand (read1 reverse, dUTP)
+#   MARINE  --strandedness 0/1/2  (same 0/1/2 meaning)
+#   JACUSA2 -P  UNSTRANDED / FR-SECONDSTRAND / RF-FIRSTSTRAND
+_STRAND_FLAGS = {
+    "unstranded":       {"reditools": "0", "marine": "0", "jacusa2": "UNSTRANDED"},
+    "stranded":         {"reditools": "1", "marine": "1", "jacusa2": "FR-SECONDSTRAND"},
+    "reverse_stranded": {"reditools": "2", "marine": "2", "jacusa2": "RF-FIRSTSTRAND"},
+}
+_STRANDEDNESS = config["params"]["common"]["strandedness"]
+if _STRANDEDNESS not in _STRAND_FLAGS:
+    raise ValueError(
+        "params.common.strandedness must be one of {}; got {!r}".format(
+            list(_STRAND_FLAGS), _STRANDEDNESS
+        )
+    )
+# Consumed by the caller rules in rules/tools.smk.
+config["strand_flags"] = _STRAND_FLAGS[_STRANDEDNESS]
 
 
 def is_paired(condition, sample):
@@ -149,9 +178,11 @@ _WGS_DB_FILES = (
 
 rule all:
     input:
-        # Preprocessing outputs (one BAM per aligner per sample)
-        expand("results/mapped/{aligner}/{condition}_{sample}.rmdup.bam",
-               aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),
+        # NOTE: rmdup.bam is intentionally NOT a target here. All BAMs are marked
+        # temp() (see preprocessing.smk / tools.smk) so they are deleted once the
+        # callers and BigWig/BigBed steps that consume them have run. The retained
+        # outputs are the edit calls, comparison matrices, correlation/consensus
+        # tables, BigWig/BigBed, and the trackhub.
         # Tool outputs (one result per aligner per sample / per aligner for JACUSA2)
         expand("results/tools/{aligner}/reditools/{condition}_{sample}.output",
                aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),
@@ -180,32 +211,38 @@ rule all:
         "results/downstream/Downstream/REDItools2-Multiple_Table.csv",
         "results/downstream/Downstream/BCFTools-Multiple_Table.csv",
         (["results/downstream/Downstream/JACUSA2_Table.csv"] if _RUN_JACUSA2 else []),
-        # REDItools3 outputs (one per aligner per sample)
-        expand("results/tools/{aligner}/reditools3/{condition}_{sample}.txt",
+        # REDItools3 outputs (one per aligner per sample, gzipped)
+        expand("results/tools/{aligner}/reditools3/{condition}_{sample}.txt.gz",
                aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),
-        # MARINE edit-type-filtered outputs (one per aligner per sample)
-        expand("results/tools/{aligner}/marine/{condition}_{sample}/final_filtered_site_info." + _MARINE_EDIT_TYPE + ".tsv",
+        # MARINE edit-type-filtered outputs (one per aligner per sample, gzipped)
+        expand("results/tools/{aligner}/marine/{condition}_{sample}/final_filtered_site_info." + _MARINE_EDIT_TYPE + ".tsv.gz",
                aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),
         # REDInet step 2: bgzip+tabix indexed REDItoolDnaRna.py output
         expand("results/tools/{aligner}/reditools_redinet/{condition}_{sample}/{condition}_{sample}.output.gz",
                aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),
-        # REDInet step 3: predictions per aligner per sample
-        expand("results/tools/{aligner}/redinet/{condition}_{sample}.predictions.tsv",
+        # REDInet step 3: predictions per aligner per sample (gzipped)
+        expand("results/tools/{aligner}/redinet/{condition}_{sample}.predictions.tsv.gz",
                aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),
-        # Cross-tool comparison matrices
-        "results/compare_all_tools/edit_coverage_matrix.tsv",
-        "results/compare_all_tools/edit_fraction_matrix.tsv",
-        "results/compare_all_tools/tool_score_matrix.tsv",
+        # Cross-tool comparison matrices (gzip-compressed)
+        "results/tool_comparison/compare_all_tools/edit_coverage_matrix.tsv.gz",
+        "results/tool_comparison/compare_all_tools/edit_fraction_matrix.tsv.gz",
+        "results/tool_comparison/compare_all_tools/tool_score_matrix.tsv.gz",
         # Intersection co-call table + per-output-type correlation (replaces the
         # old mixed tool_correlation heatmap)
-        expand("results/correlation/intersect/edits_intersect_{aligner}.tsv", aligner=_ALIGNERS),
-        expand("results/correlation/intersect/tool_jaccard_{aligner}.tsv", aligner=_ALIGNERS),
-        expand("results/correlation/by_output_type/per-site-fraction-correlation_{aligner}.tsv", aligner=_ALIGNERS),
-        expand("results/correlation/by_output_type/per-gene-fraction-correlation_{aligner}.tsv", aligner=_ALIGNERS),
-        expand("results/correlation/by_output_type/qual-or-score-correlation_{aligner}.tsv", aligner=_ALIGNERS),
-        expand("results/correlation/by_output_type/read-count-correlation_{aligner}.tsv", aligner=_ALIGNERS),
-        # Aligner correlation (per-tool, across aligners) — unchanged
-        expand("results/correlation/aligner_correlation_{tool}.tsv", tool=_BED_TOOLS),
+        expand("results/tool_comparison/correlation/intersect/edits_intersect_{aligner}.tsv.gz", aligner=_ALIGNERS),
+        expand("results/tool_comparison/correlation/intersect/tool_jaccard_{aligner}.tsv.gz", aligner=_ALIGNERS),
+        expand("results/tool_comparison/correlation/by_output_type/per-site-fraction-correlation_{aligner}.tsv.gz", aligner=_ALIGNERS),
+        expand("results/tool_comparison/correlation/by_output_type/per-gene-fraction-correlation_{aligner}.tsv.gz", aligner=_ALIGNERS),
+        expand("results/tool_comparison/correlation/by_output_type/qual-or-score-correlation_{aligner}.tsv.gz", aligner=_ALIGNERS),
+        expand("results/tool_comparison/correlation/by_output_type/read-count-correlation_{aligner}.tsv.gz", aligner=_ALIGNERS),
+        # Consensus characteristics — intersection (>=2,>=3,...) vs outersection (=1)
+        # per-site and per-gene, plus the gene-fraction anticorrelation diagnostic.
+        expand("results/tool_comparison/consensus/site_characteristics_{aligner}.tsv.gz", aligner=_ALIGNERS),
+        expand("results/tool_comparison/consensus/gene_characteristics_{aligner}.tsv.gz", aligner=_ALIGNERS),
+        expand("results/tool_comparison/consensus/anticorrelation_gene_fraction_{aligner}.tsv.gz", aligner=_ALIGNERS),
+        expand("results/tool_comparison/consensus/consensus_report_{aligner}.md", aligner=_ALIGNERS),
+        # Aligner correlation (per-tool, across aligners)
+        expand("results/tool_comparison/correlation/aligner_correlation_{tool}.tsv.gz", tool=_COMPARE_TOOLS),
         # Coverage BigWig (one per BAM)
         expand("results/bigwig/{aligner}/{condition}_{sample}.bw",
                aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),

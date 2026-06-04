@@ -2,10 +2,10 @@
 """
 compare_all_tools.py — Build position × sample matrices from all RNA editing tools.
 
-Outputs (in --outdir):
-  edit_coverage_matrix.tsv   read depth at each edited position per sample/tool
-  edit_fraction_matrix.tsv   editing fraction (0–1) at each position
-  tool_score_matrix.tsv      tool-internal confidence score at each position
+Outputs (in --outdir, gzip-compressed):
+  edit_coverage_matrix.tsv.gz   read depth at each edited position per sample/tool
+  edit_fraction_matrix.tsv.gz   editing fraction (0–1) at each position
+  tool_score_matrix.tsv.gz      tool-internal confidence score at each position
 
 Columns are named  {tool}.{aligner}.{condition}_{sample}.
 Rows are genomic positions  {chrom}:{pos}  (1-based, as reported by each tool).
@@ -160,7 +160,10 @@ def parse_sprint(dirpath):
 def parse_red_ml(dirpath):
     """
     RED-ML output directory; reads RNA_editing.sites.txt.
-    Cols: #Chr Pos Strand Ref Coverage Alt Freq P_edit
+    Cols: #Chromosome Position Read_depth Reference Reference_support_reads
+          Alternative Alternative_support_reads P_edit
+    Coverage is Read_depth; RED-ML emits no fraction column, so it is computed
+    as Alternative_support_reads / Read_depth. Score is P_edit.
     """
     sites = {}
     txt = os.path.join(dirpath, "RNA_editing.sites.txt")
@@ -178,11 +181,12 @@ def parse_red_ml(dirpath):
             if edit_type not in EDIT_TYPES:
                 continue
             try:
-                cov = float(c[4])
-                frac = float(c[6])
+                cov = float(c[2])
+                alt_support = float(c[6])
                 score = float(c[7])
             except ValueError:
                 continue
+            frac = alt_support / cov if cov else 0.0
             sites[(c[0], c[1])] = (cov, frac, score)
     return sites
 
@@ -418,8 +422,10 @@ def locate_tool_output(results_dir, tool_dir, aligner, condition, sample):
     base = os.path.join(results_dir, "tools", aligner, tool_dir)
 
     candidates = [
-        # reditools2 / reditools3
+        # reditools2 (plain; consumed by the vendored downstream parsers)
         os.path.join(base, f"{condition}_{sample}.output"),
+        # reditools3 (gzipped)
+        os.path.join(base, f"{condition}_{sample}.txt.gz"),
         os.path.join(base, f"{condition}_{sample}.txt"),
         # sprint (directory)
         os.path.join(base, f"{condition}_{sample}_output"),
@@ -427,20 +433,23 @@ def locate_tool_output(results_dir, tool_dir, aligner, condition, sample):
         os.path.join(base, f"{condition}_{sample}_output"),
         # bcftools
         os.path.join(base, f"{condition}_{sample}.bcf"),
-        # jacusa2 (single file for all samples)
+        # jacusa2 (single file for all samples; plain, downstream-consumed)
         os.path.join(base, "Jacusa.out"),
-        # jacusa2_call1 (per-sample, one condition vs reference)
+        # jacusa2_call1 (per-sample, one condition vs reference; gzipped)
+        os.path.join(base, f"{condition}_{sample}.out.gz"),
         os.path.join(base, f"{condition}_{sample}.out"),
-        # redinet
+        # redinet (gzipped)
+        os.path.join(base, f"{condition}_{sample}.predictions.tsv.gz"),
         os.path.join(base, f"{condition}_{sample}.predictions.tsv"),
     ]
     for p in candidates:
         if os.path.exists(p):
             return p
     # marine: edit-type-filtered TSV (edit type baked into filename); match the
-    # filtered variant only, never the raw final_filtered_site_info.tsv.gz.
+    # filtered variant only (final_filtered_site_info.<EDIT>.tsv.gz), never the
+    # raw final_filtered_site_info.tsv.gz.
     marine_hits = glob.glob(
-        os.path.join(base, f"{condition}_{sample}", "final_filtered_site_info.*.tsv")
+        os.path.join(base, f"{condition}_{sample}", "final_filtered_site_info.*.tsv.gz")
     )
     if marine_hits:
         return marine_hits[0]
@@ -525,6 +534,7 @@ def write_matrices_streaming(cov_data, frac_data, score_data, outdir, chunk=50_0
     chunk rows at a time across all three output files simultaneously.
     """
     import gc
+    import gzip
 
     cols = list(cov_data.keys())
 
@@ -544,13 +554,13 @@ def write_matrices_streaming(cov_data, frac_data, score_data, outdir, chunk=50_0
     header = "\t" + "\t".join(cols) + "\n"
 
     paths = [
-        os.path.join(outdir, "edit_coverage_matrix.tsv"),
-        os.path.join(outdir, "edit_fraction_matrix.tsv"),
-        os.path.join(outdir, "tool_score_matrix.tsv"),
+        os.path.join(outdir, "edit_coverage_matrix.tsv.gz"),
+        os.path.join(outdir, "edit_fraction_matrix.tsv.gz"),
+        os.path.join(outdir, "tool_score_matrix.tsv.gz"),
     ]
     data_dicts = [cov_data, frac_data, score_data]
 
-    with open(paths[0], "w") as f0, open(paths[1], "w") as f1, open(paths[2], "w") as f2:
+    with gzip.open(paths[0], "wt") as f0, gzip.open(paths[1], "wt") as f1, gzip.open(paths[2], "wt") as f2:
         handles = [f0, f1, f2]
         for fh in handles:
             fh.write(header)

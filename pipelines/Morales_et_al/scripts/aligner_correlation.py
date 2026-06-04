@@ -2,7 +2,7 @@
 """
 aligner_correlation.py — Pairwise Spearman correlation between aligners.
 
-For each tool, loads the edit_fraction_matrix.tsv and computes pairwise
+For each tool, loads the edit_fraction_matrix.tsv.gz and computes pairwise
 Spearman r between aligners, collapsing across samples.
 
 Outputs (in --outdir):
@@ -131,7 +131,7 @@ def plot_heatmap(corr_df, title, out_path):
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--matrix-dir", required=True,
-                    help="Directory with edit_fraction_matrix.tsv")
+                    help="Directory with edit_fraction_matrix.tsv.gz")
     ap.add_argument("--outdir", required=True)
     ap.add_argument("--aligners", nargs="+", default=["star"])
     ap.add_argument("--tools", nargs="+",
@@ -140,7 +140,7 @@ def main():
     args = ap.parse_args()
 
     os.makedirs(args.outdir, exist_ok=True)
-    tool_subsets = load_tool_chunks(args.matrix_dir, "edit_fraction_matrix.tsv", args.tools)
+    tool_subsets = load_tool_chunks(args.matrix_dir, "edit_fraction_matrix.tsv.gz", args.tools)
 
     for tool in args.tools:
         subset = tool_subsets.get(tool, pd.DataFrame())
@@ -148,14 +148,14 @@ def main():
         if aligner_df is None:
             print(f"  [skip] {tool}: fewer than 2 aligners found — writing empty output",
                   file=sys.stderr)
-            tsv_out = os.path.join(args.outdir, f"aligner_correlation_{tool}.tsv")
+            tsv_out = os.path.join(args.outdir, f"aligner_correlation_{tool}.tsv.gz")
             pd.DataFrame().to_csv(tsv_out, sep="\t")
             continue
         print(f"  {tool}: {aligner_df.shape[1]} aligners, {aligner_df.shape[0]} positions",
               file=sys.stderr)
 
         corr_df = compute_correlation(aligner_df)
-        tsv_out = os.path.join(args.outdir, f"aligner_correlation_{tool}.tsv")
+        tsv_out = os.path.join(args.outdir, f"aligner_correlation_{tool}.tsv.gz")
         corr_df.to_csv(tsv_out, sep="\t")
         print(f"  Wrote {tsv_out}", file=sys.stderr)
 
