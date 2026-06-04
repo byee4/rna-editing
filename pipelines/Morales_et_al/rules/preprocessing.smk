@@ -229,13 +229,26 @@ rule mark_duplicates:
     params:
         # Reserve 75 % of the SLURM-allocated memory for the JVM heap; the
         # remaining 25 % covers JVM overhead and native Picard allocations.
-        mem_mb_heap=lambda wildcards, resources: int(resources.mem_mb * 0.75)
+        mem_mb_heap=lambda wildcards, resources: int(resources.mem_mb * 0.75),
+        # When false, bypass Picard and pass the aligner BAM through unchanged so
+        # every caller still reads the single converged .rmdup.bam target — now
+        # containing all reads. Defaults to True (back-compatible).
+        remove_dups=config["params"]["common"].get("remove_duplicates", True)
     shell:
         r"""
         set -euo pipefail
-        _JAVA_OPTIONS="-Xmx{params.mem_mb_heap}m" picard MarkDuplicates INPUT={input.bam} OUTPUT={output.rmdup_bam} \
-             METRICS_FILE={output.metrics} REMOVE_DUPLICATES=true \
-             1> {log.stdout} 2> {log.stderr}
+        if [ "{params.remove_dups}" = "True" ]; then
+            _JAVA_OPTIONS="-Xmx{params.mem_mb_heap}m" picard MarkDuplicates INPUT={input.bam} OUTPUT={output.rmdup_bam} \
+                 METRICS_FILE={output.metrics} REMOVE_DUPLICATES=true \
+                 1> {log.stdout} 2> {log.stderr}
+        else
+            # Duplicate removal skipped (params.common.remove_duplicates=false):
+            # byte-copy the aligner BAM and emit a placeholder metrics file so the
+            # DAG and any *.duplication.info consumer stay stable.
+            cp -f {input.bam} {output.rmdup_bam} 2> {log.stderr}
+            echo "duplicate removal skipped (params.common.remove_duplicates=false); raw aligner BAM passed through" > {output.metrics}
+            echo "skipped" > {log.stdout}
+        fi
         """
 
 

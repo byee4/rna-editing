@@ -536,5 +536,101 @@ class TestEdgeCases(unittest.TestCase):
         )
 
 
+class TestSingleSourceBam(unittest.TestCase):
+    """Single-source invariant: every caller reads the one converged .rmdup.bam
+    (or a tag/partition-only derivative of it) and the one trimmed FASTQ. Locks
+    the audit in docs/specs/skip_duplicate_removal.md so a future edit cannot
+    silently point a caller at a different input."""
+
+    # BAM-consuming caller/derivative rules. A new rule that reads a BAM should be
+    # added here — which is the reminder to route it through .rmdup.bam.
+    CALLER_RULES = {
+        "reditools_by_chrom", "reditools3", "reditools_redinet_by_chrom",
+        "bcftools", "red_ml", "sprint", "jacusa2", "jacusa2_call1",
+        "add_md_tag", "marine_by_chrom", "split_bam_by_chrom",
+        "split_marine_md_bam_by_chrom", "sprint_mapq_bam",
+    }
+    # Allowed BAM input tokens — all resolve transitively to .rmdup.bam.
+    ALLOWED_BAM = (
+        ".rmdup.bam", ".rmdup_mapq30.bam", ".rmdup_MD.bam",
+        ".split/{chrom}.bam", ".split_md/{chrom}.bam",
+    )
+
+    def _caller_bodies(self):
+        all_rules = _all_rules()
+        # _sprint_bam helper picks .rmdup.bam / .rmdup_mapq30.bam, not a rule body,
+        # so fold the tools.smk helper text into the sprint check.
+        return {name: all_rules[name] for name in self.CALLER_RULES if name in all_rules}
+
+    def test_callers_present(self):
+        bodies = self._caller_bodies()
+        missing = self.CALLER_RULES - set(bodies)
+        self.assertFalse(
+            missing, msg=f"Expected caller rules not found (renamed?): {sorted(missing)}"
+        )
+
+    def test_no_caller_reads_pre_dedup_bam(self):
+        """No caller may read the bare pre-dedup '{condition}_{sample}.bam'."""
+        # The only legitimate consumer of the raw aligner BAM is mark_duplicates.
+        pre_dedup = re.compile(r"\{condition\}_\{sample\}\.bam\b")
+        for name, body in self._caller_bodies().items():
+            for line in body.splitlines():
+                if "input" in body and pre_dedup.search(line) and ".rmdup" not in line \
+                        and ".split" not in line:
+                    self.fail(
+                        f"Caller rule '{name}' references a pre-dedup BAM: {line.strip()}"
+                    )
+
+    def test_every_caller_resolves_to_rmdup(self):
+        """Each caller's BAM input must use an allowed (rmdup-derived) token."""
+        # sprint selects its BAM via the _sprint_bam helper in tools.smk; check that
+        # helper text rather than the rule body's input line.
+        with open(os.path.join(PIPELINE_DIR, "rules", "tools.smk")) as fh:
+            tools_text = fh.read()
+        for name, body in self._caller_bodies().items():
+            haystack = body if name != "sprint" else tools_text
+            self.assertTrue(
+                any(tok in haystack for tok in self.ALLOWED_BAM),
+                msg=f"Caller rule '{name}' BAM input does not resolve to .rmdup.bam",
+            )
+
+    def test_aligners_read_trimmed_fastq(self):
+        """Every aligner consumes the single trimmed FASTQ, not a raw/staged one."""
+        rules = _parse_rules(os.path.join(PIPELINE_DIR, "rules", "preprocessing.smk"))
+        for aligner in ("star_mapping", "bwa_mapping", "hisat2_mapping"):
+            body = rules.get(aligner, "")
+            self.assertIn(
+                "results/trimmed/{condition}_{sample}_R1_trimmed.fastq.gz",
+                body,
+                msg=f"{aligner} must read the converged trimmed FASTQ",
+            )
+
+
+class TestRemoveDuplicatesFlag(unittest.TestCase):
+    """params.common.remove_duplicates toggle: Picard branch + cp passthrough."""
+
+    def test_mark_duplicates_has_both_branches(self):
+        rules = _parse_rules(os.path.join(PIPELINE_DIR, "rules", "preprocessing.smk"))
+        body = rules.get("mark_duplicates", "")
+        self.assertIn("REMOVE_DUPLICATES=true", body,
+                      msg="mark_duplicates must keep the Picard remove branch")
+        self.assertIn("cp -f {input.bam} {output.rmdup_bam}", body,
+                      msg="mark_duplicates must have a cp passthrough skip branch")
+        self.assertIn("remove_dups", body,
+                      msg="mark_duplicates must gate on the remove_dups param")
+
+    def test_configs_declare_remove_duplicates(self):
+        for cfg in (
+            os.path.join(REPO_ROOT, "examples", "Morales_et_al_small", "config_small.yaml"),
+            os.path.join(EXAMPLE_DIR, "config.yaml"),
+        ):
+            with open(cfg) as fh:
+                data = yaml.safe_load(fh)
+            self.assertIn(
+                "remove_duplicates", data["params"]["common"],
+                msg=f"{cfg} must declare params.common.remove_duplicates",
+            )
+
+
 if __name__ == "__main__":
     unittest.main()

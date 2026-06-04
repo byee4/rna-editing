@@ -96,6 +96,7 @@ params:
   common:
     base_quality: 30
     min_coverage: 10
+    remove_duplicates: true  # false = bypass Picard, feed callers the un-deduplicated BAM
     edit_type: "AG"        # A->I; reverse-strand complement "TC" derived in code
     min_tools: 2           # co-call threshold for compare_outputs
     # Single source of truth for library strandedness, applied consistently to every
