@@ -57,6 +57,7 @@ containers:
   redinet: "/tscc/nfs/home/bay001/projects/codebase/rna-editing/singularity/redinet.sif"
   marine: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/marine.sif"
   giremi: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/giremi.sif"
+  editpredict: "/tscc/projects/ps-yeolab3/bay001/codebase/rna-editing/singularity/editpredict.sif"
 
 # ==========================================
 # WGS Samples for HEK293T SNP Database
@@ -146,6 +147,7 @@ visualization:
     - marine
     - jacusa2_call1
     - giremi
+    - editpredict
   bigwig_binsize: 10
   bigbed_min_cov: 0
   bigbed_min_score: 0

@@ -343,8 +343,36 @@ def to_bed_giremi(path, out_fh):
             out_fh.write(f"{chrom}\t{pos-1}\t{pos}\t{edit_type}\t{score}\t{strand}\n")
 
 
+def to_bed_editpredict(path, out_fh):
+    """EditPredict scores TSV: chrom pos prob_edit pred_class (no header). All sites
+    are the A>I class (the candidate view is A>I only); BED score = prob_edit * 1000.
+    EditPredict reports no coverage or strand, so MIN_COV is not applied and strand
+    is '.'."""
+    if not os.path.exists(path) or os.path.getsize(path) == 0:
+        return
+    with _open(path) as f:
+        for line in f:
+            if not line.strip():
+                continue
+            c = line.rstrip("\n").split("\t")
+            if len(c) < 3:
+                continue
+            chrom, pos_str = c[0], c[1]
+            if not chrom or not pos_str:
+                continue
+            try:
+                pos = int(pos_str)
+                score = _score1000(float(c[2]))
+            except (ValueError, TypeError):
+                continue
+            if score < MIN_SCORE:
+                continue
+            out_fh.write(f"{chrom}\t{pos-1}\t{pos}\tAG\t{score}\t.\n")
+
+
 CONVERTERS = {
     "giremi":     to_bed_giremi,
+    "editpredict": to_bed_editpredict,
     "reditools":  to_bed_reditools2,
     "reditools2": to_bed_reditools2,
     "reditools3": to_bed_reditools3,

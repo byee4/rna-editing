@@ -42,6 +42,7 @@ _TOOL_DIR = {
     "jacusa2_call1": "jacusa2_call1",
     "marine":     "marine",
     "giremi":     "giremi",
+    "editpredict": "editpredict",
 }
 
 # Tool-output filename/dir relative to results/tools/{aligner}/{tool_dir}/
@@ -59,6 +60,7 @@ _TOOL_OUTPUT = {
     # (see filter_marine_by_edit_type in rules/tools.smk).
     "marine":     "{condition}_{sample}/final_filtered_site_info." + config["params"]["common"]["edit_type"] + ".tsv.gz",
     "giremi":     "{condition}_{sample}.txt.gz",
+    "editpredict": "{condition}_{sample}_scores.txt.gz",
 }
 
 

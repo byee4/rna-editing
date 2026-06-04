@@ -337,6 +337,46 @@ rule giremi:
         """
 
 
+rule editpredict:
+    """EditPredict: CNN classifier scoring the shared candidate A>I positions (DD5).
+
+    Per-sample. Consumes the finalized EditPredict positions view (DD1) and scores
+    each with the pre-trained Alu model via the editpredict_score wrapper. Uses the
+    IUPAC-masked reference so ambiguity codes become N (unscorable) rather than
+    crashing the one-hot encoder. Output: chrom pos prob_edit pred_class (gzipped).
+    """
+    input:
+        pos="results/tools/{aligner}/candidates/{condition}_{sample}.editpredict_pos.tsv.gz",
+        ref="results/references/ref_iupac_masked.fasta",
+        ref_fai="results/references/ref_iupac_masked.fasta.fai"
+    output:
+        "results/tools/{aligner}/editpredict/{condition}_{sample}_scores.txt.gz"
+    threads: 1
+    resources:
+        mem_mb=lambda wildcards, attempt: 16000 * (1.5 ** (attempt - 1)),
+        runtime=lambda wildcards, attempt: 180 * (1.5 ** (attempt - 1))
+    container: container_for("editpredict")
+    params:
+        tmpdir=config.get("tmpdir", "/tmp")
+    log:
+        stdout="results/logs/{aligner}_{condition}_{sample}.editpredict.out",
+        stderr="results/logs/{aligner}_{condition}_{sample}.editpredict.err"
+    shell:
+        r"""
+        set -euo pipefail
+        export TMPDIR={params.tmpdir}
+        mkdir -p "$(dirname {output})"
+        work="$(mktemp -d -p {params.tmpdir})"
+        trap 'rm -rf "$work"' EXIT
+        pos="$work/positions.tsv"
+        zcat {input.pos} > "$pos"
+        scores="$work/scores.txt"
+        editpredict_score --reference {input.ref} --positions "$pos" --output "$scores" \
+            1> {log.stdout} 2> {log.stderr}
+        gzip -c "$scores" > {output}
+        """
+
+
 rule unzip_rmsk:
     params:
         rmsk=config["references"]["rmsk"]

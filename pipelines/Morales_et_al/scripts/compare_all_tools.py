@@ -440,12 +440,46 @@ def parse_giremi(filepath):
     return sites
 
 
+# Probability threshold above which an EditPredict-scored candidate counts as a
+# call (params.editpredict.score_threshold; overridable via --editpredict-threshold).
+EDITPREDICT_THRESHOLD = 0.5
+
+
+def parse_editpredict(filepath):
+    """
+    EditPredict scores TSV: chrom  pos  prob_edit  pred_class (no header). Keep
+    sites with prob_edit >= EDITPREDICT_THRESHOLD. EditPredict reports no coverage,
+    so coverage is 0 and both fraction and score carry the edit probability.
+    """
+    sites = {}
+    if not os.path.exists(filepath) or os.path.getsize(filepath) == 0:
+        return sites
+    with _open(filepath) as fh:
+        for line in fh:
+            if not line.strip():
+                continue
+            c = line.rstrip("\n").split("\t")
+            if len(c) < 3:
+                continue
+            chrom, pos = c[0], c[1]
+            try:
+                prob = float(c[2])
+            except ValueError:
+                continue
+            if prob < EDITPREDICT_THRESHOLD:
+                continue
+            if chrom and pos:
+                sites[(chrom, pos)] = (0.0, prob, prob)
+    return sites
+
+
 # ---------------------------------------------------------------------------
 # Dispatch table
 # ---------------------------------------------------------------------------
 
 TOOL_PARSERS = {
     "giremi":     ("giremi",     parse_giremi),
+    "editpredict": ("editpredict", parse_editpredict),
     "reditools2": ("reditools", parse_reditools2),
     "reditools":  ("reditools", parse_reditools2),
     "reditools3": ("reditools3", parse_reditools3),
@@ -490,6 +524,9 @@ def locate_tool_output(results_dir, tool_dir, aligner, condition, sample):
         # giremi (gzipped)
         os.path.join(base, f"{condition}_{sample}.txt.gz"),
         os.path.join(base, f"{condition}_{sample}.txt"),
+        # editpredict (gzipped)
+        os.path.join(base, f"{condition}_{sample}_scores.txt.gz"),
+        os.path.join(base, f"{condition}_{sample}_scores.txt"),
     ]
     for p in candidates:
         if os.path.exists(p):

@@ -16,6 +16,11 @@ def patch_get_seq() -> None:
 
 
 def patch_edit_predict() -> None:
+    # Upstream editPredict.py prints only the raw prediction arrays (no coordinates)
+    # and uppercases the whole line (corrupting chrom names). Rewrite it to emit a
+    # mappable TSV: `chrom  pos  prob_edit  pred_class`, one row per scorable input
+    # line, uppercasing only the flanking sequence. The input rows (from get_seq.py)
+    # are `chrom  pos  sequence`; N-containing sequences are unscorable and skipped.
     path = EDITPREDICT_ROOT / "editPredict.py"
     path.write_text(
         """import argparse
@@ -40,11 +45,15 @@ char_to_int = {c: i for i, c in enumerate(alphabet)}
 
 with open(args.txt) as tf1:
     for line in tf1:
-        line = line.upper().strip("\\n").split("\\t")
-        if "N" in line[-1]:
+        fields = line.rstrip("\\n").rstrip("\\r").split("\\t")
+        if len(fields) < 3:
+            continue
+        chrom = fields[0]
+        pos = fields[1]
+        sequence = fields[-1].upper()
+        if "N" in sequence:
             continue
 
-        sequence = line[-1]
         values = array(list(sequence))
         integer_encoded = [char_to_int[char] for char in values]
         onehot_encoded = []
@@ -56,8 +65,9 @@ with open(args.txt) as tf1:
         onehot_encoded = array(onehot_encoded)
         onehot_encoded = onehot_encoded.reshape(1, len(sequence), 4, 1)
         result = model.predict(onehot_encoded)
-        result1 = np.argmax(result, axis=1)
-        print(result, result1)
+        prob_edit = float(result[0][1])
+        pred_class = int(np.argmax(result, axis=1)[0])
+        print("%s\\t%s\\t%.6f\\t%d" % (chrom, pos, prob_edit, pred_class))
 """
     )
 
