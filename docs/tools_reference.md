@@ -182,7 +182,7 @@ JVM heap is set to 75% of the SLURM-allocated memory via `_JAVA_OPTIONS="-Xmx{me
 
 **Command (per chromosome):**
 ```
-reditools.py -S -C -bq {base_quality} -q 20 -l {min_coverage} \
+reditools.py -S -C -s {strand} -bq {base_quality} -q 20 -l {min_coverage} \
     -f {chrom.bam} -r {ref} -g {chrom} -o {output}
 ```
 
@@ -190,6 +190,7 @@ reditools.py -S -C -bq {base_quality} -q 20 -l {min_coverage} \
 |---|---|---|
 | `-S` | — | Strict mode: only emit positions with at least one non-reference base |
 | `-C` | — | Strand correction: discard positions with inconsistent strand signal |
+| `-s` | `params.common.strandedness` → 0/1/2 | Strand: 0=unstranded, 1=second-strand, 2=first-strand |
 | `-bq` | `params.common.base_quality` (30) | Minimum per-base quality score |
 | `-q` | 20 | Minimum read (mapping) quality score |
 | `-l` | `params.common.min_coverage` (5/10) | Minimum column depth (`--min-column-length`) |
@@ -246,7 +247,7 @@ python3.10 -m reditools analyze {input.bam} \
 | (positional) | BAM path | Input alignment file |
 | `-r` | `references.fasta` | Reference FASTA |
 | `-o` | output `.txt` | Output table path |
-| `-s` | `params.reditools3.strand` (0) | Strand: 0=unstranded, 1=second-strand, 2=first-strand |
+| `-s` | `params.common.strandedness` → 0/1/2 | Strand: 0=unstranded, 1=second-strand, 2=first-strand |
 | `-q` | `params.reditools3.map_quality` (20) | Minimum mapping quality |
 | `-bq` | `params.common.base_quality` (30) | Minimum base quality |
 | `-l` | `params.common.min_coverage` (5/10) | Minimum read depth (`--min-read-depth`) |
@@ -518,7 +519,7 @@ python /opt/reditools/main/REDItoolDnaRna.py \
     -i {chrom.bam} \
     -f {ref} \
     -o {output_dir} \
-    -s {reditools_strand} \
+    -s {strand} \
     -e -u \
     -q 0,{base_quality} \
     -m 0,{map_quality} \
@@ -531,7 +532,7 @@ python /opt/reditools/main/REDItoolDnaRna.py \
 | `-i` | per-chromosome BAM | Input RNA-seq BAM |
 | `-f` | `references.fasta` | Reference FASTA |
 | `-o` | output directory | Writes `outTable_{PID}` file inside this directory |
-| `-s` | `params.redinet.reditools_strand` (0) | Strand: 0=no strand inference, 1=infer |
+| `-s` | `params.common.strandedness` → 0/1/2 | Strand: 0=unstranded, 1=second-strand (read1 fwd), 2=first-strand (read1 rev) |
 | `-e` | — | Exclude multi-hit reads in RNA-seq |
 | `-u` | — | Consider mapping quality in RNA-seq filtering |
 | `-q 0,N` | 30 | Min base quality: DNA=0 (no DNA BAM), RNA=`base_quality` |
@@ -632,7 +633,7 @@ python /opt/marine/marine.py \
 | `--bam_filepath` | `{aligner}/{cond}_{samp}.rmdup_MD.bam` | MD-tagged, indexed BAM (from `add_md_tag`) |
 | `--annotation_bedfile_path` | `references.marine_annotation_bed` | Gene BED6 (`generate_marine_annotation`, from GTF `gene` features) |
 | `--contigs` | chromosome wildcard | Restricts processing to the split chromosome |
-| `--strandedness` | `params.marine.strandedness` (default 2 = reverse-stranded) | Strand model; configurable |
+| `--strandedness` | `params.common.strandedness` → 0/1/2 (default reverse_stranded = 2) | Strand model; configurable |
 | `--min_read_quality` | `params.marine.min_read_quality` (20) | Minimum MAPQ |
 | `--min_base_quality` | `params.common.base_quality` (30) | Minimum base quality (harmonized with other callers) |
 | `--paired_end` | set per-sample iff `is_paired()` is true | Dedupe overlapping mate coverage (slower, accurate) |
@@ -659,6 +660,135 @@ Key columns of `final_filtered_site_info.tsv`:
 | `coverage` | Site coverage (edit fraction = `count / coverage`; MARINE has no fraction column) |
 | `conversion` | Genomic ref>alt (e.g. `T>C`) |
 | `strand_conversion` | Strand-corrected conversion (e.g. `A>G`); the column the edit-type filter matches |
+
+---
+
+## Shared candidate-site pipeline (GIREMI + EditPredict)
+
+**Containers:** `reditools2.sif` (mpileup + adapters), `bedtools.sif` (intersects)
+**Scripts:** `mpileup_to_candidates.py`, `finalize_candidates.py`
+**Purpose:** Build one caller-independent candidate set per sample, consumed by both GIREMI
+and EditPredict, so the two methods see the same sites and stay independent of the other
+callers.
+
+Flow (only `mpileup` fans out per chromosome; the rest run once per sample):
+
+```
+split_bam_by_chrom → candidate_sites_by_chrom (samtools mpileup | mpileup_to_candidates.py)
+  → join_candidate_sites (newline-safe awk merge → candidates.bed.gz, retained)
+  → annotate_candidate_strand (bedtools intersect: gene strand + dbSNP membership)
+  → finalize_candidate_sites (GIREMI 6-col SNV list + EditPredict positions, both gzipped)
+```
+
+| Filter | Source | Meaning |
+|---|---|---|
+| coverage | `params.common.min_coverage` | min read depth (BQ-filtered in the adapter) |
+| base quality | `params.common.base_quality` | per-base Phred floor, applied from the pileup quality string |
+| `min_alt_reads` | `params.candidates.min_alt_reads` (default 2) | min reads supporting the editing substitution — bounds candidate-set size |
+
+All substitution types are kept (GIREMI's mutual-information step needs SNP anchors); the
+A→I strand is fixed by the substitution (`A>G`→`+`, `T>C`→`−`), other types take the gene
+strand, and `#` is written only for strand-uninformative intergenic sites. The EditPredict
+positions view is the A→I subset.
+
+---
+
+### GIREMI
+
+**Container:** `giremi.sif` (GIREMI 0.3.1 + htslib 1.9 + R + Python)
+**GitHub:** https://github.com/zhqingit/giremi
+**Mode:** Per-sample, RNA-only, candidate-based; identifies A→I edits by mutual information
+between a candidate site and nearby SNPs.
+
+**Command:**
+```
+giremi -f {ref} -l {candidate_snv_list} -o {prefix} \
+       -m {min_coverage} -p {paired} -s {strand} {bam}
+```
+
+| Flag | Value | Meaning |
+|---|---|---|
+| `-f` | `ref_iupac_masked.fasta` | faidx'd reference |
+| `-l` | finalized GIREMI 6-col SNV list | candidate SNVs (`chrom start0 end1 gene\|Inte dbSNP strand`) |
+| `-m` | `params.common.min_coverage` | min coverage at candidate sites |
+| `-p` | `is_paired()` → 1/0 | paired/single-end |
+| `-s` | `strand_flags.reditools` (0/1/2) | strand model (read-1 sense/antisense; matches REDItools) |
+
+**Output** (`{condition}_{sample}.txt.gz`): GIREMI `.res` table (written by `giremi.r` via R
+`write.table`, so the header has one fewer field than the data rows). Editing sites are
+`ifRNAE ∈ {1 (MI), 2 (GLM)}`; `RNAE_t` holds the substitution class, `tot_count` the depth,
+`estimated_allelic_ratio` the editing level. Parsed by `parse_giremi` into the comparison
+matrices and consensus.
+
+---
+
+### EditPredict
+
+**Container:** `editpredict.sif` (TensorFlow CPU + Keras Alu model)
+**GitHub:** https://github.com/wjd198605/EditPredict
+**Mode:** Per-sample CNN classifier; scores the shared A→I candidate positions from flanking
+sequence. It discovers nothing itself — its call set is candidate sites passing the model.
+
+**Command (via the `editpredict_score` wrapper):**
+```
+editpredict_score --reference {ref_iupac_masked.fasta} \
+                  --positions {candidate_positions} --output {scores}
+```
+Internally: `get_seq.py` extracts the flanking sequence, `editPredict.py` scores it. The
+container's `editPredict.py` was patched (`containers/editpredict/fix_upstream.py`) to emit a
+mappable TSV `chrom  pos  prob_edit  pred_class` (upstream printed only raw arrays and
+corrupted chrom names). The masked reference turns IUPAC codes into N (unscorable) instead of
+crashing the one-hot encoder.
+
+**Output** (`{condition}_{sample}_scores.txt.gz`): `chrom pos prob_edit pred_class`. Sites
+with `prob_edit ≥ 0.5` (`parse_editpredict`) enter the comparison matrices. EditPredict
+reports no coverage, so coverage is 0 and fraction/score carry the probability.
+
+> **Rebuild note:** `editpredict.sif` must be rebuilt after the `fix_upstream.py` change for
+> the mappable output to take effect.
+
+---
+
+### REDITs (differential)
+
+**Container:** `redits.sif` (R 4.3.2, base-R only)
+**GitHub:** https://github.com/gxiaolab/REDITs
+**Mode:** Two-condition statistical test (REDIT-LLR, beta-binomial), **not** a caller. Runs
+when `jacusa2_comparison` is set, reusing its condition1/condition2 groups.
+
+**Flow:** `build_redits_counts.py` builds a per-site **integer** `edited,total` matrix from
+the chosen caller's native columns (REDItools `BaseCount` + `Coverage` — never
+`fraction × coverage`), keeping sites covered in all samples; `redits_llr.R` runs REDIT-LLR
+per site.
+
+**Output:** `results/differential_editing/redits/{aligner}/redit_llr_{caller}.tsv.gz`
+(`chrom  pos  p_value`). Not part of the per-sample overlap matrices.
+
+---
+
+### LoDEI (differential)
+
+**Container:** `lodei.sif` (Bioconda LoDEI 1.0.0)
+**GitHub:** https://github.com/rna-editing1/lodei
+**Mode:** Windowed two-group differential editing. Gated on a `lodei_comparison` block.
+
+**Command:**
+```
+lodei find -a {group1_bams} -b {group2_bams} -f {ref} -g {gtf} -o {outdir} \
+           -c {cores} -w {window_size} -m {min_coverage} -l {library}
+```
+
+| Flag | Value | Meaning |
+|---|---|---|
+| `-a` / `-b` | condition1 / condition2 BAMs | the two groups |
+| `-f` | `ref_iupac_masked.fasta` | reference (same as used for BAMs) |
+| `-g` | `references.gtf` | annotation (regions searched for local editing) |
+| `-w` | `params.lodei.window_size` (25) | half-window; full window = 2w+1 |
+| `-m` | `params.common.min_coverage` | min coverage in all samples |
+| `-l` | `params.lodei.library` (SR) | library type |
+
+The rule exports `MPLCONFIGDIR` to a writable temp dir (LoDEI imports matplotlib). Output is
+a directory of differentially edited regions under `results/tools/{aligner}/lodei/`.
 
 ---
 

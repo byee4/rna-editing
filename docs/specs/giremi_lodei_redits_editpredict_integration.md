@@ -1,10 +1,30 @@
 # Spec: integrate GIREMI, LoDEI, REDITs, and EditPredict into the Morales_et_al benchmark
 
-Status: **DRAFT — decisions signed off; ready to implement**
+Status: **IMPLEMENTED** (Phases 1–5; dry-run + unit-test verified). One runtime caveat:
+`editpredict.sif` must be rebuilt for the `fix_upstream.py` output patch to take effect.
 Author: Claude (for Brian Yee)
-Date: 2026-06-03
+Date: 2026-06-03 (implemented 2026-06-04)
 Scope: `pipelines/Morales_et_al/`, `containers/{giremi,lodei,redits,editpredict}/`, `scripts/`, `docs/`
 Tracking: `rna-editing-jpg`
+
+### Implementation notes (2026-06-04)
+- **Phase 1** shared candidate pipeline: `mpileup_to_candidates.py` (stage 1) +
+  `finalize_candidates.py` (stage 3) — the spec's single `mpileup_to_candidates.py` was
+  split because the separate `bedtools` rule (DD1a) sits between the two stages. Rules
+  `candidate_sites_by_chrom` → `join_candidate_sites` → `annotate_candidate_strand` →
+  `finalize_candidate_sites` + `generate_dbsnp_bed`. Strand for the A→I class is fixed by
+  the substitution (A>G/T>C); read-orientation refinement was simplified to this because
+  plain-mpileup case is mapping- not transcript-strand for paired dUTP.
+- **Phase 2** GIREMI (`rule giremi`, `parse_giremi`, `to_bed_giremi`) and EditPredict
+  (`rule editpredict`, `parse_editpredict`, `to_bed_editpredict`), both full
+  comparison/consensus members. EditPredict required patching the container's broken
+  `editPredict.py` (no coords, chrom uppercased) via `fix_upstream.py` → **rebuild needed**.
+- **Phase 3/4** in `rules/differential.smk`: LoDEI uses `lodei find` (the spec assumed
+  `windows`; corrected against the SIF) gated on `lodei_comparison`; REDITs
+  (`build_redits_counts.py` → `redits_llr`) gated on `jacusa2_comparison`, writing under
+  `results/differential_editing/redits/`.
+- **Verified:** `giremi.sif`/`redits.sif` validate; 25 unit tests pass; full `snakemake`
+  dry-run resolves all targets.
 
 ### Revision 2026-06-03 (post-review sign-off)
 - **DD1/DD5 merged → one shared candidate set.** A single mpileup-derived candidate-site
