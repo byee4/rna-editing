@@ -242,19 +242,23 @@ Even with the DD1c floor, the candidate pipeline writes several large per-sample
 should linger uncompressed. Policy:
 - **`temp()` (deleted once consumed):** every per-chrom artifact — the per-chrom mpileup
   output, the per-chrom provisional candidate table, the per-chrom candidate BED — plus the
-  merged-but-pre-finalized intermediates (`join_candidate_sites` output, the merged candidate
-  BED fed to `annotate_candidate_strand`, and the `bedtools intersect` sidecar). These are
-  large, fully regenerable, and only exist to hand off to the next rule. Marking them `temp()`
-  mirrors how the suite already `temp()`s split BAMs.
+  `join_candidate_sites` provisional-table output and the `bedtools intersect` strand sidecar.
+  These are large, fully regenerable, and only exist to hand off to the next rule. Marking them
+  `temp()` mirrors how the suite already `temp()`s split BAMs.
+- **gzip + retained for routine inspection:** the **merged pre-finalize candidate BED** (the
+  whole-sample candidate set fed into `annotate_candidate_strand`, before strand
+  reconciliation/flooring views are split out) is kept — written `.gz` — so the raw candidate
+  set is always available for inspection without a `--notemp` rerun.
 - **gzip + retained:** the two finalized candidate **views** (GIREMI 6-col SNV list, EditPredict
-  positions TSV) are written `.gz` and kept — they are the inspectable, reproducible record of
-  what GIREMI/EditPredict were given. `rule giremi`/`rule editpredict` decompress on the fly
+  positions TSV) are written `.gz` and kept — the inspectable, reproducible record of what
+  GIREMI/EditPredict were given. `rule giremi`/`rule editpredict` decompress on the fly
   (`zcat`/Python `gzip`) since GIREMI's `-l` wants a plain path. Tool outputs (`giremi` table,
   EditPredict `*_scores.txt`, REDITs table) are gzipped too, consistent with the existing
   `*.txt.gz`/`*.tsv.gz` convention in `rule all`.
-- **Net:** nothing large is left on disk uncompressed, and the only retained candidate files
-  are the small, gzipped, inspection-worthy finalized views — keeping the DD1a "inspectable"
-  goal while bounding footprint.
+- **Net:** nothing large is left on disk uncompressed; the retained candidate files are the
+  gzipped merged pre-finalize candidate BED (raw set, for routine inspection) plus the two
+  gzipped finalized views — keeping inspectability while every per-chrom/sidecar intermediate
+  is `temp()`.
 
 **"Unless the tool's algorithm requires all sites" — assessed per consumer:**
 - **EditPredict** only scores positions handed to it — flooring is strictly beneficial and
@@ -459,10 +463,11 @@ EditPredict ed-score ≥ threshold (`params.editpredict.score_threshold`, defaul
    overriding `params.candidates.min_alt_reads` in `config.yaml` changes the count, and raising
    it strictly shrinks the candidate set (sanity check the set is bounded, not the full
    mismatch pileup).
-6f. **AC1f (DD1d — lifecycle):** after a small-example run, no per-chrom or merged-intermediate
-   candidate file remains on disk (all `temp()`), the retained finalized candidate views and
-   all new tool outputs are gzipped (`.gz`), and `rule giremi`/`rule editpredict` consume the
-   gzipped candidate views correctly (decompress on the fly).
+6f. **AC1f (DD1d — lifecycle):** after a small-example run, no per-chrom candidate file or
+   `bedtools` strand sidecar remains on disk (all `temp()`); the merged pre-finalize candidate
+   BED **is** retained and gzipped (for inspection); the finalized candidate views and all new
+   tool outputs are gzipped (`.gz`); and `rule giremi`/`rule editpredict` consume the gzipped
+   candidate views correctly (decompress on the fly).
 6. **AC6 (R8):** `snakemake --dry-run` on `config_small.yaml` lists the new targets **and**
    all pre-existing `rule all` targets; a real small-example run reproduces pre-existing
    outputs unchanged (spot-check matrices/figures).
