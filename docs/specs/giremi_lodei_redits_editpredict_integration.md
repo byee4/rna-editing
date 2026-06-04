@@ -139,9 +139,10 @@ adapter, consumed by both. Rationale: keeps both methods independent of the othe
 comparable), and avoids two candidate-generation paths.
 
 - **A (CHOSEN): samtools mpileup + `mpileup_to_candidates.py` adapter** on the deduplicated
-  BAM, floored at `params.common.min_coverage`/`base_quality`, restricted to candidate
-  mismatch sites, and annotated with dbSNP membership from `references.dbsnp`. The adapter
-  emits **two views** of the same sites:
+  BAM, floored at `params.common.min_coverage`/`base_quality` **plus a `min_alt_reads` floor
+  on editing-substitution support (DD1c)** to bound set size, restricted to candidate mismatch
+  sites, and annotated with dbSNP membership from `references.dbsnp`. The adapter emits **two
+  views** of the same sites:
   - GIREMI's 6-column SNV list: `chrom  start(0-based)  end(1-based)  gene|Inte  dbSNP(1/0)
     strand(+/-/#)` (verified against GIREMI README, §4.1).
   - EditPredict's positions TSV: `chrom<TAB>pos(1-based)` (verified against `editpredict_score`).
@@ -152,39 +153,62 @@ comparable), and avoids two candidate-generation paths.
 is slow, so the candidate-generation step is parallelized **per chromosome**, mirroring the
 existing REDItools pattern exactly:
 `checkpoint get_chrom_list` → `split_bam_by_chrom` (both already exist in `tools.smk`) →
-`candidate_sites_by_chrom` (mpileup + adapter on the single-chrom BAM, `-r {chrom}`) →
-`join_candidate_sites` (merge per-chrom candidate lists, single header kept). The per-chrom
-BAMs are already produced (and `temp()`-marked) by `split_bam_by_chrom`, so GIREMI/EditPredict
+`candidate_sites_by_chrom` (mpileup + adapter on the single-chrom BAM, `-r {chrom}`; per chrom)
+→ `join_candidate_sites` (newline-safe awk merge, DD1b) → `annotate_candidate_strand`
+(`bedtools intersect`, once per sample; DD1a step 2) → `finalize_candidate_sites` (reconcile +
+emit the GIREMI and EditPredict views, once; DD1a step 3). Only the expensive `mpileup` step
+fans out per chromosome; the intersect and finalize are cheap and run once on the merged set.
+The per-chrom BAMs are already produced (and `temp()`-marked) by `split_bam_by_chrom`, so
 candidate generation reuses them at no extra split cost. GIREMI and EditPredict then run on the
-merged candidate set (GIREMI can also run per-chrom directly off the same split BAMs if its own
+finalized candidate set (GIREMI can also run per-chrom off the same split BAMs if its own
 runtime warrants it — start merged).
 
-**DD1a — strand assignment (do NOT default to `#`).** *(Raised in review — correct and
-adopted.)* GIREMI's MI/GLM accuracy depends on the per-site transcript strand (col 6), and
-EditPredict needs it to know whether the edit signal is `A>G` (+) or `T>C` (−). Blanket-`#`
-would degrade both, especially on stranded libraries. The adapter therefore derives strand,
-and reserves `#` **only** for genuinely intergenic sites:
+**DD1a — strand assignment (do NOT default to `#`).** *(Raised in review — adopted, with
+read-orientation implemented in the first pass and the annotation intersect broken out as its
+own rule.)* GIREMI's MI/GLM accuracy depends on the per-site transcript strand (col 6 of the
+`-l` list), and EditPredict needs it to know whether the edit signal is `A>G` (+) or `T>C` (−).
+Blanket-`#` would degrade both, especially on stranded libraries.
 
-1. **Primary — gene-annotation intersect.** Intersect each candidate position with a
-   gene-strand BED6 to assign the transcript strand (`+`/`−`). The repo already builds such a
-   BED (`generate_marine_annotation` → `references.marine_annotation_bed`, gene features with
-   strand); reuse it (or a dedicated gene BED). Sites with no gene overlap → `gene="Inte"`,
-   `strand="#"` — the legitimate, narrow use of `#`.
-2. **Refinement / fallback — pileup read orientation (stranded libs).** When
-   `params.common.strandedness != unstranded`, the read orientation already encoded in
-   `samtools mpileup` (UPPERCASE = forward-mapping read, lowercase = reverse) plus the library
-   protocol (`reverse_stranded`/dUTP ⇒ R2 = transcript strand) determines transcript strand
-   directly from the data, independent of annotation. Use it to set strand where annotation is
-   ambiguous (overlapping genes on both strands) and to **choose the edit candidate**: on a
-   `+` transcript keep `A>G` (ref `A`), on a `−` transcript keep `T>C` (ref `T`). For
-   `unstranded` libraries, annotation strand is authoritative and both `A>G`/`T>C` mismatches
-   are emitted with the annotated strand.
-3. GIREMI's own `-s {0,1,2}` flag is set from `config["strand_flags"]["reditools"]`
-   (the existing single-source-of-truth `_STRAND_FLAGS`), so GIREMI's read-counting matches
-   the strand column the adapter writes.
+**Strand is assigned entirely *before* GIREMI runs.** GIREMI never computes strand — it reads
+column 6 of the candidate list it is handed (its `-s` flag only governs how it counts reads,
+not how sites are stranded). So the strand column the candidate pipeline writes is
+authoritative for GIREMI. The assignment is a three-rule, fully inspectable chain upstream of
+`rule giremi`:
 
-Net: the strand column is data/annotation-derived, not a constant. `#` appears only for
-intergenic sites, which is also what GIREMI's README intends.
+1. **`candidate_sites_by_chrom` (mpileup + adapter, per chrom) — read orientation.** The
+   adapter `mpileup_to_candidates.py` parses `samtools mpileup`, which already encodes read
+   orientation as case (UPPERCASE = forward-mapping read, lowercase = reverse). When
+   `params.common.strandedness != unstranded`, it combines that case-resolved support with the
+   library protocol (`reverse_stranded`/dUTP ⇒ R2 = transcript strand) to derive a **data
+   strand** per candidate at *zero extra I/O* (it is already reading these lines to find
+   mismatches). It also chooses the edit candidate accordingly — `A>G` (ref `A`) on `+`,
+   `T>C` (ref `T`) on `−`. Output: a per-chrom **provisional** candidate table carrying
+   `ref, alt, dbSNP(0/1), data_strand (+/-/.)`, plus a BED of candidate intervals. (Implemented
+   now — not deferred — because the orientation signal is free in this same pileup pass.)
+2. **`annotate_candidate_strand` (separate `bedtools intersect` rule) — gene strand.** A
+   standalone, inspectable rule intersects the merged candidate BED with a gene-strand BED6
+   (`bedtools intersect -a candidates.bed -b {gene_strand_bed} -loj`) to attach the
+   **annotation strand** + gene name per site. The repo already builds such a BED
+   (`generate_marine_annotation` → `references.marine_annotation_bed`); reuse it (or a
+   dedicated gene BED). Kept as its own rule (not embedded in the Python adapter) so the
+   intersect inputs/outputs can be inspected directly. Runs **once per sample** on the merged
+   candidate BED (the intersect is cheap; only mpileup needs per-chrom fan-out).
+3. **`finalize_candidate_sites` — reconcile + emit.** Joins (1) `data_strand` and (2)
+   annotation strand by site and writes the final col-6 strand: for `unstranded` libraries the
+   annotation strand is authoritative; for stranded libraries the `data_strand` is preferred
+   and used to disambiguate sites overlapping genes on both strands, with the annotation strand
+   as the fallback when read support is tied/absent. `gene="Inte"`, `strand="#"` is written
+   **only** for sites with no gene overlap *and* no usable read-orientation signal — the
+   legitimate, narrow use of `#`. Emits the two views: GIREMI's 6-col SNV list and EditPredict's
+   `chrom<TAB>pos` TSV.
+
+GIREMI's own `-s {0,1,2}` flag is still set from `config["strand_flags"]["reditools"]` (the
+existing single-source-of-truth `_STRAND_FLAGS`), so GIREMI's read-counting matches the strand
+column the pipeline wrote.
+
+Net: the strand column is data- and annotation-derived, never a constant; the annotation
+intersect is its own inspectable `bedtools` rule that runs before GIREMI; `#` appears only for
+sites that are both intergenic and strand-uninformative.
 
 **DD1b — newline-safe join (no bare `cat`).** *(Raised in review — correct and adopted.)*
 Bare `cat a.tsv b.tsv` fuses A's last line into B's first line if any per-chrom file lacks a
@@ -197,6 +221,40 @@ also terminate every line it writes with `\n`. Apply the same awk-merge to the G
 EditPredict-view files. Add an AC that a per-chrom file deliberately stripped of its trailing
 newline still merges without a fused row.
 
+**DD1c — candidate-set size: apply the shared `min_coverage` floor (and a minimal alt-read
+floor).** *(Raised in review — adopted.)* "Any mismatch in the pileup" on a deeply sequenced
+sample yields millions of candidate rows, which bottlenecks EditPredict (CNN scoring per site)
+and bloats every downstream view. The candidate generator therefore applies the **same
+`params.common.min_coverage` and `base_quality`** as every other caller (single source of
+truth — no separate threshold), so the candidate set is filtered consistently with the suite.
+
+*Important nuance (not pretending coverage alone fixes it):* a `min_coverage` floor does **not**
+by itself tame the explosion — at high depth a site has plenty of coverage yet may carry a
+single error-driven mismatch read. The dominant size driver is single-read mismatches at
+well-covered positions, which a coverage floor passes through. To actually bound the set, the
+candidate definition also requires **≥ `min_alt_reads`** reads supporting the editing
+substitution (`A>G`/`T>C`), `min_alt_reads` configurable via a new `params.candidates` block.
+This mirrors the existing low-stringency candidate knobs already in config for the REDInet
+path (`redinet.min_ag_subs`, `redinet.agfreq_threshold`).
+
+**"Unless the tool's algorithm requires all sites" — assessed per consumer:**
+- **EditPredict** only scores positions handed to it — flooring is strictly beneficial and
+  introduces no bias (it never sees a site it could have rescued). Floor applies.
+- **GIREMI** needs candidate edit sites **plus nearby heterozygous SNPs** for the mutual-
+  information step — but those SNPs are themselves covered variant sites that pass the same
+  floor, so GIREMI does **not** require the full unfiltered pileup. Floor applies. (If GIREMI
+  is later found to need denser SNP anchoring, the dbSNP-flagged rows can be exempted from the
+  `min_alt_reads` floor while still honoring `min_coverage` — noted as the escape hatch.)
+- Neither consumer triggers the "all sites" exemption. A future consumer that genuinely needs
+  every position (cf. the separate low-stringency REDItoolDnaRna→REDInet path) would read the
+  pileup directly rather than this candidate set.
+
+**Sensitivity vs. size tradeoff (open question):** the default `min_alt_reads` trades benchmark
+sensitivity against set size. `min_alt_reads = 1` is maximally sensitive but barely shrinks the
+set (every single-read mismatch survives); `= 2` removes most single-read sequencing-error
+candidates and is the typical candidate definition. **Proposed default: 2** (with
+`min_coverage` from `params.common`), surfaced for confirmation.
+
 ### DD2 — LoDEI comparison-group config
 LoDEI is differential. Reuse the existing `jacusa2_comparison: {condition1, condition2}`
 block, or add a parallel `lodei_comparison`?
@@ -208,8 +266,8 @@ block, or add a parallel `lodei_comparison`?
 ### DD3 — REDITs placement (the big one)
 REDITs is a statistic, not a caller. Two coherent placements:
 - **A (recommended): downstream differential stage.** New rule `redits_llr` that takes the
-  per-site edited/coverage counts for **one chosen caller** (default REDItools2) across the
-  two `*_comparison` conditions, runs REDIT-LLR in R, and writes
+  per-site **integer** edited/total counts for **one chosen caller** (default REDItools2)
+  across the two `*_comparison` conditions, runs REDIT-LLR in R, and writes
   `results/differential_editing/redits/{aligner}/redit_llr_{caller}.tsv.gz`
   (`chrom pos ... p_value`). It is **not** added to `_BED_TOOLS`/`_COMPARE_TOOLS`; it is a
   new downstream output under `results/differential_editing/` (distinct from the per-sample
@@ -221,6 +279,25 @@ REDITs is a statistic, not a caller. Two coherent placements:
 **Recommendation: A**, scoped to a single default caller to keep it minimal. Confirm whether
 a differential-statistics output belongs in this (largely per-sample-call-overlap) benchmark
 at all, or whether REDITs should be deferred (B).
+
+**DD3a — exact integer counts, NOT `fraction × coverage`.** *(Raised in review — correct and
+adopted.)* REDIT-LLR is a beta-binomial likelihood over **integer** `[edited, non-edited]`
+counts; its low-count behaviour (the regime where differential-editing calls actually live) is
+sensitive to off-by-one errors. The comparison-layer matrices (`edit_coverage_matrix`,
+`edit_fraction_matrix`) store **coverage and fraction**, and the fraction is often rounded
+(e.g. REDItools prints `Frequency` to 2 dp). Reconstructing `edited = round(fraction × coverage)`
+would inject rounding noise — and at the 0-vs-1 edited-read boundary the reconstruction can be
+flat wrong (`0.00 × 9 → 0` when the true count was 1). **Therefore REDITs must NOT consume the
+fraction/coverage matrices.** A dedicated `build_redits_counts` step parses the chosen caller's
+**native integer count columns** directly:
+- REDItools2/3: `BaseCount[A,C,G,T]` → edited = the alt-base integer count; total = `Coverage`.
+- MARINE: `count` (edited reads) and `coverage` — both already integers.
+
+It emits exactly the format `redits_llr.R` already consumes — per-site cells `edited,total`
+(both integers), one column per sample, restricted to sites covered in samples of **both**
+conditions. No floating-point reconstruction anywhere in the path. (The `redits_llr.R` wrapper
+in `containers/redits/` is already integer-count based, so this is purely an upstream
+matrix-build concern, not a wrapper change.)
 
 ### DD4 — REDITs / GIREMI base images
 - REDITs: reuse `morales_downstream.sif` (already R, already in the pipeline) by sourcing
@@ -258,11 +335,14 @@ EditPredict ed-score ≥ threshold (`params.editpredict.score_threshold`, defaul
 - **R1b — Shared candidate set (per-chrom).** `candidate_sites_by_chrom` (mpileup +
   `mpileup_to_candidates.py` on each `split_bam_by_chrom` output, container `wgs`) →
   `join_candidate_sites`, producing per-sample GIREMI 6-col SNV list and EditPredict positions
-  TSV, floored at `params.common.{min_coverage,base_quality}`, dbSNP-annotated, and
-  **strand-assigned per DD1a** (gene-annotation intersect + read orientation for stranded
-  libs; `#` only for intergenic). Parallelized per chromosome (genome-wide mpileup is slow),
-  reusing the existing `get_chrom_list`/`split_bam_by_chrom` rules. The per-chrom merge uses
-  the newline-safe awk join of DD1b, **not** bare `cat`.
+  TSV, floored at `params.common.{min_coverage,base_quality}` **plus `params.candidates.min_alt_reads`
+  (DD1c)**, dbSNP-annotated, and
+  **strand-assigned per DD1a** via a separate `annotate_candidate_strand` (`bedtools intersect`)
+  rule plus pileup read-orientation (implemented now), reconciled in `finalize_candidate_sites`;
+  `#` only for sites both intergenic and strand-uninformative. Only `mpileup` fans out per
+  chromosome (genome-wide mpileup is slow), reusing the existing
+  `get_chrom_list`/`split_bam_by_chrom` rules; the intersect/finalize run once per sample. The
+  per-chrom merge uses the newline-safe awk join of DD1b, **not** bare `cat`.
 - **R2 — GIREMI caller.** Per-sample rule (container `giremi`) producing
   `results/tools/{aligner}/giremi/{condition}_{sample}.txt`, fed by the R1b candidate list,
   configured from `params.common` where GIREMI exposes a knob (`-m` ← min_coverage, `-s` ←
@@ -272,8 +352,10 @@ EditPredict ed-score ≥ threshold (`params.editpredict.score_threshold`, defaul
   `lodei`, producing `results/tools/{aligner}/lodei/lodei.out` (per aligner, per comparison),
   parsed/plotted like the JACUSA2 call-2 output. Flags driven from `params.common` where
   exposed.
-- **R4 — REDITs stats.** Optional downstream rule (DD3) producing a per-site
-  p/q-value table from the chosen caller's counts across the comparison conditions.
+- **R4 — REDITs stats.** Optional downstream stage (DD3): `build_redits_counts` builds a
+  per-site integer `edited,total` matrix from the chosen caller's **native count columns**
+  (DD3a — never `fraction × coverage`), then `redits_llr` runs REDIT-LLR across the comparison
+  conditions to produce a per-site p-value table under `results/differential_editing/redits/`.
 - **R5 — EditPredict classifier.** Per-sample rule (container `editpredict`) scoring the R1b
   shared candidate positions (DD5) → `results/tools/{aligner}/editpredict/{condition}_{sample}_scores.txt`,
   via the `editpredict_score` wrapper already in the container.
@@ -287,8 +369,9 @@ EditPredict ed-score ≥ threshold (`params.editpredict.score_threshold`, defaul
   reproduces all pre-existing `rule all` targets unchanged, plus the new outputs.
 - **R9 — Config.** `examples/Morales_et_al_small/config_small.yaml` (+ production
   `config.yaml`) gain `containers.{giremi,lodei,redits,editpredict}`, any `params.{giremi,
-  lodei,redits,editpredict}` knobs, the optional `lodei_comparison` block, and
-  `visualization.tools` additions (`giremi`, `editpredict`).
+  lodei,redits,editpredict}` knobs, a `params.candidates.min_alt_reads` (DD1c, default 2),
+  `params.redits.caller` (DD3a count source, default `reditools`), the optional
+  `lodei_comparison` block, and `visualization.tools` additions (`giremi`, `editpredict`).
 - **R10 — Docs.** `docs/tools_reference.md`, `docs/specs/edit_calling_parameters.md` (flag
   matrix), README, CHANGELOG updated; each phase committed to git + reflected in beads.
 
@@ -300,12 +383,15 @@ EditPredict ed-score ≥ threshold (`params.editpredict.score_threshold`, defaul
 - **New adapters:** `pipelines/Morales_et_al/scripts/mpileup_to_candidates.py` (DD1 — emits
   both the GIREMI 6-col SNV list and the EditPredict positions TSV from one mpileup;
   strand-assigns per DD1a; writes newline-terminated rows per DD1b);
+  `pipelines/Morales_et_al/scripts/build_redits_counts.py` (DD3a — per-site integer
+  `edited,total` matrix from the chosen caller's native count columns, no fraction×coverage);
   `containers/redits/redits_llr.R` (bundled in the container).
 - **Reference dependency (DD1a):** a gene-strand BED6 for strand assignment — reuse
   `references.marine_annotation_bed` (`generate_marine_annotation`) or add a dedicated gene
   BED; wire it as an input to `candidate_sites_by_chrom`.
 - **Rules:** `pipelines/Morales_et_al/rules/tools.smk` — `candidate_sites_by_chrom` +
-  `join_candidate_sites` (R1b, per-chrom mpileup), `rule giremi`, `rule editpredict`,
+  `join_candidate_sites` + `annotate_candidate_strand` (separate `bedtools` rule, DD1a) +
+  `finalize_candidate_sites` (R1b candidate pipeline), `rule giremi`, `rule editpredict`,
   `rule lodei` (gated), `rule redits_llr` (gated). Possibly a new `rules/differential.smk`
   for LoDEI+REDITs to keep `tools.smk` focused.
 - **Comparison:** `scripts/compare_all_tools.py` (`parse_giremi`, `parse_editpredict`,
@@ -329,7 +415,10 @@ EditPredict ed-score ≥ threshold (`params.editpredict.score_threshold`, defaul
    output with q-values; when the block is absent, no LoDEI rule is scheduled (dry-run
    confirms).
 4. **AC4 (R4):** REDITs produces a per-site p/q-value table for the chosen caller across the
-   two comparison conditions (or is documented as deferred per DD3-B).
+   two comparison conditions (or is documented as deferred per DD3-B). **DD3a check:** the
+   `edited,total` cells fed to REDIT-LLR are integers taken from the caller's native count
+   columns and exactly match a hand-checked site's raw counts — no `fraction × coverage`
+   reconstruction (assert integer dtype; spot-check one low-coverage site).
 5. **AC5 (R5):** EditPredict produces `*_scores.txt` for each sample from the shared
    candidate positions; empty candidate input yields an empty (exit-0) result; EditPredict
    columns (ed-score-thresholded) appear in `edit_*_matrix.tsv.gz` and consensus, plus a
@@ -343,6 +432,10 @@ EditPredict ed-score ≥ threshold (`params.editpredict.score_threshold`, defaul
 6d. **AC1d (DD1b — join):** a per-chrom candidate file with its trailing newline deliberately
    stripped still merges via `join_candidate_sites` with the correct row count and **no** fused
    line (last row of chrom N kept distinct from first row of chrom N+1).
+6e. **AC1e (DD1c — size floor):** every candidate row satisfies `coverage ≥ min_coverage`
+   **and** editing-substitution support `≥ params.candidates.min_alt_reads`; raising
+   `min_alt_reads` strictly shrinks the candidate count (sanity check the set is bounded, not
+   the full mismatch pileup).
 6. **AC6 (R8):** `snakemake --dry-run` on `config_small.yaml` lists the new targets **and**
    all pre-existing `rule all` targets; a real small-example run reproduces pre-existing
    outputs unchanged (spot-check matrices/figures).
@@ -384,9 +477,9 @@ DD4 = dedicated containers; DD5 = EditPredict scores the shared candidate set; D
   strandedness) GIREMI (`-m/-s/-p` confirmed §4.1) and LoDEI actually expose — LoDEI flags to
   be read from `lodei windows --help` inside the SIF and recorded in the flag matrix.
 - **Strand-annotation source (DD1a):** confirm reuse of `references.marine_annotation_bed` as
-  the gene-strand BED for candidate strand assignment vs. a dedicated gene BED; and whether
-  read-orientation refinement is worth implementing now or deferred to a follow-up (the
-  annotation intersect alone already removes the all-`#` degradation).
+  the gene-strand BED vs. a dedicated gene BED. *(Resolved: read-orientation is implemented in
+  the first pass — it is free in the mpileup parse — and the gene-strand intersect is a
+  separate `bedtools` rule `annotate_candidate_strand` for inspectability.)*
 - **GIREMI runtime libhts:** the precompiled `giremi` binary links `libhts.so.1`; the
   container builds htslib 1.9 from source to provide it (§7 Dockerfile). Confirm the binary
   runs under that lib at validate time; if the soname differs, adjust the htslib version.
