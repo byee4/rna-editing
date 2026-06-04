@@ -67,8 +67,12 @@ if [ ! -s "$sequences" ]; then
   echo "EditPredict sequence extraction did not produce $sequences" >&2
   exit 1
 fi
+# NOTE: the upstream file names are inverted relative to their contents — the
+# ".json" is the Keras architecture (model_from_json) and the ".h5" is the weights
+# (load_weights). editPredict.py's -c/--json must get the JSON and -w/--h5 the H5,
+# so the files are assigned by extension/content, not by their misleading names.
 python /opt/editpredict/editPredict.py \
   -f "$sequences" \
-  -c /opt/editpredict/editPredict_construction_alu.h5 \
-  -w /opt/editpredict/editPredict_weight_alu.json \
+  -c /opt/editpredict/editPredict_weight_alu.json \
+  -w /opt/editpredict/editPredict_construction_alu.h5 \
   > "$output"

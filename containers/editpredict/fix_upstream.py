@@ -12,6 +12,15 @@ def patch_get_seq() -> None:
     text = path.read_text()
     text = text.replace("\t", "    ")
     text = text.replace("args.length/2", "args.length//2")
+    # Upstream looks sequences up by a numeric chromosome INDEX
+    # (seqs[get_chr(name)-1]), assuming bare numeric names ('1','2',...,'X') and a
+    # fixed chr1..chrM record order. That dies on 'chr'-prefixed GRCh38 names. Load
+    # the FASTA into a name-keyed dict and index by the chromosome name verbatim.
+    text = text.replace(
+        'seqs = list(SeqIO.parse(args.fasta, "fasta"))',
+        'seqs = SeqIO.to_dict(SeqIO.parse(args.fasta, "fasta"))',
+    )
+    text = text.replace("chr=get_chr(words[0])-1", "chr=words[0]")
     path.write_text(text)
 
 
@@ -64,7 +73,7 @@ with open(args.txt) as tf1:
 
         onehot_encoded = array(onehot_encoded)
         onehot_encoded = onehot_encoded.reshape(1, len(sequence), 4, 1)
-        result = model.predict(onehot_encoded)
+        result = model.predict(onehot_encoded, verbose=0)
         prob_edit = float(result[0][1])
         pred_class = int(np.argmax(result, axis=1)[0])
         print("%s\\t%s\\t%.6f\\t%d" % (chrom, pos, prob_edit, pred_class))
