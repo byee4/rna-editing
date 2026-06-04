@@ -237,6 +237,25 @@ substitution (`A>G`/`T>C`), `min_alt_reads` configurable via a new `params.candi
 This mirrors the existing low-stringency candidate knobs already in config for the REDInet
 path (`redinet.min_ag_subs`, `redinet.agfreq_threshold`).
 
+**DD1d — file lifecycle: `temp()` the intermediates, gzip what is retained.** *(Per request.)*
+Even with the DD1c floor, the candidate pipeline writes several large per-sample files; none
+should linger uncompressed. Policy:
+- **`temp()` (deleted once consumed):** every per-chrom artifact — the per-chrom mpileup
+  output, the per-chrom provisional candidate table, the per-chrom candidate BED — plus the
+  merged-but-pre-finalized intermediates (`join_candidate_sites` output, the merged candidate
+  BED fed to `annotate_candidate_strand`, and the `bedtools intersect` sidecar). These are
+  large, fully regenerable, and only exist to hand off to the next rule. Marking them `temp()`
+  mirrors how the suite already `temp()`s split BAMs.
+- **gzip + retained:** the two finalized candidate **views** (GIREMI 6-col SNV list, EditPredict
+  positions TSV) are written `.gz` and kept — they are the inspectable, reproducible record of
+  what GIREMI/EditPredict were given. `rule giremi`/`rule editpredict` decompress on the fly
+  (`zcat`/Python `gzip`) since GIREMI's `-l` wants a plain path. Tool outputs (`giremi` table,
+  EditPredict `*_scores.txt`, REDITs table) are gzipped too, consistent with the existing
+  `*.txt.gz`/`*.tsv.gz` convention in `rule all`.
+- **Net:** nothing large is left on disk uncompressed, and the only retained candidate files
+  are the small, gzipped, inspection-worthy finalized views — keeping the DD1a "inspectable"
+  goal while bounding footprint.
+
 **"Unless the tool's algorithm requires all sites" — assessed per consumer:**
 - **EditPredict** only scores positions handed to it — flooring is strictly beneficial and
   introduces no bias (it never sees a site it could have rescued). Floor applies.
@@ -249,11 +268,12 @@ path (`redinet.min_ag_subs`, `redinet.agfreq_threshold`).
   every position (cf. the separate low-stringency REDItoolDnaRna→REDInet path) would read the
   pileup directly rather than this candidate set.
 
-**Sensitivity vs. size tradeoff (open question):** the default `min_alt_reads` trades benchmark
-sensitivity against set size. `min_alt_reads = 1` is maximally sensitive but barely shrinks the
-set (every single-read mismatch survives); `= 2` removes most single-read sequencing-error
-candidates and is the typical candidate definition. **Proposed default: 2** (with
-`min_coverage` from `params.common`), surfaced for confirmation.
+**Sensitivity vs. size tradeoff — RESOLVED.** `min_alt_reads = 1` is maximally sensitive but
+barely shrinks the set (every single-read mismatch survives); `= 2` removes most single-read
+sequencing-error candidates and is the typical candidate definition. **Default = 2**, exposed
+as `params.candidates.min_alt_reads` in `config.yaml` (and the small-example config) so it is
+tunable per dataset — e.g. lowered to 1 for a maximally sensitive run, raised for very deep
+data. `min_coverage` continues to come from `params.common`.
 
 ### DD2 — LoDEI comparison-group config
 LoDEI is differential. Reuse the existing `jacusa2_comparison: {condition1, condition2}`
@@ -342,9 +362,11 @@ EditPredict ed-score ≥ threshold (`params.editpredict.score_threshold`, defaul
   `#` only for sites both intergenic and strand-uninformative. Only `mpileup` fans out per
   chromosome (genome-wide mpileup is slow), reusing the existing
   `get_chrom_list`/`split_bam_by_chrom` rules; the intersect/finalize run once per sample. The
-  per-chrom merge uses the newline-safe awk join of DD1b, **not** bare `cat`.
+  per-chrom merge uses the newline-safe awk join of DD1b, **not** bare `cat`. Per DD1d, all
+  per-chrom and merged-intermediate files are `temp()`; the two finalized candidate views
+  (GIREMI SNV list, EditPredict positions) are written `.gz` and retained.
 - **R2 — GIREMI caller.** Per-sample rule (container `giremi`) producing
-  `results/tools/{aligner}/giremi/{condition}_{sample}.txt`, fed by the R1b candidate list,
+  `results/tools/{aligner}/giremi/{condition}_{sample}.txt.gz`, fed by the R1b candidate list,
   configured from `params.common` where GIREMI exposes a knob (`-m` ← min_coverage, `-s` ←
   strand, `-p` ← paired). Starts as one job on the merged candidate set; mirror reditools
   split/join if its own runtime warrants.
@@ -357,7 +379,7 @@ EditPredict ed-score ≥ threshold (`params.editpredict.score_threshold`, defaul
   (DD3a — never `fraction × coverage`), then `redits_llr` runs REDIT-LLR across the comparison
   conditions to produce a per-site p-value table under `results/differential_editing/redits/`.
 - **R5 — EditPredict classifier.** Per-sample rule (container `editpredict`) scoring the R1b
-  shared candidate positions (DD5) → `results/tools/{aligner}/editpredict/{condition}_{sample}_scores.txt`,
+  shared candidate positions (DD5) → `results/tools/{aligner}/editpredict/{condition}_{sample}_scores.txt.gz`,
   via the `editpredict_score` wrapper already in the container.
 - **R6 — Comparison wiring.** Per DD6: GIREMI **and** EditPredict in matrices + consensus
   (EditPredict filtered to ed-score ≥ threshold); LoDEI as its own differential output (not
@@ -433,9 +455,14 @@ EditPredict ed-score ≥ threshold (`params.editpredict.score_threshold`, defaul
    stripped still merges via `join_candidate_sites` with the correct row count and **no** fused
    line (last row of chrom N kept distinct from first row of chrom N+1).
 6e. **AC1e (DD1c — size floor):** every candidate row satisfies `coverage ≥ min_coverage`
-   **and** editing-substitution support `≥ params.candidates.min_alt_reads`; raising
-   `min_alt_reads` strictly shrinks the candidate count (sanity check the set is bounded, not
-   the full mismatch pileup).
+   **and** editing-substitution support `≥ params.candidates.min_alt_reads`; the default is 2,
+   overriding `params.candidates.min_alt_reads` in `config.yaml` changes the count, and raising
+   it strictly shrinks the candidate set (sanity check the set is bounded, not the full
+   mismatch pileup).
+6f. **AC1f (DD1d — lifecycle):** after a small-example run, no per-chrom or merged-intermediate
+   candidate file remains on disk (all `temp()`), the retained finalized candidate views and
+   all new tool outputs are gzipped (`.gz`), and `rule giremi`/`rule editpredict` consume the
+   gzipped candidate views correctly (decompress on the fly).
 6. **AC6 (R8):** `snakemake --dry-run` on `config_small.yaml` lists the new targets **and**
    all pre-existing `rule all` targets; a real small-example run reproduces pre-existing
    outputs unchanged (spot-check matrices/figures).
