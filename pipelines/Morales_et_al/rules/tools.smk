@@ -285,6 +285,58 @@ rule finalize_candidate_sites:
         """
 
 
+rule giremi:
+    """GIREMI: genome-independent A-to-I identification by mutual information.
+
+    Per-sample, RNA-only. Consumes the finalized candidate SNV list (DD1) and the
+    deduplicated BAM. GIREMI's -s read-1 sense/antisense encoding matches REDItools'
+    0/1/2, so it is driven from the shared strand_flags. An empty candidate list
+    yields an empty output (GIREMI is not invoked).
+    """
+    input:
+        bam="results/mapped/{aligner}/{condition}_{sample}.rmdup.bam",
+        bai="results/mapped/{aligner}/{condition}_{sample}.rmdup.bam.bai",
+        snv="results/tools/{aligner}/candidates/{condition}_{sample}.giremi_snv.tsv.gz",
+        ref="results/references/ref_iupac_masked.fasta",
+        ref_fai="results/references/ref_iupac_masked.fasta.fai"
+    output:
+        "results/tools/{aligner}/giremi/{condition}_{sample}.txt.gz"
+    threads: 1
+    resources:
+        mem_mb=lambda wildcards, attempt: 8000 * (1.5 ** (attempt - 1)),
+        runtime=lambda wildcards, attempt: 180 * (1.5 ** (attempt - 1))
+    container: container_for("giremi")
+    params:
+        tmpdir=config.get("tmpdir", "/tmp"),
+        min_coverage=config["params"]["common"]["min_coverage"],
+        strand=config["strand_flags"]["reditools"],
+        paired=lambda wildcards: 1 if is_paired(wildcards.condition, wildcards.sample) else 0
+    log:
+        stdout="results/logs/{aligner}_{condition}_{sample}.giremi.out",
+        stderr="results/logs/{aligner}_{condition}_{sample}.giremi.err"
+    shell:
+        r"""
+        set -euo pipefail
+        export TMPDIR={params.tmpdir}
+        mkdir -p "$(dirname {output})"
+        work="$(mktemp -d -p {params.tmpdir})"
+        trap 'rm -rf "$work"' EXIT
+        snv="$work/candidates.snv"
+        zcat {input.snv} > "$snv"
+        if [ ! -s "$snv" ]; then
+            : | gzip -c > {output}
+            echo "no candidates; empty output" > {log.stdout}
+            exit 0
+        fi
+        pfx="$work/giremi_out"
+        giremi -f {input.ref} -l "$snv" -o "$pfx" \
+            -m {params.min_coverage} -p {params.paired} -s {params.strand} \
+            {input.bam} 1> {log.stdout} 2> {log.stderr}
+        if [ -f "$pfx.res" ]; then src="$pfx.res"; else src="$pfx"; fi
+        gzip -c "$src" > {output}
+        """
+
+
 rule unzip_rmsk:
     params:
         rmsk=config["references"]["rmsk"]

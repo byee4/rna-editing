@@ -83,7 +83,7 @@ if _RUN_JACUSA2:
 # kept so its reference-genome edit set is compared against the other tools.
 _BED_TOOLS = [t for t in config.get("visualization", {}).get("tools", [
     "reditools", "reditools3", "sprint", "red_ml",
-    "bcftools", "redinet", "jacusa2_call1",
+    "bcftools", "redinet", "jacusa2_call1", "giremi",
 ]) if t not in ("jacusa2",)]
 
 # Tools included in the cross-tool comparison/correlation/consensus matrices.
@@ -222,6 +222,9 @@ rule all:
                aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),
         # REDInet step 3: predictions per aligner per sample (gzipped)
         expand("results/tools/{aligner}/redinet/{condition}_{sample}.predictions.tsv.gz",
+               aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),
+        # GIREMI per-sample edit calls (gzipped) — consumes the shared candidate set
+        expand("results/tools/{aligner}/giremi/{condition}_{sample}.txt.gz",
                aligner=_ALIGNERS, condition=config["conditions"], sample=config["samples"]),
         # Cross-tool comparison matrices (gzip-compressed)
         "results/tool_comparison/compare_all_tools/edit_coverage_matrix.tsv.gz",

@@ -395,11 +395,57 @@ def parse_marine(filepath):
     return sites
 
 
+def parse_giremi(filepath):
+    """
+    GIREMI .res table (gzipped). Written by giremi.r via R write.table with row
+    names, so the header line has one fewer field than the data rows (the leading
+    row-name column is unnamed); detect and drop that leading column.
+
+    Columns (named): chr coordinate strand ifSNP gene reference_base upstream_1base
+      downstream_1base major_base major_count tot_count major_ratio if_MI MI
+      pvalue_MI estimated_allelic_ratio ifNEG if_GLM pvalue_GLM RNAE_t A C G T ifRNAE
+
+    An editing site is ifRNAE in {1 (MI-predicted), 2 (GLM-predicted)}; RNAE_t holds
+    the substitution class (e.g. "AG"), filtered to EDIT_TYPES.
+    """
+    sites = {}
+    if not os.path.exists(filepath) or os.path.getsize(filepath) == 0:
+        return sites
+    with _open(filepath) as fh:
+        header = None
+        for line in fh:
+            if not line.strip():
+                continue
+            c = line.rstrip("\n").split("\t")
+            if header is None:
+                header = [x.lower() for x in c]
+                continue
+            if len(c) == len(header) + 1:
+                c = c[1:]               # drop the unnamed row-name column
+            row = dict(zip(header, c))
+            if row.get("ifrnae") not in ("1", "2"):
+                continue
+            rnae_t = row.get("rnae_t", "").upper()
+            if rnae_t and rnae_t not in EDIT_TYPES:
+                continue
+            chrom = row.get("chr", "")
+            pos = row.get("coordinate", "")
+            try:
+                cov = float(row.get("tot_count", 0))
+                frac = float(row.get("estimated_allelic_ratio", 0))
+            except (ValueError, KeyError):
+                continue
+            if chrom and pos:
+                sites[(chrom, pos)] = (cov, frac, frac)
+    return sites
+
+
 # ---------------------------------------------------------------------------
 # Dispatch table
 # ---------------------------------------------------------------------------
 
 TOOL_PARSERS = {
+    "giremi":     ("giremi",     parse_giremi),
     "reditools2": ("reditools", parse_reditools2),
     "reditools":  ("reditools", parse_reditools2),
     "reditools3": ("reditools3", parse_reditools3),
@@ -441,6 +487,9 @@ def locate_tool_output(results_dir, tool_dir, aligner, condition, sample):
         # redinet (gzipped)
         os.path.join(base, f"{condition}_{sample}.predictions.tsv.gz"),
         os.path.join(base, f"{condition}_{sample}.predictions.tsv"),
+        # giremi (gzipped)
+        os.path.join(base, f"{condition}_{sample}.txt.gz"),
+        os.path.join(base, f"{condition}_{sample}.txt"),
     ]
     for p in candidates:
         if os.path.exists(p):

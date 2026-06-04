@@ -300,7 +300,51 @@ def to_bed_jacusa2_call1(path, out_fh):
             out_fh.write(f"{chrom}\t{pos-1}\t{pos}\t{edit_type}\t{score}\t{strand}\n")
 
 
+def to_bed_giremi(path, out_fh):
+    """GIREMI .res table (gzipped). R write.table row-name offset: header has one
+    fewer field than data rows; drop the leading unnamed column. Keep ifRNAE in
+    {1,2} and RNAE_t in the A>I class; BED score = estimated_allelic_ratio * 1000."""
+    if not os.path.exists(path) or os.path.getsize(path) == 0:
+        return
+    with _open(path) as f:
+        header = None
+        for line in f:
+            if not line.strip():
+                continue
+            c = line.rstrip("\n").split("\t")
+            if header is None:
+                header = [x.lower() for x in c]
+                continue
+            if len(c) == len(header) + 1:
+                c = c[1:]
+            row = dict(zip(header, c))
+            if row.get("ifrnae") not in ("1", "2"):
+                continue
+            edit_type = row.get("rnae_t", "").upper()
+            if edit_type not in ("AG", "TC", "A>G", "T>C"):
+                continue
+            edit_type = edit_type.replace(">", "")
+            chrom = row.get("chr", "")
+            pos_str = row.get("coordinate", "")
+            strand = row.get("strand", ".")
+            if strand not in ("+", "-"):
+                strand = "."
+            if not chrom or not pos_str:
+                continue
+            try:
+                pos = int(pos_str)
+                cov = int(float(row.get("tot_count", 0)))
+                frac = float(row.get("estimated_allelic_ratio", 0))
+                score = _score1000(frac)
+            except (ValueError, TypeError):
+                continue
+            if cov < MIN_COV or score < MIN_SCORE:
+                continue
+            out_fh.write(f"{chrom}\t{pos-1}\t{pos}\t{edit_type}\t{score}\t{strand}\n")
+
+
 CONVERTERS = {
+    "giremi":     to_bed_giremi,
     "reditools":  to_bed_reditools2,
     "reditools2": to_bed_reditools2,
     "reditools3": to_bed_reditools3,
