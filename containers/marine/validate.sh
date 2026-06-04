@@ -14,6 +14,6 @@ print("pandas", pandas.__version__)
 print("scipy", scipy.__version__)
 PY
 
-test -f /opt/marine/bin/MARINE/marine.py
-conda run -n marine python /opt/marine/bin/MARINE/marine.py --help > /dev/null
+test -f /opt/marine/marine.py
+python /opt/marine/marine.py --help > /dev/null
 echo "MARINE validation passed"
