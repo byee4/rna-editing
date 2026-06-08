@@ -328,11 +328,18 @@ rule giremi:
             echo "no candidates; empty output" > {log.stdout}
             exit 0
         fi
-        pfx="$work/giremi_out"
-        giremi -f {input.ref} -l "$snv" -o "$pfx" \
+        # GIREMI shells out to `R CMD BATCH giremi.r` by bare name, so giremi.r must sit in
+        # the CWD; run from the isolated work dir (where GIREMI also writes its outputs)
+        # and feed absolute input paths so the cd doesn't break their resolution.
+        cp /opt/giremi/giremi.r "$work"/
+        ref="$(readlink -f {input.ref})"
+        bam="$(readlink -f {input.bam})"
+        ( cd "$work" && giremi -f "$ref" -l candidates.snv -o giremi_out \
             -m {params.min_coverage} -p {params.paired} -s {params.strand} \
-            {input.bam} 1> {log.stdout} 2> {log.stderr}
-        if [ -f "$pfx.res" ]; then src="$pfx.res"; else src="$pfx"; fi
+            "$bam" ) 1> {log.stdout} 2> {log.stderr}
+        # GIREMI's R GLM step writes giremi_out.res; fall back to the C-stage MI table
+        # (giremi_out) if the GLM stage produced nothing.
+        if [ -f "$work/giremi_out.res" ]; then src="$work/giremi_out.res"; else src="$work/giremi_out"; fi
         gzip -c "$src" > {output}
         """
 
@@ -371,7 +378,10 @@ rule editpredict:
         pos="$work/positions.tsv"
         zcat {input.pos} > "$pos"
         scores="$work/scores.txt"
-        editpredict_score --reference {input.ref} --positions "$pos" --output "$scores" \
+        # editpredict_score's get_seq.py cd's into a tmpdir before opening the
+        # reference, so a relative path no longer resolves; pass it absolute.
+        ref="$(readlink -f {input.ref})"
+        editpredict_score --reference "$ref" --positions "$pos" --output "$scores" \
             1> {log.stdout} 2> {log.stderr}
         gzip -c "$scores" > {output}
         """
@@ -923,7 +933,7 @@ rule marine_by_chrom:
             {params.paired_end_flag} \
             --cores {threads} \
             1> {log.stdout} 2> {log.stderr}
-        rm -rf "$NUMBA_CACHE_DIR" "$MPLCONFIGDIR"
+        rm -rf "$NUMBA_CACHE_DIR" "$MPLCONFIGDIR" || true
         """
 
 

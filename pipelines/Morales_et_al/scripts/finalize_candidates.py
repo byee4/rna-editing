@@ -95,6 +95,7 @@ def main():
     gene_strands, gene_names = load_gene_strands(args.gene_intersect)
 
     seen_positions = set()
+    seen_giremi = set()
     with _open(args.candidates) as cin, \
             _open(args.giremi_out, "wt") as gout, \
             _open(args.editpredict_out, "wt") as eout:
@@ -109,7 +110,14 @@ def main():
                                     gene_strands.get(k, set()),
                                     gene_names.get(k, []))
             flag = dbsnp.get(k, 0)
-            gout.write(f"{chrom}\t{start0}\t{end1}\t{label}\t{flag}\t{strand}\n")
+            # GIREMI keys its SNV list on (chrom, position) only and rejects any
+            # repeated coordinate ("error: repeat snv"), regardless of strand. A
+            # site can yield multiple candidate rows (different alt, or +/- subs),
+            # so collapse to one row per coordinate, keeping the first seen.
+            giremi_key = (chrom, start0)
+            if giremi_key not in seen_giremi:
+                seen_giremi.add(giremi_key)
+                gout.write(f"{chrom}\t{start0}\t{end1}\t{label}\t{flag}\t{strand}\n")
             # EditPredict scores the A-to-I class only (substitution-strand resolved).
             if sub_strand in ("+", "-"):
                 pos_key = (chrom, end1)
