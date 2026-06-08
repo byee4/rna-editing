@@ -48,6 +48,8 @@ args = parser.parse_args()
 np.set_printoptions(threshold=np.inf)
 model = model_from_json(open(args.json).read())
 model.load_weights(args.h5)
+# The CNN takes a fixed-length window (model.input_shape == (None, L, 4, 1)).
+expected_len = model.input_shape[1]
 
 alphabet = "ACGT"
 char_to_int = {c: i for i, c in enumerate(alphabet)}
@@ -61,6 +63,11 @@ with open(args.txt) as tf1:
         pos = fields[1]
         sequence = fields[-1].upper()
         if "N" in sequence:
+            continue
+        # get_seq.py yields a short (or, via negative-index slicing, empty) flank for
+        # positions within half a window of a contig start/end; those can't be scored
+        # and would crash model.predict on the wrong input shape. Skip them.
+        if len(sequence) != expected_len:
             continue
 
         values = array(list(sequence))
