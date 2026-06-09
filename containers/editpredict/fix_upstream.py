@@ -35,7 +35,6 @@ def patch_edit_predict() -> None:
         """import argparse
 import numpy as np
 from keras.models import model_from_json
-from numpy import array
 from argparse import RawTextHelpFormatter
 
 
@@ -54,6 +53,25 @@ expected_len = model.input_shape[1]
 alphabet = "ACGT"
 char_to_int = {c: i for i, c in enumerate(alphabet)}
 
+# Score in batches. Calling model.predict() once per position leaks memory via
+# repeated tf.function retracing and OOMs on large candidate sets (tens of
+# thousands of sites); batching keeps memory flat and is far faster.
+BATCH = 8192
+batch_x = []
+batch_meta = []
+
+
+def flush():
+    if not batch_meta:
+        return
+    x = np.stack(batch_x).reshape(len(batch_x), expected_len, 4, 1)
+    preds = model.predict(x, batch_size=512, verbose=0)
+    for (chrom, pos), pred in zip(batch_meta, preds):
+        print("%s\\t%s\\t%.6f\\t%d" % (chrom, pos, float(pred[1]), int(np.argmax(pred))))
+    del batch_x[:]
+    del batch_meta[:]
+
+
 with open(args.txt) as tf1:
     for line in tf1:
         fields = line.rstrip("\\n").rstrip("\\r").split("\\t")
@@ -70,20 +88,14 @@ with open(args.txt) as tf1:
         if len(sequence) != expected_len:
             continue
 
-        values = array(list(sequence))
-        integer_encoded = [char_to_int[char] for char in values]
-        onehot_encoded = []
-        for value in integer_encoded:
-            letter = [0 for _ in range(len(alphabet))]
-            letter[value] = 1
-            onehot_encoded.append(letter)
-
-        onehot_encoded = array(onehot_encoded)
-        onehot_encoded = onehot_encoded.reshape(1, len(sequence), 4, 1)
-        result = model.predict(onehot_encoded, verbose=0)
-        prob_edit = float(result[0][1])
-        pred_class = int(np.argmax(result, axis=1)[0])
-        print("%s\\t%s\\t%.6f\\t%d" % (chrom, pos, prob_edit, pred_class))
+        onehot = np.zeros((expected_len, len(alphabet)), dtype="float32")
+        for i, ch in enumerate(sequence):
+            onehot[i, char_to_int[ch]] = 1
+        batch_x.append(onehot)
+        batch_meta.append((chrom, pos))
+        if len(batch_meta) >= BATCH:
+            flush()
+    flush()
 """
     )
 
