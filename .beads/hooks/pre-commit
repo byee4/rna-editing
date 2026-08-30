@@ -1,4 +1,16 @@
 #!/usr/bin/env sh
+# --- BEGIN CREDENTIAL GUARD (not managed by beads) ---
+# Beads sets a LOCAL core.hooksPath, and a local core.hooksPath overrides the
+# global hooks directory entirely — so a machine-wide credential guard never
+# runs in this repo. That gap is how a copy of .env reached a commit in a
+# sibling repo on 2026-08-30.
+#
+# Placed OUTSIDE the beads markers on purpose: beads regenerates only what sits
+# between its own BEGIN/END lines, so this survives a `bd` upgrade.
+if [ -x "$HOME/.config/git/hooks/secret-guard.sh" ]; then
+  "$HOME/.config/git/hooks/secret-guard.sh" || exit 1
+fi
+# --- END CREDENTIAL GUARD ---
 # --- BEGIN BEADS INTEGRATION v1.0.3 ---
 # This section is managed by beads. Do not remove these markers.
 if command -v bd >/dev/null 2>&1; then
