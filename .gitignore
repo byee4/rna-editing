@@ -22,3 +22,5 @@ singularity/
 .env.*
 !.env.example
 !.env.sample
+
+/.codebase-memory/
